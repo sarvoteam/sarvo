@@ -10,9 +10,27 @@ import Home from './pages/Home';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import TeamPage from './pages/TeamPage';
-import PricingPage from './pages/PricingPage';
 import ContactPage from './pages/ContactPage';
+import ProductPage from './pages/ProductPage';
 import ServiceDetailPage from './pages/ServiceDetailPage';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div style={{padding: '100px', color: 'red'}}><h1>Something went wrong.</h1><pre>{this.state.error.toString()}</pre></div>;
+    }
+    return this.props.children; 
+  }
+}
 
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
@@ -39,15 +57,19 @@ function App() {
         <CursorTrail />
         <ScrollProgress />
         <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/services" element={<ServicesPage />} />
-          <Route path="/services/:id" element={<ServiceDetailPage />} />
-          <Route path="/team" element={<TeamPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/services/:id" element={<ServiceDetailPage />} />
+
+            <Route path="/team" element={<TeamPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/product" element={<ProductPage />} />
+              
+          </Routes>
+        </ErrorBoundary>
         <Footer />
       </div>
     </BrowserRouter>
