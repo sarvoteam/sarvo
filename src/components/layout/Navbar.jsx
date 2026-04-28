@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Menu, X, Rocket, Sun, Moon } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import logo from '../../assets/SarvoLogo.png';
+import TransparentLogo from '../common/TransparentLogo';
+
+
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -28,10 +32,11 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled ? 'py-4 glass m-4 mt-6' : 'py-8'}`}>
       <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: "50px" }}>
-        <a href="#" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', fontSize: '1.8rem', fontWeight: 800 }}>
-          <Rocket size={32} className="gradient-text" />
+        <a href="#" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '1.8rem', fontWeight: 800 }}>
+          <TransparentLogo src={logo} alt="SARVO" style={{ height: '45px', width: 'auto' }} />
           <span className="gradient-text">SARVO</span>
         </a>
+
 
         {/* Desktop Menu */}
         <ul className="desktop-menu" style={{ display: 'flex', gap: '2.5rem', alignItems: 'center' }}>
