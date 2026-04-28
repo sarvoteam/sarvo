@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Rocket } from 'lucide-react';
 import { FaGithub, FaTwitter, FaLinkedin, FaInstagram } from 'react-icons/fa';
+import logo from '../../assets/SarvoLogo.png';
+import TransparentLogo from '../common/TransparentLogo';
 
 const Footer = () => {
   const companyLinks = [

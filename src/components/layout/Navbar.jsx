@@ -3,6 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Rocket, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import logo from '../../assets/SarvoLogo.png';
+import TransparentLogo from '../common/TransparentLogo';
+
+
 
 const navLinks = [
   { name: 'Home',     path: '/' },
@@ -41,6 +45,7 @@ const Navbar = () => {
           </div>
           <span className="gradient-text">SARVO</span>
         </Link>
+
 
         {/* Desktop Menu */}
         <ul className="desktop-menu" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: isScrolled ? 'transparent' : 'rgba(255,255,255,0.03)', padding: isScrolled ? '0' : '0.5rem 1rem', borderRadius: '100px', border: isScrolled ? 'none' : '1px solid var(--glass-border)', backdropFilter: 'blur(10px)', listStyle: 'none', margin: 0 }}>
