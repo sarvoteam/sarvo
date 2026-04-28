@@ -14,7 +14,7 @@ const Footer = () => {
   ];
 
   const supportLinks = [
-    { name: 'Pricing',         to: '/pricing' },
+    { name: 'Product',         to: '/product' },
     { name: 'Privacy Policy',  to: '#' },
     { name: 'Terms of Service',to: '#' },
   ];
