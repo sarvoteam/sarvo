@@ -52,8 +52,8 @@ const team = [
     image: OmImg,
     socials: {
       twitter: "#",
-      linkedin: "www.linkedin.com/in/omkolekar27",
-      github: "github.com/OmKolekar",
+      linkedin: "https://www.linkedin.com/in/omkolekar27/",
+      github: "https://github.com/OmKolekar",
     },
     color: "#10b981",
   },
