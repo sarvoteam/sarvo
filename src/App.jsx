@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import CursorTrail from './components/layout/CursorTrail';
+import IntroAnimation from './components/layout/IntroAnimation';
+
 
 // Pages
 import Home from './pages/Home';
@@ -51,9 +53,24 @@ function ScrollProgress() {
 }
 
 function App() {
+  const [showIntro, setShowIntro] = useState(() => {
+    return !sessionStorage.getItem('hasSeenIntro');
+  });
+
+  const handleIntroComplete = () => {
+    sessionStorage.setItem('hasSeenIntro', 'true');
+    setShowIntro(false);
+  };
+
   return (
     <BrowserRouter>
-      <div className="app">
+      {showIntro && <IntroAnimation onComplete={handleIntroComplete} />}
+      <motion.div 
+        className="app"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+      >
         <CursorTrail />
         <ScrollProgress />
         <Navbar />
@@ -71,7 +88,7 @@ function App() {
           </Routes>
         </ErrorBoundary>
         <Footer />
-      </div>
+      </motion.div>
     </BrowserRouter>
   );
 }
