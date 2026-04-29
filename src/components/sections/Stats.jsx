@@ -11,7 +11,7 @@ const stats = [
 
 const Stats = () => {
   return (
-    <section id="stats" style={{ padding: '7rem 0', position: 'relative', overflow: 'hidden' }}>
+    <section id="stats" style={{ padding: 'clamp(4rem, 8vh, 7rem) 0', position: 'relative', overflow: 'hidden' }}>
       {/* Background glow */}
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '700px', height: '700px', background: 'radial-gradient(circle, rgba(79,70,229,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
@@ -22,17 +22,17 @@ const Stats = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          style={{ textAlign: 'center', marginBottom: '4rem' }}
+          style={{ textAlign: 'center', marginBottom: 'clamp(2rem, 5vw, 4rem)' }}
         >
           <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.2em' }}>
             By The Numbers
           </span>
-          <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 900, marginTop: '1rem', letterSpacing: '-0.02em' }}>
+          <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 900, marginTop: '1rem', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
             Proven Results at <span className="gradient-text">Scale</span>
           </h2>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1.5rem' }}>
           {stats.map((stat, index) => (
             <motion.div
               key={index}
@@ -69,7 +69,7 @@ const Stats = () => {
                 {stat.icon}
               </div>
 
-              <h3 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '0.3rem', background: `linear-gradient(135deg, white, ${stat.color})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <h3 style={{ fontSize: 'clamp(2.5rem, 6vw, 3rem)', fontWeight: 900, marginBottom: '0.3rem', background: `linear-gradient(135deg, white, ${stat.color})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 {stat.value}
               </h3>
               <p style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.85rem', marginBottom: '0.5rem' }}>

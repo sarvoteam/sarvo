@@ -54,7 +54,7 @@ const Services = () => {
       ></div>
 
       <div className="container">
-        <div style={{ textAlign: "center", marginBottom: "6rem" }}>
+        <div style={{ textAlign: "center", marginBottom: "clamp(3rem, 8vw, 6rem)" }}>
           <motion.span
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -63,6 +63,7 @@ const Services = () => {
               color: "var(--accent-primary)",
               fontWeight: "700",
               letterSpacing: "0.4em",
+              paddingLeft: "0.4em",
               textTransform: "uppercase",
               fontSize: "0.75rem",
               display: "block",
@@ -77,7 +78,7 @@ const Services = () => {
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
             className="section-title"
-            style={{ marginBottom: "1.5rem", fontSize: "4rem" }}
+            style={{ marginBottom: "1.5rem" }}
           >
             Future-Ready <span className="gradient-text">Solutions</span>
           </motion.h2>
@@ -90,7 +91,7 @@ const Services = () => {
               color: "var(--text-secondary)",
               maxWidth: "700px",
               margin: "0 auto",
-              fontSize: "1.2rem",
+              fontSize: "clamp(1rem, 3vw, 1.2rem)",
               lineHeight: "1.8",
             }}
           >
@@ -105,8 +106,8 @@ const Services = () => {
           viewport={{ once: true }}
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
-            gap: "2.5rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 350px), 1fr))",
+            gap: "2rem",
           }}
         >
           {servicesData.map((service, index) => (
