@@ -12,6 +12,7 @@ import ServicesPage from './pages/ServicesPage';
 import TeamPage from './pages/TeamPage';
 import ContactPage from './pages/ContactPage';
 import ProductPage from './pages/ProductPage';
+import ServiceDetailPage from './pages/ServiceDetailPage';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -61,9 +62,12 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/services" element={<ServicesPage />} />
+            <Route path="/services/:id" element={<ServiceDetailPage />} />
+
             <Route path="/team" element={<TeamPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/product" element={<ProductPage />} />
+              
           </Routes>
         </ErrorBoundary>
         <Footer />
