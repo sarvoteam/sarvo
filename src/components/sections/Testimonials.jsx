@@ -24,7 +24,7 @@ const testimonials = [
 
 const Testimonials = () => {
   return (
-    <section id="testimonials" style={{ padding: '8rem 0', position: 'relative', overflow: 'hidden' }}>
+    <section id="testimonials" style={{ padding: 'clamp(4rem, 8vh, 8rem) 0', position: 'relative', overflow: 'hidden' }}>
       {/* Background */}
       <div style={{ position: 'absolute', bottom: '0', right: '0', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(14,165,233,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
@@ -35,7 +35,7 @@ const Testimonials = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          style={{ textAlign: 'center', marginBottom: '5rem' }}
+          style={{ textAlign: 'center', marginBottom: 'clamp(3rem, 8vw, 5rem)' }}
         >
           <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.2em', display: 'block', marginBottom: '1rem' }}>
             Client Stories
@@ -48,7 +48,7 @@ const Testimonials = () => {
           </p>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2.5rem', marginBottom: '5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '2rem', marginBottom: '4rem' }}>
           {testimonials.map((t, index) => (
             <motion.div
               key={index}
@@ -58,7 +58,7 @@ const Testimonials = () => {
               viewport={{ once: true }}
               whileHover={{ y: -12 }}
               style={{
-                padding: '2.8rem',
+                padding: 'clamp(1.5rem, 4vw, 2.8rem)',
                 borderRadius: '28px',
                 background: 'rgba(255,255,255,0.02)',
                 border: '1px solid var(--glass-border)',
@@ -110,7 +110,7 @@ const Testimonials = () => {
           viewport={{ once: true }}
           style={{
             textAlign: 'center',
-            padding: '3rem',
+            padding: 'clamp(2rem, 5vw, 3rem)',
             borderRadius: '28px',
             background: 'rgba(79,70,229,0.04)',
             border: '1px solid rgba(79,70,229,0.15)'

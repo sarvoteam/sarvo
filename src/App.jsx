@@ -5,6 +5,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import CursorTrail from './components/layout/CursorTrail';
 import IntroAnimation from './components/layout/IntroAnimation';
+import ScrollToTop from './components/common/ScrollToTop';
 
 
 // Pages
@@ -64,6 +65,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       {showIntro && <IntroAnimation onComplete={handleIntroComplete} />}
       <motion.div 
         className="app"

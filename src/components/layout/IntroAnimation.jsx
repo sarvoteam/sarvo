@@ -130,24 +130,72 @@ const IntroAnimation = ({ onComplete }) => {
                   cursor: 'pointer'
                 }}
               >
-                <Crystal />
+                <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  {/* Pulsing rings */}
+                  <motion.div
+                    animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+                    style={{
+                      position: 'absolute',
+                      width: '100px',
+                      height: '100px',
+                      borderRadius: '50%',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      zIndex: 0
+                    }}
+                  />
+                  <motion.div
+                    animate={{ scale: [1, 2], opacity: [0.3, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.5 }}
+                    style={{
+                      position: 'absolute',
+                      width: '100px',
+                      height: '100px',
+                      borderRadius: '50%',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      zIndex: 0
+                    }}
+                  />
+                  <Crystal />
+                </div>
                 <motion.div
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                   style={{
                     color: '#ffffff',
                     fontFamily: '"Inter", "Outfit", sans-serif',
                     letterSpacing: '0.4em',
-                    paddingLeft: '0.4em', // perfectly centers text to counter letter-spacing asymmetry
+                    paddingLeft: '0.4em',
                     textTransform: 'uppercase',
                     fontSize: '0.8rem',
                     marginTop: '2rem',
                     fontWeight: 300,
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.5)',
-                    paddingBottom: '6px'
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
+                    paddingBottom: '6px',
+                    opacity: 0.8
                   }}
                 >
                   Sarvo
+                </motion.div>
+                
+                <motion.div
+                  animate={{ 
+                    opacity: [0.3, 1, 0.3],
+                    y: [0, 5, 0]
+                  }}
+                  transition={{ 
+                    duration: 2.5, 
+                    repeat: Infinity, 
+                    ease: "easeInOut" 
+                  }}
+                  style={{
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    fontSize: '0.65rem',
+                    letterSpacing: '0.2em',
+                    marginTop: '1.5rem',
+                    fontWeight: 400,
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  Click to Enter
                 </motion.div>
               </motion.div>
             ) : (

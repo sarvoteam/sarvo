@@ -39,9 +39,9 @@ const Navbar = () => {
       <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         
         {/* Logo */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '1.8rem', fontWeight: 900, letterSpacing: '-0.03em', textDecoration: 'none' }}>
-          <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 16px rgba(79, 70, 229, 0.3)' }}>
-            <Rocket size={22} />
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 900, letterSpacing: '-0.03em', textDecoration: 'none' }}>
+          <div style={{ width: 'clamp(32px, 8vw, 40px)', height: 'clamp(32px, 8vw, 40px)', background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 16px rgba(79, 70, 229, 0.3)' }}>
+            <Rocket size={18} />
           </div>
           <span className="gradient-text">SARVO</span>
         </Link>
@@ -93,35 +93,44 @@ const Navbar = () => {
           </div>
         </ul>
 
-        {/* Mobile Toggle */}
-        <button
-          className="mobile-toggle"
-          style={{ display: 'none', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.6rem', borderRadius: '12px' }}
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Mobile Toggle & Theme Button */}
+        <div style={{ display: 'none', alignItems: 'center', gap: '1rem' }} className="mobile-actions">
+           <button
+              onClick={toggleTheme}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.6rem', borderRadius: '12px' }}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          <button
+            className="mobile-toggle"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.6rem', borderRadius: '12px' }}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
             style={{
               position: 'absolute',
               top: '100%',
               left: 0, right: 0,
               background: 'var(--bg-card)',
-              border: '1px solid var(--glass-border)',
+              borderBottom: '1px solid var(--glass-border)',
               backdropFilter: 'blur(20px)',
               padding: '1.5rem',
               display: 'flex',
               flexDirection: 'column',
               gap: '0.5rem',
-              zIndex: 999
+              zIndex: 999,
+              overflow: 'hidden'
             }}
           >
             {navLinks.map((link) => {
@@ -158,7 +167,7 @@ const Navbar = () => {
       <style>{`
         @media (max-width: 992px) {
           .desktop-menu { display: none !important; }
-          .mobile-toggle { display: flex !important; }
+          .mobile-actions { display: flex !important; }
         }
       `}</style>
     </nav>

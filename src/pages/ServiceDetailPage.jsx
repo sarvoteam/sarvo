@@ -55,10 +55,11 @@ const ServiceDetailPage = () => {
         </motion.button>
 
         <div
+          className="service-detail-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "5rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 500px), 1fr))",
+            gap: "clamp(2rem, 8vw, 5rem)",
             alignItems: "center",
           }}
         >
@@ -66,6 +67,7 @@ const ServiceDetailPage = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
+            className="service-info"
           >
             <motion.div
               style={{
@@ -86,7 +88,7 @@ const ServiceDetailPage = () => {
 
             <h1
               style={{
-                fontSize: "4rem",
+                fontSize: "clamp(2.5rem, 8vw, 4rem)",
                 marginBottom: "1.5rem",
                 lineHeight: "1.1",
               }}
@@ -99,7 +101,7 @@ const ServiceDetailPage = () => {
 
             <p
               style={{
-                fontSize: "1.25rem",
+                fontSize: "clamp(1rem, 3vw, 1.25rem)",
                 color: "var(--text-secondary)",
                 lineHeight: "1.8",
                 marginBottom: "2.5rem",
@@ -127,7 +129,7 @@ const ServiceDetailPage = () => {
               ))}
             </div>
 
-            <button className="btn-primary">
+            <button className="btn-primary" style={{ width: 'min(100%, 350px)' }}>
               Get Started with {service.title.split(" ")[0]}
             </button>
           </motion.div>
@@ -136,9 +138,9 @@ const ServiceDetailPage = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, ease: "easeOut" }}
-            className="glass"
+            className="glass service-image-container"
             style={{
-              height: '500px',
+              height: 'clamp(300px, 50vh, 500px)',
               width: '100%',
               position: 'relative',
               overflow: 'hidden',
@@ -192,6 +194,24 @@ const ServiceDetailPage = () => {
           </motion.div>
         </div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 992px) {
+          .service-detail-grid {
+            grid-template-columns: 1fr !important;
+            text-align: center;
+          }
+          .service-info {
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+          }
+          .service-image-container {
+            order: -1;
+            margin-bottom: 2rem;
+          }
+        }
+      `}</style>
     </main>
   );
 };
