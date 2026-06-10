@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
@@ -15,6 +15,8 @@ import TeamPage from './pages/TeamPage';
 import ContactPage from './pages/ContactPage';
 import ProductPage from './pages/ProductPage';
 import ServiceDetailPage from './pages/ServiceDetailPage';
+import SarvoPeoplePage from './pages/SarvoPeoplePage';
+import SarvoCareersPage from './sarvoCareers/src/pages/SarvoCareersPage';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -52,7 +54,11 @@ function ScrollProgress() {
   );
 }
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+  const isSarvoPeople = location.pathname === '/sarvo-people';
+  const isSarvoCareers = location.pathname === '/sarvo-careers';
+
   const [showIntro, setShowIntro] = useState(() => {
     return !sessionStorage.getItem('hasSeenIntro');
   });
@@ -62,8 +68,26 @@ function App() {
     setShowIntro(false);
   };
 
+  // If on Sarvo People page, render it standalone (it has its own layout)
+  if (isSarvoPeople) {
+    return (
+      <ErrorBoundary>
+        <SarvoPeoplePage />
+      </ErrorBoundary>
+    );
+  }
+
+  // If on Sarvo Careers page, render it standalone
+  if (isSarvoCareers) {
+    return (
+      <ErrorBoundary>
+        <SarvoCareersPage />
+      </ErrorBoundary>
+    );
+  }
+
   return (
-    <BrowserRouter>
+    <>
       {showIntro && <IntroAnimation onComplete={handleIntroComplete} />}
       <motion.div 
         className="app"
@@ -80,15 +104,24 @@ function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/services/:id" element={<ServiceDetailPage />} />
-
             <Route path="/team" element={<TeamPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/product" element={<ProductPage />} />
-              
+            <Route path="/sarvo-careers" element={<SarvoCareersPage />} />
           </Routes>
         </ErrorBoundary>
         <Footer />
       </motion.div>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/*" element={<AppContent />} />
+      </Routes>
     </BrowserRouter>
   );
 }

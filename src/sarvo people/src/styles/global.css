@@ -1,0 +1,138 @@
+:root {
+  --primary-bg: #f4f7fa;
+  --sidebar-bg: #0f1c3f;
+  --top-nav-bg: #162447;
+  --top-nav-text: #ffffff;
+  --active-blue: #007bf5;
+  --border-color: #e5e9f2;
+  --text-main: #333333;
+  --text-muted: #8e9bb3;
+  --text-red: #f44336;
+  --text-green: #00b87c;
+  --btn-green: #00b87c;
+  --btn-green-hover: #e8f7f2;
+  --card-bg: #ffffff;
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --font-family: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--primary-bg);
+  color: var(--text-main);
+  overflow-x: hidden;
+  height: 100vh;
+}
+
+#root {
+  height: 100vh;
+}
+
+/* App Layout Grid */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Main Area Container */
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* Sub Navigation (My Space overview etc) */
+.sub-nav {
+  height: 40px;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 25px;
+  flex-shrink: 0;
+}
+
+.sub-nav-link {
+  font-size: 13px;
+  color: #555555;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 11px 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sub-nav-link:hover, .sub-nav-link.active {
+  color: var(--active-blue);
+  border-bottom-color: var(--active-blue);
+}
+
+/* Scrollable Main Area */
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0;
+  position: relative;
+}
+
+/* Bottom Chat Bar */
+.bottom-chat-bar {
+  height: 40px;
+  background-color: #ffffff;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.chat-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.stock-info {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-green);
+}
+
+.chat-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #9ca3af;
+}
+
+/* Custom Scrollbar for Main Area */
+.main-content::-webkit-scrollbar {
+  width: 6px;
+}
+.main-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.main-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

@@ -10,6 +10,7 @@ const Footer = () => {
     { name: 'About Us',  to: '/about' },
     { name: 'Services',  to: '/services' },
     { name: 'Our Team',  to: '/team' },
+    { name: 'Careers',   to: '/sarvo-careers' },
     { name: 'Contact',   to: '/contact' },
   ];
 

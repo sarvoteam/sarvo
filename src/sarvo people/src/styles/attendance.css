@@ -1,0 +1,424 @@
+/* Attendance Timeline Section Styles */
+.attendance-section-container {
+  padding: 24px;
+  background-color: #f8fafc;
+  height: calc(100vh - 90px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.attendance-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.attendance-date-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attendance-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-request {
+  background-color: var(--active-blue);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.btn-request:hover {
+  background-color: #006ae0;
+}
+
+/* Timeline Card */
+.attendance-timeline-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Shift and Check-in Control Bar */
+.attendance-entry-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: #fcfcfd;
+}
+
+.shift-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.checkin-notes-input {
+  flex-grow: 1;
+  max-width: 400px;
+  margin: 0 24px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.checkin-notes-input:focus {
+  border-color: var(--active-blue);
+}
+
+/* Zoho Green Pill Check-in button */
+.btn-checkin-pill {
+  width: 170px;
+  height: 44px;
+  background-color: #00b87c;
+  border: none;
+  border-radius: 22px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 0 18px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-checkin-pill:hover {
+  background-color: #00a06c;
+}
+
+.btn-checkin-pill:active {
+  transform: scale(0.98);
+}
+
+.btn-checkin-pill.checked-out-style {
+  background-color: #f44336;
+}
+
+.btn-checkin-pill.checked-out-style:hover {
+  background-color: #d32f2f;
+}
+
+.btn-checkin-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.checkin-status-title {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.checkin-timer {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.btn-checkin-icon-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Timeline Layout Grid */
+.timeline-grid-wrapper {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.timeline-row-item {
+  display: flex;
+  align-items: center;
+  height: 52px;
+}
+
+.timeline-day-label {
+  display: flex;
+  align-items: center;
+  width: 100px;
+  gap: 15px;
+  flex-shrink: 0;
+}
+
+.day-name-txt {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  width: 32px;
+}
+
+.day-circle-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+  background-color: #f3f4f6;
+}
+
+.day-circle-num.active-day-circle {
+  background-color: var(--active-blue);
+  color: white;
+}
+
+/* Horizontal Track bar */
+.timeline-bar-container {
+  flex-grow: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  margin: 0 20px;
+  position: relative;
+}
+
+.timeline-bar-track {
+  width: 100%;
+  height: 2px;
+  background-color: #e5e7eb;
+  position: relative;
+  border-radius: 1px;
+}
+
+/* Absent Segment styles */
+.timeline-absent-bar {
+  position: absolute;
+  top: -11px;
+  left: 0;
+  right: 0;
+  height: 24px;
+  border-top: 1px solid #fca5a5;
+  border-bottom: 1px solid #fca5a5;
+  background-color: #fef2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.timeline-absent-bar span {
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Weekend Segment styles */
+.timeline-weekend-bar {
+  position: absolute;
+  top: -11px;
+  left: 0;
+  right: 0;
+  height: 24px;
+  border: 1px dashed #d1d5db;
+  background-color: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.timeline-weekend-bar span {
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Present Progress bar (starts from left, moves right) */
+.timeline-present-progress-bar {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  height: 6px;
+  background-color: #00b87c;
+  border-radius: 3px;
+}
+
+.progress-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #00b87c;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  top: -2px;
+}
+
+.progress-dot.start {
+  left: -2px;
+}
+
+.progress-dot.end {
+  right: -2px;
+}
+
+/* Hours worked text */
+.timeline-hours-worked {
+  width: 120px;
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.hours-worked-num {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.hours-worked-lbl {
+  font-size: 10px;
+  color: #6b7280;
+}
+
+/* Bottom Axis */
+.timeline-time-axes {
+  display: flex;
+  align-items: center;
+  padding: 10px 24px;
+  border-top: 1px solid var(--border-color);
+  background-color: #fafafb;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.day-label-placeholder {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.axes-labels-list {
+  flex-grow: 1;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 20px;
+}
+
+.hours-label-placeholder {
+  width: 120px;
+  flex-shrink: 0;
+}
+
+/* Bottom Stats Card */
+.attendance-stats-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  overflow: hidden;
+}
+
+.stats-card-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background-color: #fafafb;
+  padding: 0 24px;
+  gap: 20px;
+}
+
+.stats-tab-btn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 12px 4px;
+  cursor: pointer;
+  position: relative;
+}
+
+.stats-tab-btn.active {
+  color: var(--active-blue);
+}
+
+.stats-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--active-blue);
+}
+
+.stats-card-body {
+  padding: 24px;
+}
+
+.stats-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px;
+}
+
+.stat-grid-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-grid-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-grid-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}

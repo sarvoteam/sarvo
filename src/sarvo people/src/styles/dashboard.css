@@ -1,0 +1,505 @@
+/* Banner Component */
+.foliage-banner-wrapper {
+  height: 140px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.foliage-banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.banner-dots-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background-color: rgba(255, 255, 255, 0.25);
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.banner-dots-btn:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Dashboard Content Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  padding: 0 24px 40px 24px;
+  margin-top: -65px; /* Pull profile card overlap over the banner */
+  position: relative;
+  z-index: 2;
+}
+
+/* Left Column Cards */
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.card {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+}
+
+/* Profile Card Styling */
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  padding-top: 10px;
+}
+
+.profile-avatar-wrapper {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 4px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-top: -55px; /* overlap upwards */
+  background-color: white;
+  margin-bottom: 12px;
+}
+
+.profile-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-id {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.profile-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.profile-role {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.profile-status {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.profile-status.yet-checkin {
+  color: var(--text-red);
+}
+
+.profile-status.checked-in {
+  color: var(--text-green);
+}
+
+.profile-timer {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  color: #111827;
+  margin-bottom: 20px;
+  font-family: monospace;
+}
+
+.btn-checkin {
+  width: 140px;
+  height: 38px;
+  border: 1px solid var(--btn-green);
+  background: none;
+  color: var(--btn-green);
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-checkin:hover {
+  background-color: var(--btn-green-hover);
+}
+
+.btn-checkin.active {
+  border-color: var(--text-red);
+  color: var(--text-red);
+}
+
+.btn-checkin.active:hover {
+  background-color: #fff1f0;
+}
+
+/* Small Cards (Manager, Members) */
+.small-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 12px;
+}
+
+.mini-profile-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.mini-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.mini-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.mini-title {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.mini-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.mini-status {
+  font-size: 11px;
+  color: var(--text-red);
+  margin-top: 1px;
+}
+
+.mini-status.checked-in {
+  color: var(--text-green);
+}
+
+/* Right Column Card Container */
+.right-column {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+/* Tab Bar inside Main Right Card */
+.tabs-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 20px;
+  background-color: #ffffff;
+  height: 50px;
+}
+
+.tabs-list {
+  display: flex;
+  gap: 20px;
+  height: 100%;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555555;
+  cursor: pointer;
+  padding: 15px 0;
+  position: relative;
+  height: 100%;
+}
+
+.tab-btn:hover {
+  color: var(--text-main);
+}
+
+.tab-btn.active {
+  color: var(--active-blue);
+  font-weight: 600;
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--active-blue);
+}
+
+.tab-filter-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.tab-filter-btn:hover {
+  background-color: #f3f4f6;
+  color: var(--text-main);
+}
+
+/* Attendance Log Body */
+.attendance-body {
+  padding: 24px;
+  background-color: #f8fafc;
+  flex-grow: 1;
+}
+
+.attendance-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 16px;
+}
+
+.attendance-list {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* List Row */
+.attendance-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 20px;
+}
+
+.attendance-row:last-child {
+  border-bottom: none;
+}
+
+.day-column {
+  display: flex;
+  align-items: center;
+  width: 140px;
+  gap: 15px;
+}
+
+.day-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  width: 32px;
+}
+
+.day-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+  background-color: #f3f4f6;
+}
+
+.attendance-row.active-day .day-circle {
+  background-color: var(--active-blue);
+  color: white;
+}
+
+.shift-column {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shift-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.shift-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.status-column {
+  width: 250px;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-text.absent {
+  color: var(--text-red);
+}
+
+.status-text.present {
+  color: var(--text-green);
+}
+
+.status-text.yet-checkin {
+  color: var(--text-muted);
+}
+
+.status-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.status-desc.absent {
+  color: var(--text-red);
+}
+
+.status-desc.present {
+  color: var(--text-green);
+}
+
+/* Dashboard Leave Tab Styles */
+.dashboard-leave-body {
+  padding: 24px;
+  background-color: #f8fafc;
+  flex-grow: 1;
+}
+
+.dashboard-leave-list {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.dashboard-leave-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 20px;
+}
+
+.dashboard-leave-row:last-child {
+  border-bottom: none;
+}
+
+.db-leave-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 250px;
+}
+
+.db-leave-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.db-leave-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.db-leave-middle {
+  display: flex;
+  gap: 60px;
+  flex-grow: 1;
+}
+
+.db-leave-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100px;
+}
+
+.db-leave-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.db-leave-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.db-leave-value.available-green {
+  color: #10b981;
+}
+
+.db-leave-right {
+  width: 120px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.db-btn-apply-leave {
+  background: none;
+  border: 1px solid var(--active-blue);
+  color: var(--active-blue);
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.db-btn-apply-leave:hover {
+  background-color: #e0f2fe;
+}
+
