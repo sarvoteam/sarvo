@@ -1,0 +1,381 @@
+/* Time Tracker, Performance, and Tasks Section Styles */
+.timetracker-container,
+.performance-container,
+.tasks-section-container {
+  padding: 24px;
+  background-color: #f8fafc;
+  height: calc(100vh - 90px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tracker-header-bar,
+.tasks-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.btn-log-time,
+.btn-add-task {
+  background-color: var(--active-blue);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.btn-log-time:hover,
+.btn-add-task:hover {
+  background-color: #006ae0;
+}
+
+.tracker-date-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tracker-actions-right,
+.tasks-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Time Tracker Form Panel */
+.tracker-form-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 16px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.tracker-inputs-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.tracker-select {
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  outline: none;
+  width: 160px;
+  background-color: #ffffff;
+  transition: border-color 0.2s;
+}
+
+.tracker-select:focus {
+  border-color: var(--active-blue);
+}
+
+.tracker-desc-input {
+  flex-grow: 1;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.tracker-desc-input:focus {
+  border-color: var(--active-blue);
+}
+
+.billable-select {
+  width: 120px;
+}
+
+/* Timer Widget Group */
+.timer-widget-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid #10b981;
+  border-radius: 20px;
+  padding: 2px 4px 2px 14px;
+  background-color: #f0fdf4;
+  height: 36px;
+}
+
+.timer-display-box {
+  font-size: 13px;
+  font-weight: 700;
+  color: #10b981;
+  margin-right: 12px;
+  letter-spacing: 0.5px;
+  font-family: monospace;
+}
+
+.timer-display-box.running {
+  color: #ef4444;
+}
+
+.btn-timer-trigger {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background-color: #10b981;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-timer-trigger:hover {
+  background-color: #059669;
+}
+
+.btn-timer-trigger.running {
+  background-color: #ef4444;
+}
+
+.btn-timer-trigger.running:hover {
+  background-color: #dc2626;
+}
+
+/* Tracker / Performance / Tasks Content Card */
+.tracker-content-card,
+.performance-content-card,
+.tasks-content-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 40px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Empty States */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 400px;
+}
+
+.empty-illustration {
+  margin-bottom: 20px;
+  animation: floatIllustration 4s ease-in-out infinite;
+}
+
+@keyframes floatIllustration {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+.empty-state-text {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* Time logs list styling */
+.time-logs-list,
+.tasks-list-wrapper {
+  width: 100%;
+  align-self: flex-start;
+}
+
+.logs-list-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+.time-log-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 14px 20px;
+  margin-bottom: 12px;
+  background-color: #ffffff;
+  transition: border-color 0.2s;
+}
+
+.time-log-row:hover {
+  border-color: #cbd5e1;
+}
+
+.time-log-row.active-timer-row {
+  border-color: #fca5a5;
+  background-color: #fffefe;
+  animation: borderPulse 2s infinite;
+}
+
+@keyframes borderPulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.1); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.1); }
+}
+
+.log-col-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 180px;
+  flex-shrink: 0;
+}
+
+.log-project-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.log-job-name {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.log-col-desc {
+  flex-grow: 1;
+  font-size: 12px;
+  color: #4b5563;
+  margin-right: 15px;
+}
+
+.log-col-type {
+  width: 110px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.billable-badge {
+  color: #047857;
+  background-color: #d1fae5;
+  padding: 4px 10px;
+  border-radius: 12px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.non-billable-badge {
+  color: #4b5563;
+  background-color: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 12px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.log-col-duration {
+  width: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  text-align: right;
+  font-family: monospace;
+}
+
+.running-text {
+  color: #ef4444;
+}
+
+.log-col-action {
+  width: 60px;
+  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.live-badge {
+  color: #ef4444;
+  background-color: #fee2e2;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.btn-delete-log,
+.btn-delete-task {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-delete-log:hover,
+.btn-delete-task:hover {
+  color: #ef4444;
+  background-color: #fee2e2;
+}
+
+/* Time Tracker Bottom Bar */
+.tracker-bottom-bar {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 14px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.tracker-bottom-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-grow: 1;
+  text-align: center;
+}
+
+.tracker-bottom-stat.divider-left {
+  border-left: 1px solid var(--border-color);
+}
+
+.bottom-stat-num {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.bottom-stat-lbl {
+  font-size: 10px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tracker-bottom-stat.active-warning .bottom-stat-num {
+  color: #f59e0b;
+}
