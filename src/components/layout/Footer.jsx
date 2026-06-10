@@ -15,9 +15,9 @@ const Footer = () => {
   ];
 
   const supportLinks = [
-    { name: 'Product',         to: '/product' },
-    { name: 'Privacy Policy',  to: '#' },
-    { name: 'Terms of Service',to: '#' },
+    { name: 'Product', to: '/product' },
+    { name: 'Privacy Policy', to: '#' },
+    { name: 'Terms of Service', to: '#' },
   ];
 
   const linkStyle = {
@@ -28,12 +28,12 @@ const Footer = () => {
   };
 
   return (
-    <footer style={{ padding: '5rem 0 2rem', borderTop: '1px solid var(--glass-border)' }}>
+    <footer style={{ padding: 'clamp(3rem, 8vh, 5rem) 0 2rem', borderTop: '1px solid var(--glass-border)' }}>
       <div className="container">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '4rem', marginBottom: '4rem' }}>
+        <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '3rem', marginBottom: '4rem' }}>
 
           {/* Brand */}
-          <div style={{ gridColumn: 'span 2' }}>
+          <div className="footer-brand" style={{ gridColumn: 'span 2' }}>
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1.5rem', fontWeight: 900, marginBottom: '1.5rem', textDecoration: 'none' }}>
               <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                 <Rocket size={20} />
@@ -45,10 +45,10 @@ const Footer = () => {
             </p>
             <div style={{ display: 'flex', gap: '1.2rem' }}>
               {[
-                { icon: <FaTwitter size={18} />,  href: '#' },
-                { icon: <FaLinkedin size={18} />, href: '#' },
-                { icon: <FaGithub size={18} />,   href: '#' },
-                { icon: <FaInstagram size={18} />, href: '#' },
+                { icon: <FaTwitter size={18} />, href: '#' },
+                { icon: <FaLinkedin size={18} />, href: 'https://www.linkedin.com/in/sarvo-team-490718405?utm_source=share_via&utm_content=profile&utm_medium=member_android' },
+                { icon: <FaGithub size={18} />, href: 'https://github.com/sarvoteam' },
+                { icon: <FaInstagram size={18} />, href: 'https://www.instagram.com/sarvo.in' },
               ].map((s, i) => (
                 <a key={i} href={s.href}
                   style={{ color: 'var(--text-secondary)', transition: 'var(--transition-smooth)', display: 'flex' }}
@@ -62,7 +62,7 @@ const Footer = () => {
           </div>
 
           {/* Company */}
-          <div>
+          <div className="footer-links">
             <h4 style={{ marginBottom: '1.5rem', fontWeight: 800, fontSize: '1rem' }}>Company</h4>
             <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem', listStyle: 'none', padding: 0, margin: 0 }}>
               {companyLinks.map(l => (
@@ -79,7 +79,7 @@ const Footer = () => {
           </div>
 
           {/* Support */}
-          <div>
+          <div className="footer-links">
             <h4 style={{ marginBottom: '1.5rem', fontWeight: 800, fontSize: '1rem' }}>Support</h4>
             <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem', listStyle: 'none', padding: 0, margin: 0 }}>
               {supportLinks.map(l => (
@@ -100,6 +100,28 @@ const Footer = () => {
           <p>© {new Date().getFullYear()} SARVO Tech. All rights reserved. Built with 💜 for the next generation.</p>
         </div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .footer-grid {
+            grid-template-columns: 1fr !important;
+            gap: 2.5rem !important;
+            text-align: center;
+          }
+          .footer-brand {
+            grid-column: span 1 !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .footer-brand p {
+            max-width: 100% !important;
+          }
+          .footer-links ul {
+            align-items: center;
+          }
+        }
+      `}</style>
     </footer>
   );
 };

@@ -16,7 +16,7 @@ const team = [
     image: VaishnavImg,
     socials: {
       twitter: "#",
-      linkedin: "https://www.linkedin.com/in/vaishnav-ghadge/",
+      linkedin: "https://www.linkedin.com/in/vaishnav-ghadge",
       github: "https://github.com/ItsVaishnav",
     },
     color: "var(--accent-primary)",
@@ -28,7 +28,7 @@ const team = [
     image: RohitImg,
     socials: {
       twitter: "#",
-      linkedin: "#",
+      linkedin: "https://www.linkedin.com/in/rohit-ghanghav6633",
       github: "https://github.com/Rohit4589",
     },
     color: "var(--accent-secondary)",
@@ -146,42 +146,39 @@ const Team = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
+          className="team-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(6, 1fr)",
-            gap: "3.5rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
+            gap: "2.5rem",
             maxWidth: "1200px",
             margin: "0 auto",
           }}
         >
           {team.map((member, index) => {
-            // Determine grid placement
-            let gridColumn = "span 2";
-            if (index === 3) gridColumn = "2 / 4";
-            if (index === 4) gridColumn = "4 / 6";
-
             return (
               <motion.div
                 key={index}
                 variants={cardVariants}
                 whileHover={{ y: -15 }}
-                style={{ 
-                  gridColumn: gridColumn,
-                  width: "100%", 
-                  maxWidth: "380px",
+                style={{
+                  width: "100%",
+                  maxWidth: "400px",
                   justifySelf: "center"
                 }}
               >
                 <div
                   className="glass"
                   style={{
-                    padding: "2.5rem",
+                    padding: "2rem",
                     borderRadius: "32px",
                     overflow: "hidden",
                     position: "relative",
                     transition: "border-color 0.3s ease",
                     border: "1px solid var(--glass-border)",
-                    height: "100%"
+                    height: "100%",
+                    display: 'flex',
+                    flexDirection: 'column'
                   }}
                 >
                   {/* Glow Effect on Hover */}
@@ -237,7 +234,7 @@ const Team = () => {
                   <h3
                     className="gradient-text"
                     style={{
-                      fontSize: "2.2rem",
+                      fontSize: "clamp(1.8rem, 4vw, 2.2rem)",
                       marginBottom: "0.4rem",
                       fontWeight: "800",
                       letterSpacing: "-0.03em",
@@ -279,6 +276,7 @@ const Team = () => {
                       display: "flex",
                       justifyContent: "center",
                       gap: "1.5rem",
+                      marginTop: 'auto'
                     }}
                   >
                     {[
@@ -321,6 +319,18 @@ const Team = () => {
           })}
         </motion.div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 768px) {
+          #team {
+            padding: 5rem 0 !important;
+          }
+          .team-grid {
+            grid-template-columns: 1fr !important;
+            gap: 2rem !important;
+          }
+        }
+      `}</style>
     </section>
   );
 };

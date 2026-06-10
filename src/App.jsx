@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import CursorTrail from './components/layout/CursorTrail';
 import IntroAnimation from './components/layout/IntroAnimation';
-
+import ScrollToTop from './components/common/ScrollToTop';
 
 // Pages
 import Home from './pages/Home';
@@ -30,25 +30,39 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      return <div style={{padding: '100px', color: 'red'}}><h1>Something went wrong.</h1><pre>{this.state.error.toString()}</pre></div>;
+      return (
+        <div style={{ padding: '100px', color: 'red' }}>
+          <h1>Something went wrong.</h1>
+          <pre>{this.state.error.toString()}</pre>
+        </div>
+      );
     }
-    return this.props.children; 
+    return this.props.children;
   }
 }
 
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  });
+
   return (
     <motion.div
       style={{
         scaleX,
         position: 'fixed',
-        top: 0, left: 0, right: 0,
+        top: 0,
+        left: 0,
+        right: 0,
         height: '3px',
-        background: 'linear-gradient(to right, var(--accent-primary), var(--accent-secondary))',
+        background:
+          'linear-gradient(to right, var(--accent-primary), var(--accent-secondary))',
         transformOrigin: '0%',
-        zIndex: 100
+        zIndex: 100,
       }}
     />
   );
@@ -56,6 +70,7 @@ function ScrollProgress() {
 
 function AppContent() {
   const location = useLocation();
+
   const isSarvoPeople = location.pathname === '/sarvo-people';
   const isSarvoCareers = location.pathname === '/sarvo-careers';
 
@@ -68,7 +83,7 @@ function AppContent() {
     setShowIntro(false);
   };
 
-  // If on Sarvo People page, render it standalone (it has its own layout)
+  // Standalone pages
   if (isSarvoPeople) {
     return (
       <ErrorBoundary>
@@ -77,7 +92,6 @@ function AppContent() {
     );
   }
 
-  // If on Sarvo Careers page, render it standalone
   if (isSarvoCareers) {
     return (
       <ErrorBoundary>
@@ -88,16 +102,22 @@ function AppContent() {
 
   return (
     <>
-      {showIntro && <IntroAnimation onComplete={handleIntroComplete} />}
-      <motion.div 
+      <ScrollToTop />
+
+      {showIntro && (
+        <IntroAnimation onComplete={handleIntroComplete} />
+      )}
+
+      <motion.div
         className="app"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1.2, ease: "easeOut" }}
+        transition={{ duration: 1.2, ease: 'easeOut' }}
       >
         <CursorTrail />
         <ScrollProgress />
         <Navbar />
+
         <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -110,6 +130,7 @@ function AppContent() {
             <Route path="/sarvo-careers" element={<SarvoCareersPage />} />
           </Routes>
         </ErrorBoundary>
+
         <Footer />
       </motion.div>
     </>

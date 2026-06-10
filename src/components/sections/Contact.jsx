@@ -484,6 +484,10 @@ const Contact = () => {
         }
 
         @media (max-width: 992px) {
+          .contact-section {
+            padding: 5rem 0;
+          }
+          
           .contact-grid {
             grid-template-columns: 1fr;
             gap: 3rem;
@@ -513,15 +517,15 @@ const Contact = () => {
 
         @media (max-width: 768px) {
           .premium-glass {
-            padding: 2rem;
+            padding: 2rem 1.5rem;
           }
           
-          .details-heading {
-            font-size: 2rem;
+          .details-heading, .form-heading {
+            font-size: 1.75rem;
           }
           
-          .section-header .section-title {
-            font-size: 2.5rem;
+          .contact-header-left .section-title {
+            font-size: clamp(2.2rem, 8vw, 3.5rem);
           }
         }
       `}</style>

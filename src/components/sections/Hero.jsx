@@ -11,7 +11,7 @@ const Hero = () => {
   const closeModal = () => setModalState({ isOpen: false, type: '' });
 
   return (
-    <section className="hero" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', padding: '100px 0' }}>
+    <section className="hero" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', padding: 'clamp(100px, 15vh, 160px) 0 60px' }}>
       <ActionModal
         isOpen={modalState.isOpen}
         onClose={closeModal}
@@ -23,12 +23,13 @@ const Hero = () => {
       <div className="blob" style={{ bottom: '0', right: '-10%', background: 'radial-gradient(circle, rgba(14, 165, 233, 0.1) 0%, transparent 70%)', width: '600px', height: '600px' }}></div>
 
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '4rem', alignItems: 'center' }}>
+        <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '4rem', alignItems: 'center' }}>
 
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
+            className="hero-content"
           >
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -40,16 +41,16 @@ const Hero = () => {
               <span style={{ fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>PREMIUM DIGITAL SOLUTIONS</span>
             </motion.div>
 
-            <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', lineHeight: 1.05, marginBottom: '1.5rem', fontWeight: 800 }}>
+            <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', lineHeight: 1.05, marginBottom: '1.5rem', fontWeight: 800 }}>
               Engineering <span className="gradient-text">Excellence</span> in <br />
               Web & Mobile Apps
             </h1>
 
-            <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', marginBottom: '3rem', maxWidth: '600px', lineHeight: 1.7 }}>
+            <p style={{ fontSize: 'clamp(1rem, 3vw, 1.2rem)', color: 'var(--text-secondary)', marginBottom: '3rem', maxWidth: '600px', lineHeight: 1.7 }}>
               We build scalable, high-performance digital ecosystems that transform your business vision into a market-leading reality.
             </p>
 
-            <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', marginBottom: '3.5rem' }}>
+            <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', marginBottom: '3.5rem' }} className="hero-btns">
               <button
                 onClick={() => openModal('journey')}
                 className="btn-primary"
@@ -65,23 +66,6 @@ const Hero = () => {
                 View Our Work
               </button>
             </div>
-
-            {/* <div style={{ display: 'flex', gap: '1.5rem', opacity: 0.8, flexWrap: 'wrap' }}>
-              <motion.div 
-                whileHover={{ y: -5, opacity: 1, background: 'rgba(255,255,255,0.05)' }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem 1.5rem', borderRadius: '100px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)', transition: 'var(--transition-smooth)' }}
-              >
-                <Monitor size={20} className="gradient-text" />
-                <span style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Enterprise Web</span>
-              </motion.div>
-              <motion.div 
-                whileHover={{ y: -5, opacity: 1, background: 'rgba(255,255,255,0.05)' }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem 1.5rem', borderRadius: '100px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)', transition: 'var(--transition-smooth)' }}
-              >
-                <Smartphone size={20} className="gradient-text" />
-                <span style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Native Mobile</span>
-              </motion.div>
-            </div> */}
           </motion.div>
 
           <motion.div
@@ -89,6 +73,7 @@ const Hero = () => {
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
             style={{ position: 'relative' }}
+            className="hero-image"
           >
             <div className="glass" style={{ padding: '0.5rem', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <img
@@ -102,6 +87,7 @@ const Hero = () => {
             <motion.div
               animate={{ y: [0, -15, 0] }}
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+              className="floating-badge"
               style={{ position: 'absolute', bottom: '10%', left: '-5%', background: 'var(--bg-card)', padding: '1.2rem 2rem', borderRadius: '20px', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-premium)', zIndex: 2 }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -124,6 +110,7 @@ const Hero = () => {
         transition={{ repeat: Infinity, duration: 2 }}
         style={{ position: 'absolute', bottom: '2.5rem', left: '50%', transform: 'translateX(-50%)', opacity: 0.3, cursor: 'pointer' }}
         onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+        className="scroll-indicator"
       >
         <ChevronDown size={32} />
       </motion.div>
@@ -140,6 +127,31 @@ const Hero = () => {
             radial-gradient(circle at 10% 10%, rgba(79, 70, 229, 0.05) 0%, transparent 30%),
             radial-gradient(circle at 90% 90%, rgba(14, 165, 233, 0.05) 0%, transparent 30%);
           pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+          .hero {
+            padding-top: 120px;
+            text-align: center;
+          }
+          .hero-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .hero-btns {
+            justify-content: center;
+          }
+          .floating-badge {
+            display: none;
+          }
+          .scroll-indicator {
+            display: none;
+          }
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+            gap: 3rem !important;
+          }
         }
       `}</style>
     </section>

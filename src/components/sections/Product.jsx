@@ -254,19 +254,44 @@ const Product = () => {
         }
 
         @media (max-width: 768px) {
+          .product-section {
+            padding: 5rem 0;
+          }
+          
+          .section-subtitle {
+             margin-top: -1rem;
+             margin-bottom: 2rem;
+             font-size: 1rem;
+          }
+
           .product-actions {
             flex-direction: column;
             width: 100%;
+            gap: 1.5rem;
           }
           
-          .product-actions button {
+          .product-actions a {
             width: 100%;
             justify-content: center;
           }
           
           .showcase-container {
-            transform: none;
+            transform: none !important;
             padding: 0.5rem;
+            margin-bottom: 4rem;
+          }
+
+          .product-showcase {
+            margin-bottom: 4rem;
+          }
+
+          .features-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+
+          .feature-card {
+            padding: 2rem;
           }
         }
       `}</style>
