@@ -15,16 +15,7 @@ import {
   Plus, 
   X 
 } from 'lucide-react';
-
-// Default static fallbacks for mock mode
-const DEFAULT_LEAVE_TYPES = [
-  { id: 1, name: 'Casual Leave', available: 4, booked: 0, icon_type: 'sun', color_theme: 'blue' },
-  { id: 2, name: 'Compensatory Off', available: 0, booked: 0, icon_type: 'co', color_theme: 'green' },
-  { id: 3, name: 'Earned Leave', available: 12, booked: 0, icon_type: 'clock', color_theme: 'green-light' },
-  { id: 4, name: 'Leave Without Pay', available: 0, booked: 0, icon_type: 'lwop', color_theme: 'red' },
-  { id: 5, name: 'Paternity Leave', available: 0, booked: 0, icon_type: 'baby', color_theme: 'orange' },
-  { id: 6, name: 'Sick Leave', available: 12, booked: 0, icon_type: 'cross', color_theme: 'purple' }
-];
+import { leaveApi } from '../../../apis/leaveApi';
 
 const DEFAULT_HOLIDAYS = [
   { id: 1, date: '2026-08-15', name: 'Independence Day', is_past: false },
@@ -37,9 +28,18 @@ const DEFAULT_HOLIDAYS = [
   { id: 8, date: '2026-05-01', name: 'Maharashtra Day', is_past: true }
 ];
 
+const THEME_MAP = {
+  'Casual Leave': { icon_type: 'sun', color_theme: 'blue' },
+  'Compensatory Off': { icon_type: 'co', color_theme: 'green' },
+  'Earned Leave': { icon_type: 'clock', color_theme: 'green-light' },
+  'Leave Without Pay': { icon_type: 'lwop', color_theme: 'red' },
+  'Paternity Leave': { icon_type: 'baby', color_theme: 'orange' },
+  'Sick Leave': { icon_type: 'cross', color_theme: 'purple' }
+};
+
 export default function LeaveTracker() {
   const [leaveTypes, setLeaveTypes] = useState([]);
-  const [holidays, setHolidays] = useState([]);
+  const [holidays, setHolidays] = useState(DEFAULT_HOLIDAYS);
   
   // Section collapse states
   const [upcomingOpen, setUpcomingOpen] = useState(true);
@@ -47,46 +47,35 @@ export default function LeaveTracker() {
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [leaveTypeInput, setLeaveTypeInput] = useState('Casual Leave');
+  const [selectedLeaveTypeId, setSelectedLeaveTypeId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
-  
-  const [isBackendLive, setIsBackendLive] = useState(true);
 
   // Fetch leave types and holidays
   const fetchLeaveData = async () => {
     try {
-      const typesRes = await fetch('http://localhost:5000/api/leaves/types');
-      if (!typesRes.ok) throw new Error();
-      const typesData = await typesRes.json();
-      setLeaveTypes(typesData);
-
-      const holRes = await fetch('http://localhost:5000/api/leaves/holidays');
-      const holData = await holRes.json();
-      setHolidays(holData);
+      const balances = await leaveApi.getBalances();
       
-      setIsBackendLive(true);
+      const mapped = balances.map(b => {
+        const theme = THEME_MAP[b.leave_type_name] || { icon_type: 'sun', color_theme: 'blue' };
+        return {
+          id: b.leave_type_id, // Map this as id for select input
+          leave_balance_id: b.id,
+          name: b.leave_type_name,
+          available: Number(b.allocated_days) - Number(b.used_days),
+          booked: Number(b.used_days),
+          icon_type: theme.icon_type,
+          color_theme: theme.color_theme
+        };
+      });
+
+      setLeaveTypes(mapped);
+      if (mapped.length > 0 && !selectedLeaveTypeId) {
+        setSelectedLeaveTypeId(mapped[0].id);
+      }
     } catch (err) {
-      console.warn('Backend server not connected. Falling back to local storage in front-end mock.');
-      setIsBackendLive(false);
-      
-      const localLeaves = localStorage.getItem('zoho_leaves');
-      const localHolidays = localStorage.getItem('zoho_holidays');
-
-      if (localLeaves) {
-        setLeaveTypes(JSON.parse(localLeaves));
-      } else {
-        setLeaveTypes(DEFAULT_LEAVE_TYPES);
-        localStorage.setItem('zoho_leaves', JSON.stringify(DEFAULT_LEAVE_TYPES));
-      }
-
-      if (localHolidays) {
-        setHolidays(JSON.parse(localHolidays));
-      } else {
-        setHolidays(DEFAULT_HOLIDAYS);
-        localStorage.setItem('zoho_holidays', JSON.stringify(DEFAULT_HOLIDAYS));
-      }
+      console.error('Leave balance fetch failed:', err);
     }
   };
 
@@ -112,46 +101,19 @@ export default function LeaveTracker() {
   // Submit Leave Application
   const handleSubmitLeave = async (e) => {
     e.preventDefault();
-    if (!startDate || !endDate) return;
+    if (!startDate || !endDate || !selectedLeaveTypeId) return;
 
-    if (isBackendLive) {
-      try {
-        const res = await fetch('http://localhost:5000/api/leaves/apply', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            leaveTypeName: leaveTypeInput,
-            startDate,
-            endDate,
-            reason
-          })
-        });
-        if (res.ok) {
-          fetchLeaveData();
-          closeModal();
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    } else {
-      // Mock submit
-      const diffTime = Math.abs(new Date(endDate) - new Date(startDate));
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-      const updatedLeaves = leaveTypes.map(t => {
-        if (t.name === leaveTypeInput) {
-          return {
-            ...t,
-            available: Math.max(0, t.available - diffDays),
-            booked: t.booked + diffDays
-          };
-        }
-        return t;
+    try {
+      await leaveApi.applyLeave({
+        leaveTypeId: selectedLeaveTypeId,
+        startDate,
+        endDate,
+        reason
       });
-
-      setLeaveTypes(updatedLeaves);
-      localStorage.setItem('zoho_leaves', JSON.stringify(updatedLeaves));
+      fetchLeaveData();
       closeModal();
+    } catch (err) {
+      alert(err.message || 'Leave application failed');
     }
   };
 
@@ -320,12 +282,12 @@ export default function LeaveTracker() {
               <div className="form-group">
                 <label>Leave Type *</label>
                 <select 
-                  value={leaveTypeInput} 
-                  onChange={(e) => setLeaveTypeInput(e.target.value)}
+                  value={selectedLeaveTypeId} 
+                  onChange={(e) => setSelectedLeaveTypeId(e.target.value)}
                   required
                 >
                   {leaveTypes.filter(t => t.name !== 'Leave Without Pay' && t.name !== 'Compensatory Off').map(t => (
-                    <option key={t.id} value={t.name}>{t.name} (Available: {t.available})</option>
+                    <option key={t.id} value={t.id}>{t.name} (Available: {t.available})</option>
                   ))}
                 </select>
               </div>

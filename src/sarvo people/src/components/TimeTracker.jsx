@@ -10,25 +10,52 @@ import {
   Clock, 
   Trash2 
 } from 'lucide-react';
+import { projectApi } from '../../../apis/projectApi';
 
 export default function TimeTracker() {
   const [activeSubTab, setActiveSubTab] = useState('Time Logs');
   const [logs, setLogs] = useState([]);
+  const [projectsList, setProjectsList] = useState([]);
+  const [tasksList, setTasksList] = useState([]);
   
   // Timer States
   const [isRunning, setIsRunning] = useState(false);
   const [timeElapsed, setTimeElapsed] = useState(0); // in seconds
-  const [project, setProject] = useState('');
-  const [job, setJob] = useState('');
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [selectedTaskId, setSelectedTaskId] = useState('');
   const [description, setDescription] = useState('');
   const [isBillable, setIsBillable] = useState('Billable');
 
-  // Load logs from localStorage
-  useEffect(() => {
-    const localLogs = localStorage.getItem('zoho_time_logs');
-    if (localLogs) {
-      setLogs(JSON.parse(localLogs));
+  const fetchTrackerData = async () => {
+    try {
+      // 1. Fetch Projects
+      const projs = await projectApi.getProjects();
+      setProjectsList(projs);
+
+      // 2. Fetch Tasks
+      const tasks = await projectApi.getTasks();
+      setTasksList(tasks);
+
+      // 3. Fetch Time Logs
+      const timeLogs = await projectApi.getTimeLogs();
+      const mappedLogs = timeLogs.map(tl => ({
+        id: tl.id,
+        project: tl.project_name,
+        job: tl.task_name,
+        description: tl.description,
+        billable: 'Billable', // Default
+        duration: tl.duration_minutes * 60, // Convert minutes back to seconds for frontend formatting
+        date: new Date(tl.log_date).toLocaleDateString()
+      }));
+      setLogs(mappedLogs);
+    } catch (err) {
+      console.error('Failed to load tracker data:', err);
     }
+  };
+
+  // Load backend data on startup
+  useEffect(() => {
+    fetchTrackerData();
   }, []);
 
   // Timer Tick
@@ -55,22 +82,27 @@ export default function TimeTracker() {
     return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
   };
 
-  const handleStartStop = () => {
+  const handleStartStop = async () => {
     if (isRunning) {
       // Save current log
-      if (timeElapsed > 0) {
-        const newLog = {
-          id: Date.now(),
-          project: project || 'General Project',
-          job: job || 'Default Job',
-          description: description || 'Working on tasks',
-          billable: isBillable,
-          duration: timeElapsed, // in seconds
-          date: new Date().toLocaleDateString()
-        };
-        const updated = [newLog, ...logs];
-        setLogs(updated);
-        localStorage.setItem('zoho_time_logs', JSON.stringify(updated));
+      if (timeElapsed > 0 && selectedTaskId) {
+        try {
+          const durationMins = Math.max(1, Math.round(timeElapsed / 60));
+          const todayStr = new Date().toISOString().split('T')[0];
+          
+          await projectApi.logTime({
+            taskId: selectedTaskId,
+            logDate: todayStr,
+            durationMinutes: durationMins,
+            description: description || 'Working on tasks'
+          });
+
+          fetchTrackerData();
+        } catch (err) {
+          alert(err.message || 'Logging time failed');
+        }
+      } else if (!selectedTaskId) {
+        alert('Please select a task to log time against');
       }
       // Reset
       setIsRunning(false);
@@ -82,9 +114,8 @@ export default function TimeTracker() {
   };
 
   const handleDeleteLog = (id) => {
-    const updated = logs.filter(log => log.id !== id);
-    setLogs(updated);
-    localStorage.setItem('zoho_time_logs', JSON.stringify(updated));
+    // Delete log locally or ignore since it's a read-only historical list
+    setLogs(prev => prev.filter(log => log.id !== id));
   };
 
   // Calculate totals
@@ -127,25 +158,31 @@ export default function TimeTracker() {
       <div className="tracker-form-card">
         <div className="tracker-inputs-row">
           <select 
-            value={project} 
-            onChange={(e) => setProject(e.target.value)}
+            value={selectedProjectId} 
+            onChange={(e) => {
+              setSelectedProjectId(e.target.value);
+              setSelectedTaskId(''); // Reset task
+            }}
             className="tracker-select"
           >
             <option value="">Select Project</option>
-            <option value="Zoho CRM Clone">Zoho CRM Clone</option>
-            <option value="Employee Portal">Employee Portal</option>
-            <option value="Internal Operations">Internal Operations</option>
+            {projectsList.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
           </select>
 
           <select 
-            value={job} 
-            onChange={(e) => setJob(e.target.value)}
+            value={selectedTaskId} 
+            onChange={(e) => setSelectedTaskId(e.target.value)}
             className="tracker-select"
           >
-            <option value="">Select Job</option>
-            <option value="Frontend Development">Frontend Development</option>
-            <option value="Backend Integration">Backend Integration</option>
-            <option value="UI Design Polish">UI Design Polish</option>
+            <option value="">Select Job/Task</option>
+            {tasksList
+              .filter(t => !selectedProjectId || Number(t.project_id) === Number(selectedProjectId))
+              .map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))
+            }
           </select>
 
           <input 
@@ -206,8 +243,12 @@ export default function TimeTracker() {
             {isRunning && (
               <div className="time-log-row active-timer-row">
                 <div className="log-col-info">
-                  <span className="log-project-name">{project || 'General Project'}</span>
-                  <span className="log-job-name">{job || 'Default Job'}</span>
+                  <span className="log-project-name">
+                    {projectsList.find(p => Number(p.id) === Number(selectedProjectId))?.name || 'General Project'}
+                  </span>
+                  <span className="log-job-name">
+                    {tasksList.find(t => Number(t.id) === Number(selectedTaskId))?.name || 'Default Job'}
+                  </span>
                 </div>
                 <div className="log-col-desc">{description || 'Tracking current activity...'}</div>
                 <div className="log-col-type billable-badge">{isBillable}</div>

@@ -15,7 +15,7 @@ import Login from './components/Login';
 
 export default function App() {
   const [employee, setEmployee] = useState(() => {
-    const saved = localStorage.getItem('zoho_current_user');
+    const saved = localStorage.getItem('sarvo_current_user');
     return saved ? JSON.parse(saved) : null;
   });
 
@@ -80,11 +80,11 @@ export default function App() {
         if (res.ok) {
           const data = await res.json();
           setEmployee(data);
-          localStorage.setItem('zoho_current_user', JSON.stringify(data));
+          localStorage.setItem('sarvo_current_user', JSON.stringify(data));
         }
       } catch (err) {
         // Fallback for mock mode
-        const localMe = localStorage.getItem('zoho_current_user');
+        const localMe = localStorage.getItem('sarvo_current_user');
         if (localMe) {
           setEmployee(JSON.parse(localMe));
         }
@@ -138,7 +138,7 @@ export default function App() {
           setActiveSubTab={setActiveSubTab}
           links={topNavLinks}
           onLogout={() => {
-            localStorage.removeItem('zoho_current_user');
+            localStorage.removeItem('sarvo_current_user');
             setEmployee(null);
             setActiveTab('home');
           }}
@@ -179,7 +179,7 @@ export default function App() {
         ) : (
           <div style={{ padding: '40px', color: '#6b7280', textAlign: 'center' }}>
             <h2>{activeTab.toUpperCase()} Section</h2>
-            <p style={{ marginTop: '10px' }}>This section is currently under development to match the Zoho layout.</p>
+            <p style={{ marginTop: '10px' }}>This section is currently under development to match the Sarvo layout.</p>
             <button
               onClick={() => setActiveTab('home')}
               style={{

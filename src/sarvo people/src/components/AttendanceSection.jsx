@@ -10,6 +10,8 @@ import {
   Square,
   Power
 } from 'lucide-react';
+import { attendanceApi } from '../../../apis/attendanceApi';
+import { authApi } from '../../../apis/authApi';
 
 export default function AttendanceSection() {
   const [employee, setEmployee] = useState(null);
@@ -17,7 +19,6 @@ export default function AttendanceSection() {
   const [timerText, setTimerText] = useState('00:00:00 Hrs');
   const [notes, setNotes] = useState('');
   const [activeBottomTab, setActiveBottomTab] = useState('Days');
-  const [isBackendLive, setIsBackendLive] = useState(true);
 
   // Stats calculation
   const [stats, setStats] = useState({
@@ -32,39 +33,60 @@ export default function AttendanceSection() {
   const fetchData = async () => {
     try {
       // 1. Fetch employee
-      const meRes = await fetch('http://localhost:5000/api/employees/me');
-      if (meRes.ok) {
-        const meData = await meRes.json();
-        setEmployee(meData);
-      }
-
-      // 2. Fetch attendance logs
-      const attRes = await fetch('http://localhost:5000/api/attendance/week');
-      if (attRes.ok) {
-        const attData = await attRes.json();
-        setAttendance(attData);
-        calculateStats(attData);
-      }
-      setIsBackendLive(true);
-    } catch (err) {
-      setIsBackendLive(false);
+      const meData = await authApi.getProfile();
       
-      // Load fallback mock states
-      const localMe = localStorage.getItem('zoho_me');
-      const localAtt = localStorage.getItem('zoho_attendance');
-      
-      const me = localMe ? JSON.parse(localMe) : {
-        employee_id: 'SPWHI015',
-        name: 'Rohit Ghanghav',
-        status: 'Yet to check-in'
+      // We need to fetch the today check-in status to set employee status to 'Checked-in' or 'Yet to check-in'
+      const statusRes = await attendanceApi.getTodayStatus();
+      const meWithStatus = {
+        ...meData,
+        status: statusRes.checkedIn && !statusRes.checkedOut ? 'Checked-in' : 'Yet to check-in'
       };
-      setEmployee(me);
+      setEmployee(meWithStatus);
 
-      if (localAtt) {
-        const att = JSON.parse(localAtt);
-        setAttendance(att);
-        calculateStats(att);
+      // 2. Fetch weekly logs
+      const backendLogs = await attendanceApi.getWeeklyLogs();
+      
+      // Map to last 7 days
+      const daysOfWeek = [];
+      const shortDaysNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        const dayOfWeek = d.getDay();
+        
+        const log = backendLogs.find(l => {
+          const lDateStr = new Date(l.date).getFullYear() + '-' + String(new Date(l.date).getMonth() + 1).padStart(2, '0') + '-' + String(new Date(l.date).getDate()).padStart(2, '0');
+          return lDateStr === dateStr;
+        });
+        
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const isToday = i === 0;
+        
+        let status = 'Absent';
+        if (log) {
+          status = log.status === 'present' ? 'Present' : 'Absent';
+        } else if (isWeekend) {
+          status = 'Weekend';
+        }
+        
+        daysOfWeek.push({
+          date: dateStr,
+          dayName: shortDaysNames[dayOfWeek],
+          dayNum: d.getDate(),
+          isToday,
+          status,
+          check_in: log ? log.check_in_time : null,
+          check_out: log ? log.check_out_time : null,
+          total_hours: log ? Number(log.total_hours) : 0.00
+        });
       }
+      
+      setAttendance(daysOfWeek);
+      calculateStats(daysOfWeek);
+    } catch (err) {
+      console.error('Attendance fetch error:', err);
     }
   };
 
@@ -80,19 +102,19 @@ export default function AttendanceSection() {
     });
 
     setStats({
-      payableDays: presentCount + weekendCount > 0 ? presentCount + weekendCount : 2,
+      payableDays: presentCount + weekendCount,
       present: presentCount,
       onDuty: 0,
       paidLeave: 0,
       holidays: 0,
-      weekend: weekendCount || 2
+      weekend: weekendCount
     });
   };
 
   useEffect(() => {
     fetchData();
     // Sync periodically
-    const syncInterval = setInterval(fetchData, 4000);
+    const syncInterval = setInterval(fetchData, 5000);
     return () => clearInterval(syncInterval);
   }, []);
 
@@ -131,41 +153,15 @@ export default function AttendanceSection() {
 
   const handleCheckInToggle = async () => {
     const isCheckedIn = employee?.status === 'Checked-in';
-    const endpoint = isCheckedIn ? 'check-out' : 'check-in';
-
-    if (isBackendLive) {
-      try {
-        const res = await fetch(`http://localhost:5000/api/attendance/${endpoint}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        if (res.ok) fetchData();
-      } catch (err) {
-        console.error(err);
+    try {
+      if (isCheckedIn) {
+        await attendanceApi.checkOut();
+      } else {
+        await attendanceApi.checkIn();
       }
-    } else {
-      // Mock toggle
-      const newStatus = isCheckedIn ? 'Yet to check-in' : 'Checked-in';
-      const updatedEmp = { ...employee, status: newStatus };
-      setEmployee(updatedEmp);
-      localStorage.setItem('zoho_me', JSON.stringify(updatedEmp));
-
-      const now = new Date();
-      const updatedAtt = attendance.map(log => {
-        if (log.isToday) {
-          return {
-            ...log,
-            status: isCheckedIn ? 'Present' : 'Present',
-            check_in: isCheckedIn ? log.check_in : now.toISOString(),
-            check_out: isCheckedIn ? now.toISOString() : null
-          };
-        }
-        return log;
-      });
-
-      setAttendance(updatedAtt);
-      localStorage.setItem('zoho_attendance', JSON.stringify(updatedAtt));
-      calculateStats(updatedAtt);
+      fetchData();
+    } catch (err) {
+      alert(err.message || 'Action failed');
     }
   };
 

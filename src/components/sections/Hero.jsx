@@ -115,7 +115,7 @@ const Hero = () => {
         <ChevronDown size={32} />
       </motion.div>
 
-      <style jsx>{`
+      <style>{`
         .hero::before {
           content: '';
           position: absolute;

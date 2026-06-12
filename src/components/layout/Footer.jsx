@@ -101,7 +101,7 @@ const Footer = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @media (max-width: 768px) {
           .footer-grid {
             grid-template-columns: 1fr !important;

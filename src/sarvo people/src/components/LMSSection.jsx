@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Play, Download, Award, FileText, CheckCircle2, ChevronRight, BarChart3, AlertCircle, Clock } from 'lucide-react';
+import { lmsApi } from '../../../apis/lmsApi';
 
 const COURSES_DATA = [
   {
@@ -171,7 +172,6 @@ export default function LMSSection() {
   };
 
   const handleQuizSubmit = () => {
-    if (quizSubmitted) return;
     setQuizSubmitted(true);
     
     // Calculate Score
@@ -185,11 +185,14 @@ export default function LMSSection() {
     const scorePct = Math.round((correctCount / quizDetails.questions.length) * 100);
     setQuizScore(scorePct);
 
-    // Save score to local storage to sync with Intern Performance
-    const savedGradesStr = localStorage.getItem('zoho_quiz_grades');
-    const grades = savedGradesStr ? JSON.parse(savedGradesStr) : {};
-    grades[quizDetails.id] = scorePct;
-    localStorage.setItem('zoho_quiz_grades', JSON.stringify(grades));
+    // Save score to database
+    lmsApi.saveQuizGrade({
+      quizId: String(quizDetails.id),
+      quizName: quizDetails.title,
+      score: scorePct,
+      totalQuestions: quizDetails.questions.length,
+      passed: scorePct >= 50
+    }).catch(err => console.error('Failed to save quiz grade:', err));
   };
 
   const exitQuiz = () => {

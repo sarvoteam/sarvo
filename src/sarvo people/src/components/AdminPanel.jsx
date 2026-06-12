@@ -17,66 +17,9 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
-
-const DEFAULT_EMPLOYEES = [
-  {
-    id: 1,
-    employee_id: 'SPWHI001',
-    name: 'Admin S.',
-    role: 'Reporting Manager',
-    department: 'Administration',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
-    status: 'Yet to check-in',
-    manager_id: null,
-    email: 'admin@spwhitel.com',
-    mobile: '91-9999999999',
-    work_phone: '9999999999',
-    timezone: 'India Standard Time (GMT+05:30)',
-    about_me: 'System Administrator and Manager',
-    shift: 'General (10:30 AM - 06:30 PM)'
-  },
-  {
-    id: 2,
-    employee_id: 'SPWHI015',
-    name: 'Rohit Ghanghav',
-    role: 'Developer',
-    department: 'Engineering',
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
-    status: 'Yet to check-in',
-    manager_id: 1,
-    email: 'rohit.g@spwhitel.com',
-    mobile: '91-9335293233',
-    work_phone: '9335293233',
-    timezone: 'India Standard Time (GMT+05:30)',
-    about_me: 'Write a short introduction about yourself',
-    shift: 'General (10:30 AM - 06:30 PM)'
-  },
-  {
-    id: 3,
-    employee_id: 'SPWHI012',
-    name: 'Chetan Ghanghav',
-    role: 'UI/UX Designer',
-    department: 'Engineering',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-    status: 'Yet to check-in',
-    manager_id: 1,
-    email: 'chetan.g@spwhitel.com',
-    mobile: '91-9222222222',
-    work_phone: '9222222222',
-    timezone: 'India Standard Time (GMT+05:30)',
-    about_me: 'Creative UI/UX Designer',
-    shift: 'General (10:30 AM - 06:30 PM)'
-  }
-];
-
-const DEFAULT_LEAVE_TYPES = [
-  { id: 1, name: 'Casual Leave', available: 4, booked: 0, icon_type: 'sun', color_theme: 'blue' },
-  { id: 2, name: 'Compensatory Off', available: 0, booked: 0, icon_type: 'co', color_theme: 'green' },
-  { id: 3, name: 'Earned Leave', available: 12, booked: 0, icon_type: 'clock', color_theme: 'green-light' },
-  { id: 4, name: 'Leave Without Pay', available: 0, booked: 0, icon_type: 'lwop', color_theme: 'red' },
-  { id: 5, name: 'Paternity Leave', available: 0, booked: 0, icon_type: 'baby', color_theme: 'orange' },
-  { id: 6, name: 'Sick Leave', available: 12, booked: 0, icon_type: 'cross', color_theme: 'purple' }
-];
+import { employeeApi } from '../../../apis/employeeApi';
+import { attendanceApi } from '../../../apis/attendanceApi';
+import { leaveApi } from '../../../apis/leaveApi';
 
 export default function AdminPanel() {
   const [employees, setEmployees] = useState([]);
@@ -90,14 +33,17 @@ export default function AdminPanel() {
   // Form State
   const [formName, setFormName] = useState('');
   const [formId, setFormId] = useState('');
-  const [formRole, setFormRole] = useState('Developer');
-  const [formDept, setFormDept] = useState('Engineering');
+  const [formRole, setFormRole] = useState(''); // Designation ID
+  const [formDept, setFormDept] = useState(''); // Department ID
   const [formEmail, setFormEmail] = useState('');
   const [formMobile, setFormMobile] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formTimezone, setFormTimezone] = useState('India Standard Time (GMT+05:30)');
   const [formShift, setFormShift] = useState('General (10:30 AM - 06:30 PM)');
   const [formAbout, setFormAbout] = useState('');
+
+  // Organization Meta (Departments, Designations)
+  const [orgMeta, setOrgMeta] = useState({ departments: [], designations: [] });
   
   // Tracked records state
   const [attendanceLogs, setAttendanceLogs] = useState([]);
@@ -107,28 +53,41 @@ export default function AdminPanel() {
   // Alerts
   const [alertMsg, setAlertMsg] = useState(null);
 
-  // Load Employees
-  const fetchEmployees = async () => {
+  // Load Employees and Org Meta
+  const fetchEmployeesAndMeta = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/employees');
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setEmployees(data);
+      const data = await employeeApi.getEmployees();
+      const mappedEmps = data.map(emp => ({
+        id: emp.id,
+        employee_id: emp.employee_code,
+        name: `${emp.first_name} ${emp.last_name}`,
+        role: emp.designation_name || emp.role || 'Employee',
+        department: emp.department_name || 'Engineering',
+        avatar: `https://images.unsplash.com/photo-${1500000000000 + (emp.id * 100000)}?w=150` || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+        status: emp.status || 'Yet to check-in',
+        email: emp.email,
+        mobile: emp.phone || '9999999999',
+        work_phone: emp.phone || '9999999999',
+        timezone: 'India Standard Time (GMT+05:30)',
+        about_me: 'Registered employee',
+        shift: 'General (10:30 AM - 06:30 PM)'
+      }));
+      setEmployees(mappedEmps);
+
+      const meta = await employeeApi.getMeta();
+      setOrgMeta(meta);
+      if (meta.departments.length > 0) setFormDept(meta.departments[0].id);
+      if (meta.designations.length > 0) setFormRole(meta.designations[0].id);
+
       setIsBackendLive(true);
     } catch (err) {
+      console.error('Failed to load employees or metadata:', err);
       setIsBackendLive(false);
-      const localEmps = localStorage.getItem('zoho_admin_employees');
-      if (localEmps) {
-        setEmployees(JSON.parse(localEmps));
-      } else {
-        setEmployees(DEFAULT_EMPLOYEES);
-        localStorage.setItem('zoho_admin_employees', JSON.stringify(DEFAULT_EMPLOYEES));
-      }
     }
   };
 
   useEffect(() => {
-    fetchEmployees();
+    fetchEmployeesAndMeta();
   }, []);
 
   // Fetch record tracking details when selected employee or tab changes
@@ -140,67 +99,21 @@ export default function AdminPanel() {
       
       // Fetch Attendance logs for selected employee
       try {
-        const attRes = await fetch(`http://localhost:5000/api/attendance/week/${empId}`);
-        if (attRes.ok) {
-          const attData = await attRes.json();
-          setAttendanceLogs(attData);
-        }
+        const attData = await attendanceApi.getWeeklyLogs(empId);
+        setAttendanceLogs(attData);
       } catch (e) {
-        const localAtt = localStorage.getItem(`zoho_attendance_${empId}`);
-        if (localAtt) {
-          setAttendanceLogs(JSON.parse(localAtt));
-        } else {
-          // Generate a default weekly log
-          const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-          const today = new Date();
-          const todayStr = today.toISOString().split('T')[0];
-          
-          const defaultAtt = weekDays.map((day, idx) => {
-            const date = new Date();
-            date.setDate(today.getDate() - today.getDay() + idx + 1);
-            const dateStr = date.toISOString().split('T')[0];
-            const isWeekend = idx === 5 || idx === 6;
-            return {
-              employee_id: empId,
-              date: dateStr,
-              dayNum: date.getDate(),
-              dayName: day,
-              check_in: null,
-              check_out: null,
-              status: isWeekend ? 'Weekend' : 'Absent',
-              shift_name: 'General',
-              isToday: dateStr === todayStr
-            };
-          });
-          setAttendanceLogs(defaultAtt);
-          localStorage.setItem(`zoho_attendance_${empId}`, JSON.stringify(defaultAtt));
-        }
+        console.error('Failed to fetch attendance logs:', e);
       }
 
       // Fetch Leaves
       try {
-        const leavesRes = await fetch('http://localhost:5000/api/leaves/types');
-        if (leavesRes.ok) {
-          const leavesData = await leavesRes.json();
-          setLeaveBalances(leavesData);
-        }
+        const balancesData = await leaveApi.getBalances(empId);
+        setLeaveBalances(balancesData);
         
-        const historyRes = await fetch(`http://localhost:5000/api/leaves/applications/${empId}`);
-        if (historyRes.ok) {
-          const historyData = await historyRes.json();
-          setLeaveHistory(historyData);
-        }
+        const historyData = await leaveApi.listApplications(empId);
+        setLeaveHistory(historyData);
       } catch (e) {
-        const localLeaves = localStorage.getItem(`zoho_leaves_${empId}`);
-        if (localLeaves) {
-          setLeaveBalances(JSON.parse(localLeaves));
-        } else {
-          setLeaveBalances(DEFAULT_LEAVE_TYPES);
-          localStorage.setItem(`zoho_leaves_${empId}`, JSON.stringify(DEFAULT_LEAVE_TYPES));
-        }
-
-        const localHistory = localStorage.getItem(`zoho_leave_applications_${empId}`);
-        setLeaveHistory(localHistory ? JSON.parse(localHistory) : []);
+        console.error('Failed to fetch leave info:', e);
       }
     };
 
@@ -236,72 +149,40 @@ export default function AdminPanel() {
       return;
     }
 
-    const randomId = Math.floor(Math.random() * 1000) + 100;
-    const unsplashAvatars = [
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150'
-    ];
-    const randomAvatar = unsplashAvatars[Math.floor(Math.random() * unsplashAvatars.length)];
+    const names = formName.trim().split(' ');
+    const firstName = names[0];
+    const lastName = names.slice(1).join(' ') || 'User';
 
     const empData = {
-      employee_id: formId,
-      name: formName,
-      role: formRole,
-      department: formDept,
-      email: formEmail || `${formName.toLowerCase().replace(/\s+/g, '.')}@spwhitel.com`,
-      mobile: formMobile || '91-0000000000',
-      work_phone: formPhone || '0000000000',
-      timezone: formTimezone,
-      shift: formShift,
-      about_me: formAbout || 'Write a short introduction about yourself',
-      avatar: randomAvatar
+      employeeCode: formId,
+      firstName,
+      lastName,
+      email: formEmail || `${firstName.toLowerCase()}@sarvo.com`,
+      phone: formMobile || formPhone || '9999999999',
+      role: 'Employee', // Default role
+      departmentId: Number(formDept),
+      designationId: Number(formRole)
     };
 
-    if (isBackendLive) {
-      try {
-        const res = await fetch('http://localhost:5000/api/employees/add', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(empData)
-        });
-        if (res.ok) {
-          setAlertMsg({ type: 'success', text: 'Employee added successfully!' });
-          fetchEmployees();
-          resetForm();
-          setTimeout(() => {
-            setIsDrawerOpen(false);
-            setAlertMsg(null);
-          }, 1500);
-        } else {
-          const errData = await res.json();
-          setAlertMsg({ type: 'error', text: errData.error || 'Failed to add employee.' });
-        }
-      } catch (err) {
-        setAlertMsg({ type: 'error', text: 'Error connecting to server.' });
-      }
-    } else {
-      // Mock save to local storage
-      const newEmpList = [...employees, { ...empData, id: randomId, status: 'Yet to check-in' }];
-      setEmployees(newEmpList);
-      localStorage.setItem('zoho_admin_employees', JSON.stringify(newEmpList));
-      
-      setAlertMsg({ type: 'success', text: 'Employee added to mock storage successfully!' });
+    try {
+      await employeeApi.addEmployee(empData);
+      setAlertMsg({ type: 'success', text: 'Employee added successfully!' });
+      await fetchEmployeesAndMeta();
       resetForm();
       setTimeout(() => {
         setIsDrawerOpen(false);
         setAlertMsg(null);
       }, 1500);
+    } catch (err) {
+      setAlertMsg({ type: 'error', text: err.message || 'Failed to add employee.' });
     }
   };
 
   const resetForm = () => {
     setFormName('');
     setFormId('');
-    setFormRole('Developer');
-    setFormDept('Engineering');
+    if (orgMeta.departments.length > 0) setFormDept(orgMeta.departments[0].id);
+    if (orgMeta.designations.length > 0) setFormRole(orgMeta.designations[0].id);
     setFormEmail('');
     setFormMobile('');
     setFormPhone('');
@@ -690,21 +571,18 @@ export default function AdminPanel() {
                 <div className="admin-form-group">
                   <label>Role / Designation *</label>
                   <select value={formRole} onChange={(e) => setFormRole(e.target.value)}>
-                    <option value="Developer">Developer</option>
-                    <option value="UI/UX Designer">UI/UX Designer</option>
-                    <option value="Reporting Manager">Reporting Manager</option>
-                    <option value="QA Engineer">QA Engineer</option>
-                    <option value="HR Manager">HR Manager</option>
+                    {orgMeta.designations.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
                   </select>
                 </div>
 
                 <div className="admin-form-group">
                   <label>Department *</label>
                   <select value={formDept} onChange={(e) => setFormDept(e.target.value)}>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Design">Design</option>
-                    <option value="Administration">Administration</option>
-                    <option value="Human Resources">Human Resources</option>
+                    {orgMeta.departments.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>

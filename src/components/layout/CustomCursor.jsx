@@ -84,7 +84,7 @@ const CustomCursor = () => {
       />
 
       
-      <style jsx global>{`
+      <style>{`
         * {
           cursor: none !important;
         }

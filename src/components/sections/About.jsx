@@ -124,7 +124,7 @@ const About = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @media (min-width: 992px) {
           .about-left {
             position: sticky;

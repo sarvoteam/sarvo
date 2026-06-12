@@ -214,7 +214,7 @@ const Contact = () => {
           </motion.div>
         </div>
       </div>
-      <style jsx>{`
+      <style>{`
         .contact-section {
           padding: 8rem 0;
           position: relative;
