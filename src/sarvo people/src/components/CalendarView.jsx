@@ -10,7 +10,8 @@ export default function CalendarView() {
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/attendance/week');
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+        const res = await fetch(`${apiBase}/attendance/week`);
         if (res.ok) {
           const data = await res.json();
           setAttendance(data);

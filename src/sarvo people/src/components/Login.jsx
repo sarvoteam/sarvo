@@ -80,8 +80,8 @@ export default function Login({ onLoginSuccess }) {
     }
 
     try {
-      // Attempt backend API call
-      const res = await fetch('http://localhost:5000/api/employees/login', {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${apiBase}/employees/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

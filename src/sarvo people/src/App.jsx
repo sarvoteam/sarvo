@@ -76,7 +76,8 @@ export default function App() {
     if (!employee) return;
     const fetchEmployee = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/employees/${employee.employee_id}`);
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+        const res = await fetch(`${apiBase}/employees/${employee.employee_id}`);
         if (res.ok) {
           const data = await res.json();
           setEmployee(data);
