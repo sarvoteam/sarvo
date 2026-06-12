@@ -112,7 +112,7 @@ const Product = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .product-section {
           padding: 8rem 0;
           position: relative;

@@ -54,28 +54,28 @@ export default function Dashboard() {
 
   // Fetch initial user data
   useEffect(() => {
-    const savedUser = localStorage.getItem('zoho_current_user');
+    const savedUser = localStorage.getItem('sarvo_current_user');
     if (savedUser) {
       const parsed = JSON.parse(savedUser);
       setEmployee(parsed);
       setAboutMeText(parsed.about_me || '');
     }
 
-    const localAtt = localStorage.getItem('zoho_attendance');
+    const localAtt = localStorage.getItem('sarvo_attendance');
     if (localAtt) {
       setAttendance(JSON.parse(localAtt));
     } else {
       const defaultAtt = getMockWeeklyLogs();
       setAttendance(defaultAtt);
-      localStorage.setItem('zoho_attendance', JSON.stringify(defaultAtt));
+      localStorage.setItem('sarvo_attendance', JSON.stringify(defaultAtt));
     }
 
-    const localLeaves = localStorage.getItem('zoho_leaves');
+    const localLeaves = localStorage.getItem('sarvo_leaves');
     if (localLeaves) {
       setLeaveTypes(JSON.parse(localLeaves));
     } else {
       setLeaveTypes([...DEFAULT_LEAVE_TYPES]);
-      localStorage.setItem('zoho_leaves', JSON.stringify(DEFAULT_LEAVE_TYPES));
+      localStorage.setItem('sarvo_leaves', JSON.stringify(DEFAULT_LEAVE_TYPES));
     }
   }, []);
 
@@ -156,7 +156,7 @@ export default function Dashboard() {
   const handleCheckIn = () => {
     const updatedEmp = { ...employee, status: 'Checked-in' };
     setEmployee(updatedEmp);
-    localStorage.setItem('zoho_current_user', JSON.stringify(updatedEmp));
+    localStorage.setItem('sarvo_current_user', JSON.stringify(updatedEmp));
 
     // Update in list
     const registeredStr = localStorage.getItem('sarvo_registered_interns');
@@ -181,13 +181,13 @@ export default function Dashboard() {
       return log;
     });
     setAttendance(updatedAttendance);
-    localStorage.setItem('zoho_attendance', JSON.stringify(updatedAttendance));
+    localStorage.setItem('sarvo_attendance', JSON.stringify(updatedAttendance));
   };
 
   const handleCheckOut = () => {
     const updatedEmp = { ...employee, status: 'Yet to check-in' };
     setEmployee(updatedEmp);
-    localStorage.setItem('zoho_current_user', JSON.stringify(updatedEmp));
+    localStorage.setItem('sarvo_current_user', JSON.stringify(updatedEmp));
 
     const registeredStr = localStorage.getItem('sarvo_registered_interns');
     if (registeredStr) {
@@ -209,13 +209,13 @@ export default function Dashboard() {
       return log;
     });
     setAttendance(updatedAttendance);
-    localStorage.setItem('zoho_attendance', JSON.stringify(updatedAttendance));
+    localStorage.setItem('sarvo_attendance', JSON.stringify(updatedAttendance));
   };
 
   const handleSaveAboutMe = () => {
     const updatedEmp = { ...employee, about_me: aboutMeText };
     setEmployee(updatedEmp);
-    localStorage.setItem('zoho_current_user', JSON.stringify(updatedEmp));
+    localStorage.setItem('sarvo_current_user', JSON.stringify(updatedEmp));
     setIsEditingAbout(false);
   };
 
@@ -238,10 +238,10 @@ export default function Dashboard() {
     });
 
     setLeaveTypes(updatedLeaves);
-    localStorage.setItem('zoho_leaves', JSON.stringify(updatedLeaves));
+    localStorage.setItem('sarvo_leaves', JSON.stringify(updatedLeaves));
     
     // Add leave request to log
-    const existingStr = localStorage.getItem('zoho_leave_applications');
+    const existingStr = localStorage.getItem('sarvo_leave_applications');
     const existing = existingStr ? JSON.parse(existingStr) : [];
     existing.push({
       id: Date.now(),
@@ -253,7 +253,7 @@ export default function Dashboard() {
       internEmail: employee.email,
       internName: employee.name
     });
-    localStorage.setItem('zoho_leave_applications', JSON.stringify(existing));
+    localStorage.setItem('sarvo_leave_applications', JSON.stringify(existing));
 
     closeLeaveModal();
     alert('Leave applied successfully!');

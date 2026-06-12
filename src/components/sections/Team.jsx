@@ -320,7 +320,7 @@ const Team = () => {
         </motion.div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @media (max-width: 768px) {
           #team {
             padding: 5rem 0 !important;

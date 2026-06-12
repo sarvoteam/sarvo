@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, AlertTriangle, FileText, Plus, X, MessageSquare, CheckCircle, RefreshCw } from 'lucide-react';
+import { dailyReportApi } from '../../../apis/dailyReportApi';
 
 const INITIAL_REPORTS = [
   {
@@ -42,38 +43,51 @@ export default function DailyReportsSection({ currentUser }) {
 
   const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Reporting Manager';
 
+  // Map database reports format to frontend component requirements
+  const mapReport = (dbRow) => ({
+    id: dbRow.id,
+    date: dbRow.report_date ? new Date(dbRow.report_date).toISOString().split('T')[0] : '',
+    internName: dbRow.first_name ? `${dbRow.first_name} ${dbRow.last_name}` : 'Unknown',
+    internEmail: dbRow.email || '',
+    hoursWorked: Number(dbRow.hours_spent || 0),
+    summary: dbRow.today_work,
+    challenges: dbRow.challenges || 'None.',
+    mentorFeedback: dbRow.mentor_comments || '',
+    reviewed: !!dbRow.mentor_comments
+  });
+
+  const loadReports = async () => {
+    try {
+      const data = await dailyReportApi.getReports();
+      if (data && data.length > 0) {
+        setReports(data.map(mapReport));
+      } else {
+        setReports([]);
+      }
+    } catch (err) {
+      console.error('Failed to load reports:', err);
+    }
+  };
+
   // Load reports
   useEffect(() => {
-    const saved = localStorage.getItem('zoho_daily_reports');
-    if (saved) {
-      setReports(JSON.parse(saved));
-    } else {
-      setReports(INITIAL_REPORTS);
-      localStorage.setItem('zoho_daily_reports', JSON.stringify(INITIAL_REPORTS));
-    }
+    loadReports();
   }, []);
 
-  const handleInternSubmit = (e) => {
+  const handleInternSubmit = async (e) => {
     e.preventDefault();
     if (!formHours || !formSummary) return;
 
     setSubmitting(true);
-    setTimeout(() => {
-      const newReport = {
-        id: Date.now(),
-        date: new Date().toISOString().slice(0, 10),
-        internName: currentUser.name,
-        internEmail: currentUser.email,
-        hoursWorked: Number(formHours),
-        summary: formSummary,
+    try {
+      await dailyReportApi.submitReport({
+        reportDate: new Date().toISOString().slice(0, 10),
+        todayWork: formSummary,
+        tomorrowPlan: 'Planned next actions.',
         challenges: formChallenges || 'None.',
-        mentorFeedback: '',
-        reviewed: false
-      };
-
-      const updated = [newReport, ...reports];
-      setReports(updated);
-      localStorage.setItem('zoho_daily_reports', JSON.stringify(updated));
+        hoursSpent: Number(formHours)
+      });
+      await loadReports();
 
       // Reset
       setIsModalOpen(false);
@@ -82,27 +96,26 @@ export default function DailyReportsSection({ currentUser }) {
       setFormChallenges('');
       setSubmitting(false);
       alert('Daily report submitted successfully!');
-    }, 800);
+    } catch (err) {
+      console.error('Failed to submit report:', err);
+      setSubmitting(false);
+    }
   };
 
-  const handleFeedbackSubmit = (e) => {
+  const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
-    const updated = reports.map(r => {
-      if (r.id === activeReport.id) {
-        return {
-          ...r,
-          reviewed: true,
-          mentorFeedback: feedbackText
-        };
-      }
-      return r;
-    });
-
-    setReports(updated);
-    localStorage.setItem('zoho_daily_reports', JSON.stringify(updated));
-    alert('Feedback submitted successfully!');
-    setActiveReport(null);
-    setFeedbackText('');
+    try {
+      await dailyReportApi.commentReport(activeReport.id, {
+        comment: feedbackText,
+        rating: 5 // Default rating
+      });
+      await loadReports();
+      alert('Feedback submitted successfully!');
+      setActiveReport(null);
+      setFeedbackText('');
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
+    }
   };
 
   const visibleReports = isAdminOrMentor

@@ -1,25 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Users, User, Calendar, Plus, X, FolderMinus, Sparkles, BookOpen, Check } from 'lucide-react';
+import { cohortApi } from '../../../apis/cohortApi';
 
 const INITIAL_BATCHES = [
   {
     id: 1,
     name: 'Summer Full-Stack BootCamp 2026',
-    mentorName: 'Rohit Ghanghav',
-    mentorEmail: 'employee@sarvo.com',
+    mentorName: 'Aditya Patil',
+    mentorEmail: 'mentor@sarvo.com',
     startDate: '2026-06-01',
     progress: 75,
-    studentsCount: 24,
+    studentsCount: 1,
     description: 'Core training program focusing on React/Node/PostgreSQL stack development, server deployment, and scaling.'
   },
   {
     id: 2,
     name: 'UI/UX Design Studio Batch A',
     mentorName: 'Chetan Ghanghav',
-    mentorEmail: 'chetan.g@spwhitel.com',
+    mentorEmail: 'chetan@sarvo.com',
     startDate: '2026-06-05',
     progress: 30,
-    studentsCount: 12,
+    studentsCount: 0,
     description: 'Interactive workshop on typography, visual balance, grid styles, auto-layouts, and Figma vector tools.'
   }
 ];
@@ -30,38 +31,66 @@ export default function BatchSection({ currentUser }) {
   
   // Roster lists for selectors
   const [availableInterns, setAvailableInterns] = useState([]);
+  const [availableMentors, setAvailableMentors] = useState([]);
   const [selectedInterns, setSelectedInterns] = useState([]);
 
   // Form States
   const [formName, setFormName] = useState('');
-  const [formMentor, setFormMentor] = useState('Rohit Ghanghav');
+  const [formMentor, setFormMentor] = useState('');
   const [formStart, setFormStart] = useState('');
   const [formDesc, setFormDesc] = useState('');
 
   const isAdmin = currentUser?.role === 'Admin';
 
-  // Load batches and interns from storage
-  useEffect(() => {
-    // Batches
-    const savedBatches = localStorage.getItem('zoho_batches');
-    if (savedBatches) {
-      setBatches(JSON.parse(savedBatches));
-    } else {
-      setBatches(INITIAL_BATCHES);
-      localStorage.setItem('zoho_batches', JSON.stringify(INITIAL_BATCHES));
-    }
+  const mapCohort = (c) => ({
+    id: c.id,
+    name: c.name,
+    mentorName: c.mentor_name || 'Unassigned',
+    mentorEmail: c.mentor_email || '',
+    startDate: c.start_date ? new Date(c.start_date).toISOString().split('T')[0] : '',
+    progress: c.progress || 0,
+    studentsCount: c.students_count || 0,
+    description: c.description
+  });
 
-    // Load registered interns list
-    const registered = localStorage.getItem('sarvo_registered_interns');
-    const localInterns = registered ? JSON.parse(registered) : [];
-    // Default list
-    const defaults = [
-      { id: 10, name: 'Aditya Patil', email: 'intern@sarvo.com' },
-      { id: 11, name: 'Rajesh Kumar', email: 'rajesh@gmail.com' },
-      { id: 12, name: 'Neha Sharma', email: 'neha@gmail.com' },
-      { id: 13, name: 'Siddharth Roy', email: 'sid@gmail.com' }
-    ];
-    setAvailableInterns([...defaults, ...localInterns]);
+  const loadData = async () => {
+    try {
+      // Load batches
+      const data = await cohortApi.getCohorts();
+      if (data && data.length > 0) {
+        setBatches(data.map(mapCohort));
+      } else {
+        setBatches([]);
+      }
+
+      // Load available interns
+      const interns = await cohortApi.getAvailableInterns();
+      const mappedInterns = interns.map(i => ({
+        id: i.id,
+        name: `${i.first_name} ${i.last_name}`,
+        email: i.email
+      }));
+      setAvailableInterns(mappedInterns);
+
+      // Load available mentors
+      const mentors = await cohortApi.getAvailableMentors();
+      const mappedMentors = mentors.map(m => ({
+        id: m.id,
+        name: `${m.first_name} ${m.last_name}`,
+        email: m.email
+      }));
+      setAvailableMentors(mappedMentors);
+      if (mappedMentors.length > 0) {
+        setFormMentor(mappedMentors[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to load cohort data:', err);
+    }
+  };
+
+  // Load batches and interns from database
+  useEffect(() => {
+    loadData();
   }, []);
 
   const handleToggleInternSelection = (internEmail) => {
@@ -72,32 +101,44 @@ export default function BatchSection({ currentUser }) {
     }
   };
 
-  const handleCreateBatch = (e) => {
+  const handleCreateBatch = async (e) => {
     e.preventDefault();
-    if (!formName || !formStart) return;
+    if (!formName || !formStart || !formMentor) return;
 
-    const newBatch = {
-      id: Date.now(),
-      name: formName,
-      mentorName: formMentor,
-      mentorEmail: formMentor === 'Rohit Ghanghav' ? 'employee@sarvo.com' : 'chetan.g@spwhitel.com',
-      startDate: formStart,
-      progress: 0,
-      studentsCount: selectedInterns.length || 1,
-      description: formDesc
-    };
+    try {
+      const selectedMentor = availableMentors.find(m => m.id === formMentor);
+      const cohort = await cohortApi.createCohort({
+        name: formName,
+        mentorId: selectedMentor?.id,
+        mentorName: selectedMentor?.name,
+        mentorEmail: selectedMentor?.email,
+        startDate: formStart,
+        progress: 0,
+        description: formDesc
+      });
 
-    const updated = [newBatch, ...batches];
-    setBatches(updated);
-    localStorage.setItem('zoho_batches', JSON.stringify(updated));
+      // Add selected interns to the cohort
+      if (cohort && selectedInterns.length > 0) {
+        for (const email of selectedInterns) {
+          const internObj = availableInterns.find(i => i.email === email);
+          if (internObj) {
+            await cohortApi.addCohortMember(cohort.id, internObj.id);
+          }
+        }
+      }
 
-    // Reset Form
-    setIsDrawerOpen(false);
-    setFormName('');
-    setFormStart('');
-    setFormDesc('');
-    setSelectedInterns([]);
-    alert('New Batch created successfully!');
+      await loadData();
+
+      // Reset Form
+      setIsDrawerOpen(false);
+      setFormName('');
+      setFormStart('');
+      setFormDesc('');
+      setSelectedInterns([]);
+      alert('New Batch created successfully!');
+    } catch (err) {
+      console.error('Failed to create batch:', err);
+    }
   };
 
   return (
@@ -214,9 +255,11 @@ export default function BatchSection({ currentUser }) {
 
               <div className="admin-form-group">
                 <label>Assign Mentor *</label>
-                <select value={formMentor} onChange={(e) => setFormMentor(e.target.value)}>
-                  <option value="Rohit Ghanghav">Rohit Ghanghav (Lead Fullstack)</option>
-                  <option value="Chetan Ghanghav">Chetan Ghanghav (UI/UX Designer)</option>
+                <select value={formMentor} onChange={(e) => setFormMentor(e.target.value)} required>
+                  <option value="">Select Mentor</option>
+                  {availableMentors.map(m => (
+                    <option key={m.id} value={m.id}>{m.name} ({m.email})</option>
+                  ))}
                 </select>
               </div>
 

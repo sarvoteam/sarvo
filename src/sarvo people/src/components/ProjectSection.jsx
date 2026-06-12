@@ -1,59 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Folder, GitBranch, ExternalLink, Star, MessageSquare, AlertCircle, FileText, CheckCircle, Clock, RefreshCw } from 'lucide-react';
-
-const INITIAL_PROJECTS = [
-  {
-    id: 1,
-    title: 'E-Commerce Admin Dashboard',
-    description: 'Build a secure, modern admin dashboard utilizing React, Chart.js, Express, and PostgreSQL to manage products, orders, and sales analytics.',
-    assignedTo: 'Aditya Patil',
-    assignedToEmail: 'intern@sarvo.com',
-    deadline: '2026-06-25',
-    status: 'In Progress', // To Do, In Progress, In Review, Completed
-    githubLink: '',
-    liveLink: '',
-    docText: '',
-    rating: 0,
-    reviewComments: '',
-    aiEvaluation: null
-  },
-  {
-    id: 2,
-    title: 'Task Scheduler API Service',
-    description: 'Design and build a scalable REST API using Node.js, Express, and Redis to queue email notifications, verify user registration tokens, and execute cron schedules.',
-    assignedTo: 'Aditya Patil',
-    assignedToEmail: 'intern@sarvo.com',
-    deadline: '2026-06-12',
-    status: 'In Review',
-    githubLink: 'https://github.com/aditya-patil/node-task-scheduler',
-    liveLink: 'https://scheduler-api.sarvo.demo',
-    docText: 'Implemented redis queue using BullMQ. Added cron schedules for nightly DB backups. Standard JWT validation is in place.',
-    rating: 0,
-    reviewComments: '',
-    aiEvaluation: {
-      score: 85,
-      codeQuality: 'High',
-      securityCheck: 'Passed with minor warnings (JWT expiry should be shorter)',
-      scalability: 'Excellent (Uses Redis connection pooler)',
-      insights: 'The modular file structure is clean. Strongly recommend adding unit tests for the Redis connector.'
-    }
-  },
-  {
-    id: 3,
-    title: 'Collaborative Rich Text Editor',
-    description: 'Create a real-time collaborative text editor supporting collaborative cursors, Markdown shortcuts, and document sharing using Socket.io and React.',
-    assignedTo: 'Aditya Patil',
-    assignedToEmail: 'intern@sarvo.com',
-    deadline: '2026-07-10',
-    status: 'To Do',
-    githubLink: '',
-    liveLink: '',
-    docText: '',
-    rating: 0,
-    reviewComments: '',
-    aiEvaluation: null
-  }
-];
+import { projectApi } from '../../../apis/projectApi';
 
 export default function ProjectSection({ currentUser }) {
   const [projects, setProjects] = useState([]);
@@ -68,17 +15,26 @@ export default function ProjectSection({ currentUser }) {
   const [feedback, setFeedback] = useState('');
   const [auditing, setAuditing] = useState(false);
 
-  const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Reporting Manager';
+  const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Reporting Manager' || currentUser?.role === 'admin' || currentUser?.role === 'mentor';
 
-  // Load from local storage
-  useEffect(() => {
-    const saved = localStorage.getItem('zoho_projects');
-    if (saved) {
-      setProjects(JSON.parse(saved));
-    } else {
-      setProjects(INITIAL_PROJECTS);
-      localStorage.setItem('zoho_projects', JSON.stringify(INITIAL_PROJECTS));
+  const loadProjects = async () => {
+    try {
+      const data = await projectApi.getProjects();
+      setProjects(data);
+      if (activeProject) {
+        const updatedActive = data.find(p => p.id === activeProject.id);
+        if (updatedActive) {
+          setActiveProject(updatedActive);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load projects:', err);
     }
+  };
+
+  // Load from database
+  useEffect(() => {
+    loadProjects();
   }, []);
 
   const selectProject = (proj) => {
@@ -90,7 +46,7 @@ export default function ProjectSection({ currentUser }) {
     setScoreRating(proj.rating || 5);
   };
 
-  const handleInternSubmit = (e) => {
+  const handleInternSubmit = async (e) => {
     e.preventDefault();
     if (!githubUrl) {
       alert('GitHub Repository Link is required.');
@@ -98,85 +54,54 @@ export default function ProjectSection({ currentUser }) {
     }
 
     setSubmitting(true);
-    setTimeout(() => {
-      const updated = projects.map(p => {
-        if (p.id === activeProject.id) {
-          return {
-            ...p,
-            githubLink: githubUrl,
-            liveLink: liveUrl,
-            docText: notes,
-            status: 'In Review',
-            // Simulate AI generating evaluation on submit!
-            aiEvaluation: {
-              score: Math.floor(Math.random() * 21) + 80, // 80 - 100
-              codeQuality: 'Good',
-              securityCheck: 'Passed',
-              scalability: 'Medium',
-              insights: 'Code looks highly modular. Found 2 unused packages. Clean styling variable implementations detected.'
-            }
-          };
-        }
-        return p;
+    try {
+      await projectApi.submitProject({
+        projectId: activeProject.id,
+        githubLink: githubUrl,
+        liveLink: liveUrl,
+        docText: notes
       });
-
-      setProjects(updated);
-      localStorage.setItem('zoho_projects', JSON.stringify(updated));
-      
-      const matched = updated.find(p => p.id === activeProject.id);
-      setActiveProject(matched);
+      await loadProjects();
       setSubmitting(false);
       alert('Project submitted for evaluation! AI code check has generated feedback.');
-    }, 1200);
+    } catch (err) {
+      setSubmitting(false);
+      alert(err.message || 'Submission failed');
+    }
   };
 
-  const triggerAICodeAudit = () => {
+  const triggerAICodeAudit = async () => {
     if (!activeProject.githubLink) return;
     setAuditing(true);
-    setTimeout(() => {
-      const updated = projects.map(p => {
-        if (p.id === activeProject.id) {
-          return {
-            ...p,
-            aiEvaluation: {
-              score: Math.floor(Math.random() * 15) + 85, // 85 - 100
-              codeQuality: 'Excellent',
-              securityCheck: 'Secure (No vulnerable packages found)',
-              scalability: 'High (Optimized memory structures)',
-              insights: 'AI Code Audit completed. ESLint warnings: 0. Complexity: Low. Good use of modular components.'
-            }
-          };
-        }
-        return p;
+    try {
+      // The backend submit auto-audits, but we can call submit again to re-trigger audit
+      await projectApi.submitProject({
+        projectId: activeProject.id,
+        githubLink: activeProject.githubLink,
+        liveLink: activeProject.liveLink,
+        docText: activeProject.docText
       });
-
-      setProjects(updated);
-      localStorage.setItem('zoho_projects', JSON.stringify(updated));
-      const matched = updated.find(p => p.id === activeProject.id);
-      setActiveProject(matched);
+      await loadProjects();
       setAuditing(false);
-    }, 1500);
+    } catch (err) {
+      setAuditing(false);
+      alert('Audit failed');
+    }
   };
 
-  const handleMentorReviewSubmit = (e) => {
+  const handleMentorReviewSubmit = async (e) => {
     e.preventDefault();
-    const updated = projects.map(p => {
-      if (p.id === activeProject.id) {
-        return {
-          ...p,
-          rating: scoreRating,
-          reviewComments: feedback,
-          status: 'Completed'
-        };
-      }
-      return p;
-    });
-
-    setProjects(updated);
-    localStorage.setItem('zoho_projects', JSON.stringify(updated));
-    const matched = updated.find(p => p.id === activeProject.id);
-    setActiveProject(matched);
-    alert('Project rating and review submitted successfully!');
+    try {
+      await projectApi.reviewProject({
+        projectId: activeProject.id,
+        rating: scoreRating,
+        reviewComments: feedback
+      });
+      await loadProjects();
+      alert('Project rating and review submitted successfully!');
+    } catch (err) {
+      alert(err.message || 'Failed to submit review');
+    }
   };
 
   // Filter projects if Intern (only see their assigned ones)

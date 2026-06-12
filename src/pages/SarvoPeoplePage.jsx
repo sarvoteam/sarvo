@@ -48,7 +48,7 @@ export default function SarvoPeoplePage() {
 
   const [employee, setEmployee] = useState(() => {
     if (sessionStorage.getItem('sarvo_people_auth') === 'true') {
-      const saved = localStorage.getItem('zoho_current_user');
+      const saved = localStorage.getItem('sarvo_current_user');
       return saved ? JSON.parse(saved) : null;
     }
     return null;
@@ -321,7 +321,7 @@ export default function SarvoPeoplePage() {
             setActiveSubTab={setActiveSubTab}
             links={topNavLinks}
             onLogout={() => {
-              localStorage.removeItem('zoho_current_user');
+              localStorage.removeItem('sarvo_current_user');
               sessionStorage.removeItem('sarvo_people_auth');
               setEmployee(null);
               setIsAuthenticated(false);

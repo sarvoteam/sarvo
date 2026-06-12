@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, Users, ArrowLeft, Eye, EyeOff, AlertCircle, CheckCircle, ShieldCheck, KeyRound, School } from 'lucide-react';
+import { authApi } from '../../../apis/authApi';
 
 const STATIC_ADMIN = {
   id: 1,
@@ -17,13 +18,13 @@ const STATIC_ADMIN = {
 const STATIC_MENTOR = {
   id: 2,
   employee_id: 'SARVO002',
-  name: 'Rohit Ghanghav',
+  name: 'Aditya Patil',
   role: 'Reporting Manager',
   department: 'Engineering',
   avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
   status: 'Checked-in',
   manager_id: 1,
-  email: 'employee@sarvo.com',
+  email: 'mentor@sarvo.com',
   shift: 'General (10:30 AM - 06:30 PM)',
   skills: ['React', 'Node.js', 'SQL', 'System Design']
 };
@@ -31,7 +32,7 @@ const STATIC_MENTOR = {
 const DEFAULT_INTERN = {
   id: 3,
   employee_id: 'INT2026001',
-  name: 'Aditya Patil',
+  name: 'Om Kolekar',
   role: 'Intern',
   department: 'Engineering',
   avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
@@ -85,15 +86,15 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
       setEmail('admin@sarvo.com');
       setPassword('admin123');
     } else if (role === 'mentor') {
-      setEmail('employee@sarvo.com');
-      setPassword('employee123');
+      setEmail('mentor@sarvo.com');
+      setPassword('Mentor123');
     } else {
       setEmail('intern@sarvo.com');
-      setPassword('intern123');
+      setPassword('Intern123');
     }
   };
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -105,38 +106,22 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
 
     setLoading(true);
 
-    setTimeout(() => {
-      // Check static users
-      let matchedUser = null;
-      if (email.trim().toLowerCase() === 'admin@sarvo.com' && password === 'admin123') {
-        matchedUser = STATIC_ADMIN;
-      } else if (email.trim().toLowerCase() === 'employee@sarvo.com' && password === 'employee123') {
-        matchedUser = STATIC_MENTOR;
-      } else if (email.trim().toLowerCase() === 'intern@sarvo.com' && password === 'intern123') {
-        matchedUser = DEFAULT_INTERN;
-      } else {
-        // Check local storage registered users
-        const registered = localStorage.getItem('sarvo_registered_interns');
-        if (registered) {
-          const interns = JSON.parse(registered);
-          matchedUser = interns.find(
-            (u) => u.email === email.trim().toLowerCase() && u.password === password
-          );
-        }
-      }
-
-      if (matchedUser) {
-        setSuccess('Authentication successful! Loading dashboard...');
-        localStorage.setItem('zoho_current_user', JSON.stringify(matchedUser));
-        sessionStorage.setItem('sarvo_people_auth', 'true');
-        setTimeout(() => {
-          onLoginSuccess(matchedUser);
-        }, 800);
-      } else {
-        setError('Invalid email or password. Please try again.');
-        setLoading(false);
-      }
-    }, 600);
+    try {
+      const data = await authApi.login(email.trim(), password.trim());
+      setSuccess('Authentication successful! Loading dashboard...');
+      
+      // Save details
+      sessionStorage.setItem('sarvo_token', data.token);
+      localStorage.setItem('sarvo_current_user', JSON.stringify(data.user));
+      sessionStorage.setItem('sarvo_people_auth', 'true');
+      
+      setTimeout(() => {
+        onLoginSuccess(data.user);
+      }, 800);
+    } catch (err) {
+      setError(err.message || 'Invalid email or password. Please try again.');
+      setLoading(false);
+    }
   };
 
   const handleRegisterSubmit = (e) => {
@@ -151,36 +136,24 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
 
     setLoading(true);
 
-    setTimeout(() => {
-      const generatedId = 'INT' + new Date().getFullYear() + String(Math.floor(Math.random() * 900) + 100);
-      const newIntern = {
-        id: Date.now(),
-        employee_id: generatedId,
-        name: regName,
-        email: regEmail.trim().toLowerCase(),
-        password: regPassword,
-        role: 'Intern',
-        department: 'Engineering',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150', // Default avatar
-        status: 'Yet to check-in',
-        manager_id: 2, // Default mentor
-        college: regCollege,
-        skills: regSkills ? regSkills.split(',').map(s => s.trim()) : [],
-        github: regGithub || '',
-        linkedin: regLinkedin || '',
-        status_tracking: 'Pending Verification',
-        attendance_pct: 100,
-        shift: 'General (10:30 AM - 06:30 PM)'
-      };
+    const internPayload = {
+      name: regName,
+      email: regEmail.trim().toLowerCase(),
+      password: regPassword,
+      college: regCollege,
+      skills: regSkills,
+      github: regGithub || '',
+      linkedin: regLinkedin || '',
+      phone: ''
+    };
 
-      setTempInternData(newIntern);
-      setLoading(false);
-      setSuccess('Verification OTP sent to ' + regEmail);
-      setView('verify');
-    }, 800);
+    setTempInternData(internPayload);
+    setLoading(false);
+    setSuccess('Verification OTP sent to ' + regEmail);
+    setView('verify');
   };
 
-  const handleVerifySubmit = (e) => {
+  const handleVerifySubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -191,29 +164,11 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      // Save intern to local storage list
-      const existingStr = localStorage.getItem('sarvo_registered_interns');
-      const existing = existingStr ? JSON.parse(existingStr) : [];
-      
-      const verifiedIntern = {
-        ...tempInternData,
-        status_tracking: 'Active' // Now verified & active
-      };
-
-      // Add to registered list
-      existing.push(verifiedIntern);
-      localStorage.setItem('sarvo_registered_interns', JSON.stringify(existing));
-
-      // Also append to zoho_admin_employees so Admin sees them
-      const adminEmpsStr = localStorage.getItem('zoho_admin_employees');
-      const adminEmps = adminEmpsStr ? JSON.parse(adminEmpsStr) : [];
-      adminEmps.push(verifiedIntern);
-      localStorage.setItem('zoho_admin_employees', JSON.stringify(adminEmps));
-
-      setSuccess('Email verified successfully! You can now log in.');
-      setEmail(verifiedIntern.email);
-      setPassword(verifiedIntern.password);
+    try {
+      const createdIntern = await authApi.register(tempInternData);
+      setSuccess('Email verified and registered successfully! You can now log in.');
+      setEmail(createdIntern.email);
+      setPassword(tempInternData.password);
       setActiveRole('intern');
       
       setTimeout(() => {
@@ -221,7 +176,10 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
         setOtp('');
         setLoading(false);
       }, 1000);
-    }, 600);
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+      setLoading(false);
+    }
   };
 
   const handleForgotSubmit = (e) => {
@@ -378,8 +336,8 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
               {/* Demo accounts hint */}
               <div className="auth-demo-hint">
                 <strong>Demo Credentials ({activeRole.toUpperCase()}):</strong>
-                <div>Email: <span className="fill-cred" onClick={() => setEmail(activeRole === 'admin' ? 'admin@sarvo.com' : activeRole === 'mentor' ? 'employee@sarvo.com' : 'intern@sarvo.com')}>{activeRole === 'admin' ? 'admin@sarvo.com' : activeRole === 'mentor' ? 'employee@sarvo.com' : 'intern@sarvo.com'}</span></div>
-                <div>Password: <span className="fill-cred" onClick={() => setPassword(activeRole === 'admin' ? 'admin123' : activeRole === 'mentor' ? 'employee123' : 'intern123')}>{activeRole === 'admin' ? 'admin123' : activeRole === 'mentor' ? 'employee123' : 'intern123'}</span></div>
+                <div>Email: <span className="fill-cred" onClick={() => setEmail(activeRole === 'admin' ? 'admin@sarvo.com' : activeRole === 'mentor' ? 'mentor@sarvo.com' : 'intern@sarvo.com')}>{activeRole === 'admin' ? 'admin@sarvo.com' : activeRole === 'mentor' ? 'mentor@sarvo.com' : 'intern@sarvo.com'}</span></div>
+                <div>Password: <span className="fill-cred" onClick={() => setPassword(activeRole === 'admin' ? 'admin123' : activeRole === 'mentor' ? 'Mentor123' : 'Intern123')}>{activeRole === 'admin' ? 'admin123' : activeRole === 'mentor' ? 'Mentor123' : 'Intern123'}</span></div>
               </div>
 
               <div className="auth-footer-link">

@@ -19,7 +19,7 @@ export default function CalendarView() {
       } catch (err) {
         setIsBackendLive(false);
         // Fallback to local storage if API is down
-        const localAtt = localStorage.getItem('zoho_attendance');
+        const localAtt = localStorage.getItem('sarvo_attendance');
         if (localAtt) {
           setAttendance(JSON.parse(localAtt));
         }
@@ -109,7 +109,7 @@ export default function CalendarView() {
           {daysArray.map((dayNum) => {
             const status = getDayStatus(dayNum);
             const weekend = isWeekend(dayNum);
-            const isToday = dayNum === 9; // Today is June 9th in our Zoho app mock timeline
+            const isToday = dayNum === 9; // Today is June 9th in our Sarvo app mock timeline
 
             return (
               <div 

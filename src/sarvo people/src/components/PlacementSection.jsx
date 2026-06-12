@@ -1,125 +1,120 @@
 import React, { useState, useEffect } from 'react';
 import { Briefcase, Building, MapPin, Calendar, DollarSign, Send, CheckCircle2, Clock, Users, ArrowRight } from 'lucide-react';
-
-const INITIAL_JOBS = [
-  {
-    id: 1,
-    company: 'Sarvo Technologies',
-    role: 'Associate Full-Stack Developer',
-    location: 'Pune (On-site)',
-    salary: '₹6.5 - ₹8.0 LPA',
-    skills: ['React', 'Node.js', 'PostgreSQL', 'JavaScript'],
-    description: 'Looking for a passionate full-stack developer intern to transition into a full-time role. Will work on core ERP systems, database optimization, and modern React interfaces.',
-    applied: false,
-    status: 'Applied' // Applied, Shortlisted, Interview Scheduled, Offered, Rejected
-  },
-  {
-    id: 2,
-    company: 'TechnoCorp Solutions',
-    role: 'Backend API Engineer',
-    location: 'Bangalore (Hybrid)',
-    salary: '₹8.0 - ₹10.0 LPA',
-    skills: ['Node.js', 'Express', 'Redis', 'Docker'],
-    description: 'We are seeking backend specialists to design, build, and support high-throughput microservices. Experience with queue management and caching is highly desirable.',
-    applied: true,
-    status: 'Interview Scheduled',
-    interviewDate: '2026-06-18 at 02:30 PM'
-  },
-  {
-    id: 3,
-    company: 'DesignGrid Studio',
-    role: 'Frontend UI/UX Developer',
-    location: 'Remote',
-    salary: '₹5.5 - ₹7.0 LPA',
-    skills: ['React', 'Framer Motion', 'Figma', 'CSS Grid'],
-    description: 'Collaborate with product designers to implement premium interactive user experiences. You must have a strong eye for visual details, micro-animations, and responsive layouts.',
-    applied: false,
-    status: ''
-  }
-];
+import { jobApi } from '../../../apis/jobApi';
 
 export default function PlacementSection({ currentUser }) {
   const [jobs, setJobs] = useState([]);
   const [activeJob, setActiveJob] = useState(null);
   const [applying, setApplying] = useState(false);
 
-  const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Reporting Manager';
+  const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Reporting Manager' || currentUser?.role === 'admin' || currentUser?.role === 'mentor';
 
-  // Load from local storage
-  useEffect(() => {
-    const saved = localStorage.getItem('zoho_placements');
-    if (saved) {
-      setJobs(JSON.parse(saved));
-    } else {
-      setJobs(INITIAL_JOBS);
-      localStorage.setItem('zoho_placements', JSON.stringify(INITIAL_JOBS));
+  const loadJobsAndApps = async () => {
+    try {
+      const jobsData = await jobApi.getJobs();
+      let appsData = [];
+      try {
+        appsData = await jobApi.getApplications();
+      } catch (e) {
+        // Not logged in or unauthorized
+      }
+      
+      const mappedJobs = jobsData.map(j => {
+        // Find if current user applied (matches by email)
+        const userApp = appsData.find(a => 
+          Number(a.job_id) === Number(j.id) && 
+          a.email.toLowerCase() === currentUser?.email?.toLowerCase()
+        );
+
+        // For Admin, show the first application details so they can perform updates
+        const anyApp = appsData.find(a => Number(a.job_id) === Number(j.id));
+        const activeApp = isAdminOrMentor ? anyApp : userApp;
+
+        return {
+          id: j.id,
+          applicationId: activeApp ? activeApp.id : null,
+          company: 'Sarvo Technologies',
+          role: j.title,
+          location: j.location || 'Pune (On-site)',
+          salary: j.salary_range || '₹6.5 - ₹8.0 LPA',
+          skills: j.skills || ['React', 'Node.js', 'PostgreSQL', 'JavaScript'],
+          description: j.description,
+          applied: !!userApp,
+          status: activeApp ? activeApp.status : '',
+          interviewDate: activeApp ? activeApp.interview_date : null
+        };
+      });
+
+      setJobs(mappedJobs);
+      if (mappedJobs.length > 0) {
+        // Retain selection if valid
+        const prevActive = activeJob ? mappedJobs.find(mj => mj.id === activeJob.id) : null;
+        setActiveJob(prevActive || mappedJobs[0]);
+      }
+    } catch (err) {
+      console.error('Failed to load job listings:', err);
     }
-  }, []);
+  };
+
+  useEffect(() => {
+    loadJobsAndApps();
+  }, [currentUser]);
 
   const selectJob = (job) => {
     setActiveJob(job);
   };
 
-  const handleApply = (jobId) => {
+  const handleApply = async (jobId) => {
     setApplying(true);
-    setTimeout(() => {
-      const updated = jobs.map(j => {
-        if (j.id === jobId) {
-          return {
-            ...j,
-            applied: true,
-            status: 'Applied'
-          };
-        }
-        return j;
-      });
+    try {
+      const names = currentUser?.name ? currentUser.name.split(' ') : ['New', 'Intern'];
+      const firstName = names[0];
+      const lastName = names.slice(1).join(' ') || 'User';
 
-      setJobs(updated);
-      localStorage.setItem('zoho_placements', JSON.stringify(updated));
-      
-      const matched = updated.find(j => j.id === jobId);
-      setActiveJob(matched);
+      await jobApi.applyForJob(jobId, {
+        firstName,
+        lastName,
+        email: currentUser?.email || 'intern@sarvo.com',
+        phone: currentUser?.phone || '9999999999',
+        resumeUrl: 'https://sarvo.com/resumes/default.pdf',
+        coverLetter: 'Applied via Sarvo HRMS'
+      });
+      await loadJobsAndApps();
       setApplying(false);
       alert('Application submitted successfully!');
-    }, 800);
+    } catch (err) {
+      setApplying(false);
+      alert(err.message || 'Application failed');
+    }
   };
 
   // Status handler for Admin / Mentor to schedule interview
-  const handleScheduleInterview = (jobId, dateStr) => {
-    const updated = jobs.map(j => {
-      if (j.id === jobId) {
-        return {
-          ...j,
-          status: 'Interview Scheduled',
-          interviewDate: dateStr
-        };
-      }
-      return j;
-    });
-
-    setJobs(updated);
-    localStorage.setItem('zoho_placements', JSON.stringify(updated));
-    const matched = updated.find(j => j.id === jobId);
-    setActiveJob(matched);
-    alert('Interview scheduled on ' + dateStr);
+  const handleScheduleInterview = async (jobId, dateStr) => {
+    if (!activeJob?.applicationId) {
+      alert('No application found to schedule interview for.');
+      return;
+    }
+    try {
+      await jobApi.updateApplicationStatus(activeJob.applicationId, 'Interview Scheduled', dateStr);
+      await loadJobsAndApps();
+      alert('Interview scheduled on ' + dateStr);
+    } catch (err) {
+      alert(err.message || 'Failed to schedule interview');
+    }
   };
 
-  const handleStatusUpdate = (jobId, newStatus) => {
-    const updated = jobs.map(j => {
-      if (j.id === jobId) {
-        return {
-          ...j,
-          status: newStatus
-        };
-      }
-      return j;
-    });
-
-    setJobs(updated);
-    localStorage.setItem('zoho_placements', JSON.stringify(updated));
-    const matched = updated.find(j => j.id === jobId);
-    setActiveJob(matched);
-    alert('Application status updated to: ' + newStatus);
+  const handleStatusUpdate = async (jobId, newStatus) => {
+    if (!activeJob?.applicationId) {
+      alert('No application found to update status.');
+      return;
+    }
+    try {
+      await jobApi.updateApplicationStatus(activeJob.applicationId, newStatus, null);
+      await loadJobsAndApps();
+      alert('Application status updated to: ' + newStatus);
+    } catch (err) {
+      alert(err.message || 'Failed to update status');
+    }
   };
 
   return (

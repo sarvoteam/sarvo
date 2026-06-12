@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, Calendar, CheckSquare, Square, Trash2 } from 'lucide-react';
+import { personalTaskApi } from '../../../apis/personalTaskApi';
 
 export default function TasksSection() {
   const [tasks, setTasks] = useState([]);
@@ -8,52 +9,68 @@ export default function TasksSection() {
   const [dueDate, setDueDate] = useState('');
   const [description, setDescription] = useState('');
 
-  // Load tasks from localStorage
-  useEffect(() => {
-    const localTasks = localStorage.getItem('zoho_tasks');
-    if (localTasks) {
-      setTasks(JSON.parse(localTasks));
+  // Load tasks from backend API
+  const loadTasks = async () => {
+    try {
+      const data = await personalTaskApi.getTasks();
+      // Map database format to component expectations
+      const mapped = data.map(t => ({
+        id: t.id,
+        name: t.name,
+        dueDate: t.due_date ? new Date(t.due_date).toISOString().split('T')[0] : '',
+        description: t.description,
+        completed: t.completed
+      }));
+      setTasks(mapped);
+    } catch (err) {
+      console.error('Failed to load tasks:', err);
     }
+  };
+
+  useEffect(() => {
+    loadTasks();
   }, []);
 
-  const handleAddTask = (e) => {
+  const handleAddTask = async (e) => {
     e.preventDefault();
     if (!taskName) return;
 
-    const newTask = {
-      id: Date.now(),
-      name: taskName,
-      dueDate: dueDate || new Date().toISOString().split('T')[0],
-      description,
-      completed: false
-    };
-
-    const updated = [newTask, ...tasks];
-    setTasks(updated);
-    localStorage.setItem('zoho_tasks', JSON.stringify(updated));
-    
-    // Close & reset
-    setIsModalOpen(false);
-    setTaskName('');
-    setDueDate('');
-    setDescription('');
+    try {
+      await personalTaskApi.createTask({
+        name: taskName,
+        dueDate: dueDate || new Date().toISOString().split('T')[0],
+        description
+      });
+      await loadTasks();
+      
+      // Close & reset
+      setIsModalOpen(false);
+      setTaskName('');
+      setDueDate('');
+      setDescription('');
+    } catch (err) {
+      console.error('Failed to create task:', err);
+    }
   };
 
-  const handleToggleComplete = (id) => {
-    const updated = tasks.map(task => {
-      if (task.id === id) {
-        return { ...task, completed: !task.completed };
-      }
-      return task;
-    });
-    setTasks(updated);
-    localStorage.setItem('zoho_tasks', JSON.stringify(updated));
+  const handleToggleComplete = async (id) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    try {
+      await personalTaskApi.toggleTask(id, !task.completed);
+      await loadTasks();
+    } catch (err) {
+      console.error('Failed to toggle task completion:', err);
+    }
   };
 
-  const handleDeleteTask = (id) => {
-    const updated = tasks.filter(task => task.id !== id);
-    setTasks(updated);
-    localStorage.setItem('zoho_tasks', JSON.stringify(updated));
+  const handleDeleteTask = async (id) => {
+    try {
+      await personalTaskApi.deleteTask(id);
+      await loadTasks();
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+    }
   };
 
   const openTasks = tasks.filter(t => !t.completed);

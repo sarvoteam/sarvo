@@ -90,7 +90,7 @@ export default function Login({ onLoginSuccess }) {
       if (res.ok) {
         const data = await res.json();
         // Save current session
-        localStorage.setItem('zoho_current_user', JSON.stringify(data.employee));
+        localStorage.setItem('sarvo_current_user', JSON.stringify(data.employee));
         onLoginSuccess(data.employee);
       } else {
         const errData = await res.json();
@@ -100,7 +100,7 @@ export default function Login({ onLoginSuccess }) {
       // Offline fallback: Search local storage or DEFAULT_EMPLOYEES
       console.warn('Backend server not connected. Attempting offline fallback authentication.');
       
-      const localEmps = localStorage.getItem('zoho_admin_employees');
+      const localEmps = localStorage.getItem('sarvo_admin_employees');
       const employeeList = localEmps ? JSON.parse(localEmps) : DEFAULT_EMPLOYEES;
 
       const user = employeeList.find(emp => emp.email.toLowerCase() === email.toLowerCase().trim());
@@ -119,7 +119,7 @@ export default function Login({ onLoginSuccess }) {
       }
 
       // Successful mock login
-      localStorage.setItem('zoho_current_user', JSON.stringify(user));
+      localStorage.setItem('sarvo_current_user', JSON.stringify(user));
       onLoginSuccess(user);
     }
   };
@@ -130,8 +130,8 @@ export default function Login({ onLoginSuccess }) {
         <div className="login-card">
           {/* Brand Logo */}
           <div className="login-logo">
-            <div className="login-logo-icon">Z</div>
-            <span className="login-logo-text">zoho People</span>
+            <div className="login-logo-icon">S</div>
+            <span className="login-logo-text">sarvo People</span>
           </div>
 
           {/* Title Header */}

@@ -195,7 +195,7 @@ const ServiceDetailPage = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @media (max-width: 992px) {
           .service-detail-grid {
             grid-template-columns: 1fr !important;
