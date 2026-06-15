@@ -2,6 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Folder, GitBranch, ExternalLink, Star, MessageSquare, AlertCircle, FileText, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 import { projectApi } from '../../../apis/projectApi';
 
+const normalizeProject = (p) => {
+  if (!p) return null;
+  let displayStatus = 'To Do';
+  const dbStatus = (p.status || '').toLowerCase().trim();
+  if (dbStatus === 'active' || dbStatus === 'in progress' || dbStatus === 'in_progress') {
+    displayStatus = 'In Progress';
+  } else if (dbStatus === 'in review' || dbStatus === 'in_review') {
+    displayStatus = 'In Review';
+  } else if (dbStatus === 'completed' || dbStatus === 'done') {
+    displayStatus = 'Completed';
+  } else if (dbStatus === 'todo' || dbStatus === 'to do') {
+    displayStatus = 'To Do';
+  }
+
+  return {
+    ...p,
+    title: p.title || p.name || 'Untitled Project',
+    status: displayStatus,
+    assignedTo: p.assignedTo || p.assigned_to_email || 'Development Team',
+    deadline: p.deadline || (p.end_date ? new Date(p.end_date).toLocaleDateString() : 'No Deadline'),
+    description: p.description || 'No description provided.'
+  };
+};
+
 export default function ProjectSection({ currentUser }) {
   const [projects, setProjects] = useState([]);
   const [activeProject, setActiveProject] = useState(null);
@@ -20,9 +44,10 @@ export default function ProjectSection({ currentUser }) {
   const loadProjects = async () => {
     try {
       const data = await projectApi.getProjects();
-      setProjects(data);
+      const normalized = (data || []).map(normalizeProject);
+      setProjects(normalized);
       if (activeProject) {
-        const updatedActive = data.find(p => p.id === activeProject.id);
+        const updatedActive = normalized.find(p => p.id === activeProject.id);
         if (updatedActive) {
           setActiveProject(updatedActive);
         }
@@ -181,8 +206,8 @@ export default function ProjectSection({ currentUser }) {
                         borderRadius: '6px',
                         fontSize: '10.5px',
                         fontWeight: 700,
-                        background: statusPills[p.status].bg,
-                        color: statusPills[p.status].text
+                        background: statusPills[p.status]?.bg || 'var(--primary-bg)',
+                        color: statusPills[p.status]?.text || 'var(--text-muted)'
                       }}>
                         {p.status}
                       </span>
