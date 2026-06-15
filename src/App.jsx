@@ -6,17 +6,7 @@ import Footer from './components/layout/Footer';
 import CursorTrail from './components/layout/CursorTrail';
 import IntroAnimation from './components/layout/IntroAnimation';
 import ScrollToTop from './components/common/ScrollToTop';
-
-// Pages
-import Home from './pages/Home';
-import AboutPage from './pages/AboutPage';
-import ServicesPage from './pages/ServicesPage';
-import TeamPage from './pages/TeamPage';
-import ContactPage from './pages/ContactPage';
-import ProductPage from './pages/ProductPage';
-import ServiceDetailPage from './pages/ServiceDetailPage';
-import SarvoPeoplePage from './pages/SarvoPeoplePage';
-import SarvoCareersPage from './sarvoCareers/src/pages/SarvoCareersPage';
+import AppRouter from './routes/AppRouter';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -71,11 +61,22 @@ function ScrollProgress() {
 function AppContent() {
   const location = useLocation();
 
-  const isSarvoPeople = location.pathname === '/sarvo-people';
-  const isSarvoCareers = location.pathname === '/sarvo-careers';
+  const isSarvoPeople = location.pathname.startsWith('/sarvo-people');
+  const isSarvoCareers = location.pathname.startsWith('/sarvo-careers');
 
-  const [showIntro, setShowIntro] = useState(() => {
-    return !sessionStorage.getItem('hasSeenIntro');
+  const [showIntro, setShowIntro] = useState(false);
+
+  // Lifted authentication states for Sarvo People
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('sarvo_people_auth') === 'true';
+  });
+
+  const [employee, setEmployee] = useState(() => {
+    if (sessionStorage.getItem('sarvo_people_auth') === 'true') {
+      const saved = localStorage.getItem('sarvo_current_user');
+      return saved ? JSON.parse(saved) : null;
+    }
+    return null;
   });
 
   const handleIntroComplete = () => {
@@ -83,19 +84,16 @@ function AppContent() {
     setShowIntro(false);
   };
 
-  // Standalone pages
-  if (isSarvoPeople) {
+  // Standalone pages (no main site header/footer)
+  if (isSarvoPeople || isSarvoCareers) {
     return (
       <ErrorBoundary>
-        <SarvoPeoplePage />
-      </ErrorBoundary>
-    );
-  }
-
-  if (isSarvoCareers) {
-    return (
-      <ErrorBoundary>
-        <SarvoCareersPage />
+        <AppRouter 
+          employee={employee}
+          isAuthenticated={isAuthenticated}
+          setIsAuthenticated={setIsAuthenticated}
+          setEmployee={setEmployee}
+        />
       </ErrorBoundary>
     );
   }
@@ -119,16 +117,12 @@ function AppContent() {
         <Navbar />
 
         <ErrorBoundary>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/services/:id" element={<ServiceDetailPage />} />
-            <Route path="/team" element={<TeamPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/product" element={<ProductPage />} />
-            <Route path="/sarvo-careers" element={<SarvoCareersPage />} />
-          </Routes>
+          <AppRouter 
+            employee={employee}
+            isAuthenticated={isAuthenticated}
+            setIsAuthenticated={setIsAuthenticated}
+            setEmployee={setEmployee}
+          />
         </ErrorBoundary>
 
         <Footer />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 
 // Import newly structured sub-components
@@ -38,46 +38,47 @@ import '../sarvo people/src/styles/calendar.css';
 import '../sarvo people/src/styles/admin.css';
 import '../sarvo people/src/styles/login.css';
 
-export default function SarvoPeoplePage() {
+export default function SarvoPeoplePage({
+  employee,
+  isAuthenticated,
+  setIsAuthenticated,
+  setEmployee
+}) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme } = useTheme();
 
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem('sarvo_people_auth') === 'true';
-  });
+  // Compute active tab dynamically from browser path split
+  const pathParts = location.pathname.split('/');
+  const activeTab = pathParts[2] || 'home';
 
-  const [employee, setEmployee] = useState(() => {
-    if (sessionStorage.getItem('sarvo_people_auth') === 'true') {
-      const saved = localStorage.getItem('sarvo_current_user');
-      return saved ? JSON.parse(saved) : null;
-    }
-    return null;
-  });
+  const handleTabChange = (tabId) => {
+    navigate(`/sarvo-people/${tabId}`);
+  };
 
-  // Default active tab based on role on login
-  const [activeTab, setActiveTab] = useState('home');
   const [activeSubTab, setActiveSubTab] = useState('My Space');
   const [subNavItem, setSubNavItem] = useState('Overview');
 
+  // Navigate to default home page upon initial login to /sarvo-people
   useEffect(() => {
-    if (employee) {
+    if (employee && (location.pathname === '/sarvo-people' || location.pathname === '/sarvo-people/')) {
       const isSystemAdmin = employee.role === 'Admin';
       const isSystemMentor = employee.role === 'Reporting Manager';
       if (isSystemAdmin) {
-        setActiveTab('home');
+        navigate('/sarvo-people/home', { replace: true });
         setActiveSubTab('Control Center');
         setSubNavItem('Roster Status');
       } else if (isSystemMentor) {
-        setActiveTab('home');
+        navigate('/sarvo-people/home', { replace: true });
         setActiveSubTab('Mentor Space');
         setSubNavItem('Overview');
       } else {
-        setActiveTab('home');
+        navigate('/sarvo-people/home', { replace: true });
         setActiveSubTab('My Space');
         setSubNavItem('Overview');
       }
     }
-  }, [employee]);
+  }, [employee, location.pathname]);
 
   // Handle secondary sub-routing selectors
   useEffect(() => {
@@ -310,7 +311,7 @@ export default function SarvoPeoplePage() {
       `}</style>
       <div className="app-container">
         {/* 1. Left Sidebar Navigation */}
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={employee} />
+        <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} user={employee} />
 
         {/* Main Workspace Frame */}
         <div className="main-wrapper">
@@ -343,60 +344,25 @@ export default function SarvoPeoplePage() {
 
           {/* 4. Page Content area */}
           <div className="main-content">
-            {activeTab === 'home' ? (
-              subNavItem === 'Calendar' ? (
-                <CalendarView />
-              ) : (
-                <Dashboard />
-              )
-            ) : activeTab === 'attendance' ? (
-              <AttendanceSection />
-            ) : activeTab === 'leave' ? (
-              <LeaveTracker />
-            ) : activeTab === 'timetracker' ? (
-              <TimeTracker />
-            ) : activeTab === 'performance' ? (
-              <Performance />
-            ) : activeTab === 'tasks' ? (
-              <TasksSection />
-            ) : activeTab === 'admin' ? (
-              <AdminPanel />
-            ) : activeTab === 'lms' ? (
-              <LMSSection />
-            ) : activeTab === 'projects' ? (
-              <ProjectSection currentUser={employee} />
-            ) : activeTab === 'placements' ? (
-              <PlacementSection currentUser={employee} />
-            ) : activeTab === 'aihub' ? (
-              <AIFeaturesSection currentUser={employee} />
-            ) : activeTab === 'certificates' ? (
-              <CertificateSection currentUser={employee} />
-            ) : activeTab === 'reports' ? (
-              <ReportsSection />
-            ) : activeTab === 'batches' ? (
-              <BatchSection currentUser={employee} />
-            ) : activeTab === 'dailyreports' ? (
-              <DailyReportsSection currentUser={employee} />
-            ) : (
-              <div style={{ padding: '40px', color: '#6b7280', textAlign: 'center' }}>
-                <h2>{activeTab.toUpperCase()} Section</h2>
-                <p style={{ marginTop: '10px' }}>This section is currently under development.</p>
-                <button
-                  onClick={() => setActiveTab('home')}
-                  style={{
-                    marginTop: '20px',
-                    padding: '8px 16px',
-                    backgroundColor: '#007bf5',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Go to Home Dashboard
-                </button>
-              </div>
-            )}
+            <Routes>
+              <Route path="/" element={<Navigate to="home" replace />} />
+              <Route path="home" element={subNavItem === 'Calendar' ? <CalendarView /> : <Dashboard />} />
+              <Route path="attendance" element={<AttendanceSection />} />
+              <Route path="leave" element={<LeaveTracker />} />
+              <Route path="timetracker" element={<TimeTracker />} />
+              <Route path="performance" element={<Performance />} />
+              <Route path="tasks" element={<TasksSection />} />
+              <Route path="admin" element={<AdminPanel />} />
+              <Route path="lms" element={<LMSSection />} />
+              <Route path="projects" element={<ProjectSection currentUser={employee} />} />
+              <Route path="placements" element={<PlacementSection currentUser={employee} />} />
+              <Route path="aihub" element={<AIFeaturesSection currentUser={employee} />} />
+              <Route path="certificates" element={<CertificateSection currentUser={employee} />} />
+              <Route path="reports" element={<ReportsSection />} />
+              <Route path="batches" element={<BatchSection currentUser={employee} />} />
+              <Route path="dailyreports" element={<DailyReportsSection currentUser={employee} />} />
+              <Route path="*" element={<Navigate to="home" replace />} />
+            </Routes>
           </div>
 
           {/* 5. Bottom Chat / Ticker status bar */}

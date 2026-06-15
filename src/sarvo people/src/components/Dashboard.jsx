@@ -21,9 +21,12 @@ import {
   Cpu,
   Award,
   BookOpen,
-  Sparkles
+  Sparkles,
+  AlertCircle
 } from 'lucide-react';
 import foliageBanner from '../assets/foliage_banner.png';
+import { dashboardApi } from '../../../apis/dashboardApi';
+import { employeeApi } from '../../../apis/employeeApi';
 
 const DEFAULT_LEAVE_TYPES = [
   { id: 1, name: 'Casual Leave', available: 4, booked: 0, icon_type: 'sun', color_theme: 'blue' },
@@ -38,6 +41,7 @@ export default function Dashboard() {
   const [employee, setEmployee] = useState(null);
   const [attendance, setAttendance] = useState([]);
   const [timerText, setTimerText] = useState('00 : 00 : 00');
+  const [metrics, setMetrics] = useState(null);
   
   // Profile Inner Tabs
   const [activeInnerTab, setActiveInnerTab] = useState('Attendance');
@@ -52,6 +56,89 @@ export default function Dashboard() {
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
 
+  // Add Employee Form State
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [formName, setFormName] = useState('');
+  const [formId, setFormId] = useState('');
+  const [formRole, setFormRole] = useState(''); // Designation ID
+  const [formDept, setFormDept] = useState(''); // Department ID
+  const [formEmail, setFormEmail] = useState('');
+  const [formMobile, setFormMobile] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+  const [formShift, setFormShift] = useState('General (10:30 AM - 06:30 PM)');
+  const [formAbout, setFormAbout] = useState('');
+  const [orgMeta, setOrgMeta] = useState({ departments: [], designations: [] });
+  const [alertMsg, setAlertMsg] = useState(null);
+
+  // Load organization metadata
+  useEffect(() => {
+    const fetchOrgMetadata = async () => {
+      try {
+        const meta = await employeeApi.getMeta();
+        setOrgMeta(meta);
+        if (meta.departments?.length > 0) setFormDept(meta.departments[0].id);
+        if (meta.designations?.length > 0) setFormRole(meta.designations[0].id);
+      } catch (err) {
+        console.error('Failed to load org metadata:', err);
+      }
+    };
+    fetchOrgMetadata();
+  }, []);
+
+  const resetAddEmployeeForm = () => {
+    setFormName('');
+    setFormId('');
+    if (orgMeta.departments?.length > 0) setFormDept(orgMeta.departments[0].id);
+    if (orgMeta.designations?.length > 0) setFormRole(orgMeta.designations[0].id);
+    setFormEmail('');
+    setFormMobile('');
+    setFormPhone('');
+    setFormAbout('');
+  };
+
+  const handleAddEmployeeSubmit = async (e) => {
+    e.preventDefault();
+    if (!formName || !formId || !formRole || !formDept) {
+      setAlertMsg({ type: 'error', text: 'Please fill out all required fields.' });
+      return;
+    }
+
+    const names = formName.trim().split(' ');
+    const firstName = names[0];
+    const lastName = names.slice(1).join(' ') || 'User';
+
+    const selectedDesignation = orgMeta.designations.find(d => Number(d.id) === Number(formRole));
+    const roleValue = selectedDesignation?.name === 'Intern' ? 'Intern' : 'Employee';
+
+    const empData = {
+      employeeCode: formId,
+      firstName,
+      lastName,
+      email: formEmail || `${firstName.toLowerCase()}@sarvo.com`,
+      phone: formMobile || formPhone || '9999999999',
+      role: roleValue,
+      departmentId: Number(formDept),
+      designationId: Number(formRole)
+    };
+
+    try {
+      await employeeApi.addEmployee(empData);
+      setAlertMsg({ type: 'success', text: 'Employee added successfully!' });
+      
+      // Reload admin metrics dynamically!
+      const data = await dashboardApi.getAdminMetrics();
+      setMetrics(data);
+
+      resetAddEmployeeForm();
+      setTimeout(() => {
+        setIsDrawerOpen(false);
+        setAlertMsg(null);
+      }, 1500);
+    } catch (err) {
+      setAlertMsg({ type: 'error', text: err.message || 'Failed to add employee.' });
+    }
+  };
+
   // Fetch initial user data
   useEffect(() => {
     const savedUser = localStorage.getItem('sarvo_current_user');
@@ -59,6 +146,12 @@ export default function Dashboard() {
       const parsed = JSON.parse(savedUser);
       setEmployee(parsed);
       setAboutMeText(parsed.about_me || '');
+      
+      if (parsed.role === 'Admin') {
+        dashboardApi.getAdminMetrics()
+          .then(data => setMetrics(data))
+          .catch(err => console.error('Failed to fetch admin metrics:', err));
+      }
     }
 
     const localAtt = localStorage.getItem('sarvo_attendance');
@@ -307,109 +400,216 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
           <div className="card" style={{ padding: '16px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Active Interns</span>
-            <h4 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>114 Students</h4>
-            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Scaling to target: 1000+</p>
+            <h4 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>
+              {metrics?.activeInterns?.count ?? 114} Students
+            </h4>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{metrics?.activeInterns?.subText ?? 'Scaling to target: 1000+'}</p>
           </div>
           <div className="card" style={{ padding: '16px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Training Batches</span>
-            <h4 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--active-blue)', marginTop: '4px' }}>4 Active</h4>
-            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Avg progress: 52.5%</p>
+            <h4 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--active-blue)', marginTop: '4px' }}>
+              {metrics?.trainingBatches?.count ?? 4} Active
+            </h4>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Avg progress: {metrics?.trainingBatches?.avgProgress ?? 52.5}%</p>
           </div>
           <div className="card" style={{ padding: '16px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Task Completion</span>
-            <h4 style={{ fontSize: '22px', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>91.2%</h4>
-            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>All-time cohorts average</p>
+            <h4 style={{ fontSize: '22px', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>
+              {metrics?.taskCompletion?.rate ?? 91.2}%
+            </h4>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{metrics?.taskCompletion?.subText ?? 'All-time cohorts average'}</p>
           </div>
           <div className="card" style={{ padding: '16px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Placement Ratio</span>
-            <h4 style={{ fontSize: '22px', fontWeight: 800, color: '#f59e0b', marginTop: '4px' }}>84.5%</h4>
-            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>84 out of 100 graduated</p>
+            <h4 style={{ fontSize: '22px', fontWeight: 800, color: '#f59e0b', marginTop: '4px' }}>
+              {metrics?.placementRatio?.rate ?? 84.5}%
+            </h4>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{metrics?.placementRatio?.subText ?? '84 out of 100 graduated'}</p>
           </div>
         </div>
 
         {/* Sub grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* Quick Actions & Activity */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
-            {/* Quick Actions Panel */}
-            <div className="card" style={{ padding: '20px' }}>
-              <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--sidebar-bg)', marginBottom: '14px' }}>Administrative Actions</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                <div style={{ padding: '12px', background: 'var(--primary-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                  <Users size={18} style={{ color: 'var(--active-blue)', margin: '0 auto 6px' }} />
-                  <strong style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-main)' }}>Add Employee</strong>
-                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Role assignment</span>
-                </div>
-                <div style={{ padding: '12px', background: 'var(--primary-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                  <Award size={18} style={{ color: '#10b981', margin: '0 auto 6px' }} />
-                  <strong style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-main)' }}>Certificates</strong>
-                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Validate graduations</span>
-                </div>
-                <div style={{ padding: '12px', background: 'var(--primary-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                  <Cpu size={18} style={{ color: '#f59e0b', margin: '0 auto 6px' }} />
-                  <strong style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-main)' }}>ATS Scanner</strong>
-                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Resume checkers</span>
-                </div>
+          {/* Quick Actions Panel */}
+          <div className="card" style={{ padding: '20px' }}>
+            <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--sidebar-bg)', marginBottom: '14px' }}>Administrative Actions</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+              <div 
+                style={{ padding: '12px', background: 'var(--primary-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center', cursor: 'pointer' }}
+                onClick={() => setIsDrawerOpen(true)}
+              >
+                <Users size={18} style={{ color: 'var(--active-blue)', margin: '0 auto 6px' }} />
+                <strong style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-main)' }}>Add Employee</strong>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Role assignment</span>
+              </div>
+              <div style={{ padding: '12px', background: 'var(--primary-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                <Award size={18} style={{ color: '#10b981', margin: '0 auto 6px' }} />
+                <strong style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-main)' }}>Certificates</strong>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Validate graduations</span>
+              </div>
+              <div style={{ padding: '12px', background: 'var(--primary-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                <Cpu size={18} style={{ color: '#f59e0b', margin: '0 auto 6px' }} />
+                <strong style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-main)' }}>ATS Scanner</strong>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Resume checkers</span>
               </div>
             </div>
-
-            {/* Recent Activities list */}
-            <div className="card" style={{ padding: '20px' }}>
-              <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--sidebar-bg)', marginBottom: '14px' }}>System Activities Timeline</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {[
-                  { text: 'Intern Aditya Patil submitted E-Commerce project repository.', desc: 'Fullstack Cohort • Awaiting mentor review', time: '10 mins ago' },
-                  { text: 'Placement openings listed: associate engineer at TechnoCorp.', desc: '₹8.0 LPA package • DevOps skills', time: '1 hour ago' },
-                  { text: 'Weekly performance grades updated for UI/UX Design Cohort.', desc: 'Cohort average: 82% efficiency rating', time: '3 hours ago' }
-                ].map((act, i) => (
-                  <div key={i} style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', background: 'var(--primary-bg)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                    <div>
-                      <strong style={{ display: 'block', fontSize: '12px', color: 'var(--text-main)' }}>{act.text}</strong>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>{act.desc}</span>
-                    </div>
-                    <span style={{ fontSize: '9.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginLeft: '12px' }}>{act.time}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
           </div>
 
-          {/* Side stats widget */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--sidebar-bg)' }}>Roster Highlights</h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-              <div>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Roster Capacity utilization</span>
-                <strong style={{ display: 'block', fontSize: '13px', color: 'var(--text-main)', marginTop: '2px' }}>11.4% (Targeting 1000)</strong>
-                <div style={{ width: '100%', height: '5px', background: 'var(--primary-bg)', borderRadius: '10px', marginTop: '6px', overflow: 'hidden' }}>
-                  <div style={{ width: '11.4%', height: '100%', background: 'var(--active-blue)', borderRadius: '10px' }} />
+          {/* Recent Activities list */}
+          <div className="card" style={{ padding: '20px' }}>
+            <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--sidebar-bg)', marginBottom: '14px' }}>System Activities Timeline</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {(metrics?.activities ?? [
+                { text: 'Intern Aditya Patil submitted E-Commerce project repository.', desc: 'Fullstack Cohort • Awaiting mentor review', time: '10 mins ago' },
+                { text: 'Placement openings listed: associate engineer at TechnoCorp.', desc: '₹8.0 LPA package • DevOps skills', time: '1 hour ago' },
+                { text: 'Weekly performance grades updated for UI/UX Design Cohort.', desc: 'Cohort average: 82% efficiency rating', time: '3 hours ago' }
+              ]).map((act, i) => (
+                <div key={i} style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', background: 'var(--primary-bg)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '12px', color: 'var(--text-main)' }}>{act.text}</strong>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>{act.desc}</span>
+                  </div>
+                  <span style={{ fontSize: '9.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginLeft: '12px' }}>{act.time}</span>
                 </div>
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>LMS Course coverage</span>
-                <strong style={{ display: 'block', fontSize: '13px', color: 'var(--text-main)', marginTop: '2px' }}>82% interactive engagement</strong>
-                <div style={{ width: '100%', height: '5px', background: 'var(--primary-bg)', borderRadius: '10px', marginTop: '6px', overflow: 'hidden' }}>
-                  <div style={{ width: '82%', height: '100%', background: '#10b981', borderRadius: '10px' }} />
-                </div>
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Project reviews done</span>
-                <strong style={{ display: 'block', fontSize: '13px', color: 'var(--text-main)', marginTop: '2px' }}>42 / 48 submissions reviewed</strong>
-                <div style={{ width: '100%', height: '5px', background: 'var(--primary-bg)', borderRadius: '10px', marginTop: '6px', overflow: 'hidden' }}>
-                  <div style={{ width: '87.5%', height: '100%', background: '#f59e0b', borderRadius: '10px' }} />
-                </div>
-              </div>
+              ))}
             </div>
-
           </div>
 
         </div>
+
+        {/* Drawer overlay for Add Employee */}
+        {isDrawerOpen && (
+          <div className="admin-drawer-overlay" onClick={() => setIsDrawerOpen(false)}>
+            <div className="admin-drawer-content" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-drawer-header">
+                <h3>Register New Employee</h3>
+                <button className="admin-drawer-close" onClick={() => setIsDrawerOpen(false)}>
+                  <X size={18} />
+                </button>
+              </div>
+              
+              <form onSubmit={handleAddEmployeeSubmit} className="admin-drawer-body">
+                {alertMsg && (
+                  <div className={`admin-alert-success ${alertMsg.type === 'error' ? 'admin-alert-error' : ''}`} style={alertMsg.type === 'error' ? { backgroundColor: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626' } : {}}>
+                    {alertMsg.type === 'error' ? <AlertCircle size={16} /> : <Check size={16} />}
+                    <span>{alertMsg.text}</span>
+                  </div>
+                )}
+
+                <div className="admin-form-group">
+                  <label>Full Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Chetan Ghanghav"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label>Employee ID *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. SPWHI012"
+                    value={formId}
+                    onChange={(e) => setFormId(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Role / Designation *</label>
+                    <select value={formRole} onChange={(e) => setFormRole(e.target.value)}>
+                      {orgMeta.designations.map(d => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="admin-form-group">
+                    <label>Department *</label>
+                    <select value={formDept} onChange={(e) => setFormDept(e.target.value)}>
+                      {orgMeta.departments.map(d => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="admin-form-group">
+                  <label>Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="e.g. name@spwhitel.com"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Mobile Number</label>
+                    <input
+                      type="text"
+                      placeholder="91-XXXXXXXXXX"
+                      value={formMobile}
+                      onChange={(e) => setFormMobile(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="admin-form-group">
+                    <label>Work Phone</label>
+                    <input
+                      type="text"
+                      placeholder="XXXXXXXXXX"
+                      value={formPhone}
+                      onChange={(e) => setFormPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-group">
+                  <label>Shift Timing</label>
+                  <select value={formShift} onChange={(e) => setFormShift(e.target.value)}>
+                    <option value="General (10:30 AM - 06:30 PM)">General (10:30 AM - 06:30 PM)</option>
+                    <option value="Night Shift (09:00 PM - 05:00 AM)">Night Shift (09:00 PM - 05:00 AM)</option>
+                  </select>
+                </div>
+
+                <div className="admin-form-group">
+                  <label>About Employee</label>
+                  <textarea
+                    placeholder="Brief summary..."
+                    value={formAbout}
+                    onChange={(e) => setFormAbout(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                {/* Submitting inside body handles layout better */}
+                <div style={{ display: 'none' }}>
+                  <button type="submit" id="admin-submit-hidden">Submit</button>
+                </div>
+              </form>
+              
+              <div className="admin-drawer-footer">
+                <button type="button" className="btn-drawer-cancel" onClick={() => setIsDrawerOpen(false)}>
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-drawer-submit" 
+                  onClick={() => document.getElementById('admin-submit-hidden').click()}
+                >
+                  Submit Request
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     );
