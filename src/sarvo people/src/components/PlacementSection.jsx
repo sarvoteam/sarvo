@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Briefcase, Building, MapPin, Calendar, DollarSign, Send, CheckCircle2, Clock, Users, ArrowRight } from 'lucide-react';
-import { jobApi } from '../../../apis/jobApi';
+import { jobApi } from '../apis/jobApi';
 
 export default function PlacementSection({ currentUser }) {
   const [jobs, setJobs] = useState([]);

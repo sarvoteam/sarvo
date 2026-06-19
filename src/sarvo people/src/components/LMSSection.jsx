@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Play, Download, Award, FileText, CheckCircle2, ChevronRight, BarChart3, AlertCircle, Clock } from 'lucide-react';
-import { lmsApi } from '../../../apis/lmsApi';
+import { lmsApi } from '../apis/lmsApi';
 
 const COURSES_DATA = [
   {

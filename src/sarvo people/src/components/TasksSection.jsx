@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, Calendar, CheckSquare, Square, Trash2 } from 'lucide-react';
-import { personalTaskApi } from '../../../apis/personalTaskApi';
+import { personalTaskApi } from '../apis/personalTaskApi';
 
 export default function TasksSection() {
   const [tasks, setTasks] = useState([]);

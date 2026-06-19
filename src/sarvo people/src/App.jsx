@@ -168,7 +168,7 @@ export default function App() {
         ) : activeTab === 'attendance' ? (
           <AttendanceSection />
         ) : activeTab === 'leave' ? (
-          <LeaveTracker />
+          <LeaveTracker subNavItem={subNavItem} user={employee} />
         ) : activeTab === 'timetracker' ? (
           <TimeTracker />
         ) : activeTab === 'performance' ? (

@@ -26,6 +26,8 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
       { id: 'home', label: 'Dashboard', icon: Home },
       { id: 'batches', label: 'Batches', icon: Layers },
       { id: 'admin', label: 'Employees', icon: ShieldCheck },
+      { id: 'attendance', label: 'Attendance', icon: Fingerprint },
+      { id: 'leave', label: 'Leaves', icon: Umbrella },
       { id: 'lms', label: 'LMS Hub', icon: BookOpen },
       { id: 'projects', label: 'Projects', icon: Folder },
       { id: 'placements', label: 'Placements', icon: Briefcase },
@@ -50,6 +52,7 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
       { id: 'placements', label: 'Job Placements', icon: Briefcase },
       { id: 'aihub', label: 'AI Prep Hub', icon: Cpu },
       { id: 'certificates', label: 'My Certificate', icon: Award },
+      { id: 'leave', label: 'Leaves', icon: Umbrella },
       { id: 'attendance', label: 'Attendance', icon: Fingerprint }
     ]
   };

@@ -181,7 +181,7 @@ export default function SarvoPeoplePage({
                         : activeTab === 'reports'
                           ? ['SVG Graphs', 'Data Exporters']
                           : activeTab === 'batches'
-                            ? ['Active Batches', 'Roster Map']
+                            ? ['Active Batches', 'Roster Map', 'Students']
                             : activeTab === 'dailyreports'
                               ? ['Daily Logs', 'Mentor Comments']
                               : ['Overview', 'Dashboard', 'Calendar'];
@@ -347,8 +347,8 @@ export default function SarvoPeoplePage({
             <Routes>
               <Route path="/" element={<Navigate to="home" replace />} />
               <Route path="home" element={subNavItem === 'Calendar' ? <CalendarView /> : <Dashboard />} />
-              <Route path="attendance" element={<AttendanceSection />} />
-              <Route path="leave" element={<LeaveTracker />} />
+              <Route path="attendance" element={<AttendanceSection subNavItem={subNavItem} activeSubTab={activeSubTab} user={employee} />} />
+              <Route path="leave" element={<LeaveTracker subNavItem={subNavItem} user={employee} />} />
               <Route path="timetracker" element={<TimeTracker />} />
               <Route path="performance" element={<Performance />} />
               <Route path="tasks" element={<TasksSection />} />
@@ -359,7 +359,7 @@ export default function SarvoPeoplePage({
               <Route path="aihub" element={<AIFeaturesSection currentUser={employee} />} />
               <Route path="certificates" element={<CertificateSection currentUser={employee} />} />
               <Route path="reports" element={<ReportsSection />} />
-              <Route path="batches" element={<BatchSection currentUser={employee} />} />
+              <Route path="batches" element={<BatchSection currentUser={employee} subNavItem={subNavItem} />} />
               <Route path="dailyreports" element={<DailyReportsSection currentUser={employee} />} />
               <Route path="*" element={<Navigate to="home" replace />} />
             </Routes>

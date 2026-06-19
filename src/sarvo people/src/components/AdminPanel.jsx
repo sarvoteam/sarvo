@@ -17,9 +17,28 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
-import { employeeApi } from '../../../apis/employeeApi';
-import { attendanceApi } from '../../../apis/attendanceApi';
-import { leaveApi } from '../../../apis/leaveApi';
+import { employeeApi } from '../apis/employeeApi';
+import { attendanceApi } from '../apis/attendanceApi';
+import { leaveApi } from '../apis/leaveApi';
+import EditEmployeeProfileModal from './EditEmployeeProfileModal';
+
+const getAvatarColor = (name) => {
+  const colors = [
+    { bg: 'rgba(79, 70, 229, 0.1)', text: '#4f46e5' },   // Indigo
+    { bg: 'rgba(16, 185, 129, 0.1)', text: '#10b981' },  // Green
+    { bg: 'rgba(245, 158, 11, 0.1)', text: '#f59e0b' },  // Amber
+    { bg: 'rgba(59, 130, 246, 0.1)', text: '#3b82f6' },  // Blue
+    { bg: 'rgba(139, 92, 246, 0.1)', text: '#8b5cf6' },  // Purple
+    { bg: 'rgba(236, 72, 153, 0.1)', text: '#ec4899' },  // Pink
+    { bg: 'rgba(20, 184, 166, 0.1)', text: '#14b8a6' }   // Teal
+  ];
+  if (!name) return colors[0];
+  let sum = 0;
+  for (let i = 0; i < name.length; i++) {
+    sum += name.charCodeAt(i);
+  }
+  return colors[sum % colors.length];
+};
 
 export default function AdminPanel() {
   const [employees, setEmployees] = useState([]);
@@ -29,6 +48,8 @@ export default function AdminPanel() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isBackendLive, setIsBackendLive] = useState(true);
+  const [selectedEmployeeProfile, setSelectedEmployeeProfile] = useState(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   // Form State
   const [formName, setFormName] = useState('');
@@ -49,6 +70,8 @@ export default function AdminPanel() {
   const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [leaveBalances, setLeaveBalances] = useState([]);
   const [leaveHistory, setLeaveHistory] = useState([]);
+  const [adminRemarksMap, setAdminRemarksMap] = useState({});
+  const [adminApprovingIds, setAdminApprovingIds] = useState({});
 
   // Alerts
   const [alertMsg, setAlertMsg] = useState(null);
@@ -90,12 +113,21 @@ export default function AdminPanel() {
     fetchEmployeesAndMeta();
   }, []);
 
+  const fetchProfileDetails = async (empId) => {
+    try {
+      const profile = await employeeApi.getEmployeeProfile(empId);
+      setSelectedEmployeeProfile(profile);
+    } catch (e) {
+      console.error('Failed to fetch detailed profile:', e);
+    }
+  };
+
   // Fetch record tracking details when selected employee or tab changes
   useEffect(() => {
     if (!selectedEmployee) return;
 
     const fetchSelectedDetails = async () => {
-      const empId = selectedEmployee.employee_id;
+      const empId = selectedEmployee.id;
       
       // Fetch Attendance logs for selected employee
       try {
@@ -115,10 +147,36 @@ export default function AdminPanel() {
       } catch (e) {
         console.error('Failed to fetch leave info:', e);
       }
+
+      // Fetch detailed profile
+      await fetchProfileDetails(selectedEmployee.id);
     };
 
     fetchSelectedDetails();
   }, [selectedEmployee, selectedTab]);
+
+  const getProfileCompletion = (profile) => {
+    if (!profile) return 0;
+    const fields = [
+      profile.date_of_birth,
+      profile.gender,
+      profile.blood_group,
+      profile.current_address,
+      profile.parent_contact,
+      profile.qualification,
+      profile.university,
+      profile.tenth_certificate,
+      profile.twelfth_certificate,
+      profile.bachelors_certificate
+    ];
+    const filled = fields.filter(val => 
+      val !== null && 
+      val !== undefined && 
+      String(val).trim() !== '' && 
+      String(val).trim() !== 'Not Submitted'
+    ).length;
+    return Math.round((filled / fields.length) * 100);
+  };
 
   // Master Search Filtering
   const filteredEmployees = employees.filter(emp => {
@@ -187,6 +245,34 @@ export default function AdminPanel() {
     setFormMobile('');
     setFormPhone('');
     setFormAbout('');
+  };
+
+  const handleAdminStatusUpdate = async (applicationId, status) => {
+    const remarks = adminRemarksMap[applicationId] || '';
+    try {
+      setAdminApprovingIds(prev => ({ ...prev, [applicationId]: true }));
+      await leaveApi.updateStatus(applicationId, status, remarks);
+      
+      // Refresh leave history and balances
+      if (selectedEmployee) {
+        const empId = selectedEmployee.id;
+        const balancesData = await leaveApi.getBalances(empId);
+        setLeaveBalances(balancesData);
+        
+        const historyData = await leaveApi.listApplications(empId);
+        setLeaveHistory(historyData);
+      }
+      
+      setAdminRemarksMap(prev => {
+        const copy = { ...prev };
+        delete copy[applicationId];
+        return copy;
+      });
+    } catch (err) {
+      alert(err.message || `Failed to update status to ${status}`);
+    } finally {
+      setAdminApprovingIds(prev => ({ ...prev, [applicationId]: false }));
+    }
   };
 
   // Helper: Calculate worked hours
@@ -282,25 +368,73 @@ export default function AdminPanel() {
       {!selectedEmployee ? (
         <div>
           <h3 className="admin-employees-grid-title">All Registered Employees ({filteredEmployees.length})</h3>
-          <div className="admin-employees-grid">
-            {filteredEmployees.map(emp => (
-              <div 
-                key={emp.employee_id} 
-                className="admin-employee-card"
-                onClick={() => setSelectedEmployee(emp)}
-              >
-                <img src={emp.avatar} alt={emp.name} className="admin-card-avatar" />
-                <span className="admin-card-name">{emp.name}</span>
-                <span className="admin-card-id">{emp.employee_id}</span>
-                <span className="admin-card-role">{emp.role}</span>
-                <span className="admin-card-dept">{emp.department}</span>
-                <span className={`admin-card-status-pill ${emp.status === 'Checked-in' ? 'status-checked-in' : ''}`}>
-                  {emp.status}
-                </span>
+          <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: '16px' }}>
+            {filteredEmployees.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                No employees match your search query.
               </div>
-            ))}
-            {filteredEmployees.length === 0 && (
-              <div className="admin-no-results">No employees match your search query.</div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--primary-bg)' }}>
+                      <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Employee</th>
+                      <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Employee ID</th>
+                      <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Designation</th>
+                      <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Department</th>
+                      <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEmployees.map(emp => (
+                      <tr 
+                        key={emp.employee_id} 
+                        onClick={() => setSelectedEmployee(emp)}
+                        style={{ 
+                          borderBottom: '1px solid var(--border-color)',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s'
+                        }}
+                        className="table-row-hover"
+                      >
+                        <td style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          {(() => {
+                            const colors = getAvatarColor(emp.name);
+                            return (
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '50%',
+                                backgroundColor: colors.bg,
+                                color: colors.text,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '12.5px',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                border: `1px solid ${colors.text}33`,
+                                flexShrink: 0
+                              }}>
+                                {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
+                              </div>
+                            );
+                          })()}
+                          <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>{emp.name}</strong>
+                        </td>
+                        <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.employee_id}</td>
+                        <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.role}</td>
+                        <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.department}</td>
+                        <td style={{ padding: '14px 18px' }}>
+                          <span className={`admin-card-status-pill ${emp.status === 'Checked-in' ? 'status-checked-in' : ''}`}>
+                            {emp.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
@@ -308,17 +442,85 @@ export default function AdminPanel() {
         <div className="admin-track-view-wrapper">
           {/* Back button and profile summary */}
           <div className="admin-track-back-bar">
-            <button className="btn-track-back" onClick={() => setSelectedEmployee(null)}>
+            <button className="btn-track-back" onClick={() => { setSelectedEmployee(null); setSelectedEmployeeProfile(null); }}>
               <ArrowLeft size={16} />
               Back to Employee List
             </button>
           </div>
 
-          <div className="admin-track-profile-summary">
-            <img src={selectedEmployee.avatar} alt={selectedEmployee.name} className="admin-track-avatar" />
-            <div className="admin-track-intro">
-              <span className="admin-track-name">{selectedEmployee.name}</span>
-              <span className="admin-track-meta">{selectedEmployee.employee_id} · {selectedEmployee.role} · {selectedEmployee.department}</span>
+          <div className="admin-track-profile-summary" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {(() => {
+                const colors = getAvatarColor(selectedEmployee.name);
+                return (
+                  <div style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '50%',
+                    backgroundColor: colors.bg,
+                    color: colors.text,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    border: `1px solid ${colors.text}33`,
+                    flexShrink: 0
+                  }}>
+                    {selectedEmployee.name ? selectedEmployee.name.charAt(0).toUpperCase() : 'E'}
+                  </div>
+                );
+              })()}
+              <div className="admin-track-intro">
+                <span className="admin-track-name">{selectedEmployee.name}</span>
+                <span className="admin-track-meta">{selectedEmployee.employee_id} · {selectedEmployee.role} · {selectedEmployee.department}</span>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+              {/* Circular progress bar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ position: 'relative', width: '42px', height: '42px' }}>
+                  <svg width="42" height="42" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--border-color)" strokeWidth="3" />
+                    <circle 
+                      cx="18" 
+                      cy="18" 
+                      r="15.915" 
+                      fill="none" 
+                      stroke="var(--active-blue)" 
+                      strokeWidth="3" 
+                      strokeDasharray={`${getProfileCompletion(selectedEmployeeProfile)} ${100 - getProfileCompletion(selectedEmployeeProfile)}`}
+                      strokeDashoffset="0"
+                      style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                    />
+                  </svg>
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    color: 'var(--text-main)'
+                  }}>
+                    {getProfileCompletion(selectedEmployeeProfile)}%
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)' }}>Profile Completion</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Required details updated</span>
+                </div>
+              </div>
+
+              <button 
+                className="btn-add-employee" 
+                onClick={() => setIsEditProfileOpen(true)}
+                style={{ padding: '8px 16px', fontSize: '12px', height: 'fit-content' }}
+              >
+                Complete Profile
+              </button>
             </div>
           </div>
 
@@ -348,6 +550,7 @@ export default function AdminPanel() {
             {/* 3a. Profile View */}
             {selectedTab === 'profile' && (
               <div className="admin-profile-details-grid">
+                {/* 1. Personal Details */}
                 <div className="admin-profile-card-section">
                   <h4 className="admin-profile-section-title">Personal Information</h4>
                   <div className="admin-profile-row">
@@ -362,27 +565,136 @@ export default function AdminPanel() {
                     <span className="admin-profile-label">Work Phone</span>
                     <span className="admin-profile-value">{selectedEmployee.work_phone}</span>
                   </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">Date of Birth</span>
+                    <span className="admin-profile-value">
+                      {selectedEmployeeProfile?.date_of_birth 
+                        ? new Date(selectedEmployeeProfile.date_of_birth).toLocaleDateString() 
+                        : '-'}
+                    </span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">Gender</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.gender || '-'}</span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">Blood Group</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.blood_group || '-'}</span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">Parent Contact</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.parent_contact || '-'}</span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">Emergency Name</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.emergency_contact_name || '-'}</span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">Emergency Phone</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.emergency_contact_phone || '-'}</span>
+                  </div>
+                  <div className="admin-profile-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                    <span className="admin-profile-label">Current Address</span>
+                    <span className="admin-profile-value" style={{ fontWeight: 500, textAlign: 'left' }}>
+                      {selectedEmployeeProfile?.current_address || '-'}
+                    </span>
+                  </div>
+                  <div className="admin-profile-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                    <span className="admin-profile-label">Permanent Address</span>
+                    <span className="admin-profile-value" style={{ fontWeight: 500, textAlign: 'left' }}>
+                      {selectedEmployeeProfile?.permanent_address || '-'}
+                    </span>
+                  </div>
                 </div>
 
+                {/* 2. Academic Details */}
                 <div className="admin-profile-card-section">
-                  <h4 className="admin-profile-section-title">Work & Shift Settings</h4>
+                  <h4 className="admin-profile-section-title">Academic Details</h4>
                   <div className="admin-profile-row">
-                    <span className="admin-profile-label">Shift Details</span>
-                    <span className="admin-profile-value">{selectedEmployee.shift}</span>
+                    <span className="admin-profile-label">Highest Qualification</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.qualification || '-'}</span>
                   </div>
                   <div className="admin-profile-row">
-                    <span className="admin-profile-label">Timezone</span>
-                    <span className="admin-profile-value">{selectedEmployee.timezone}</span>
+                    <span className="admin-profile-label">University / Board</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.university || '-'}</span>
                   </div>
                   <div className="admin-profile-row">
-                    <span className="admin-profile-label">Status</span>
-                    <span className="admin-profile-value">{selectedEmployee.status}</span>
+                    <span className="admin-profile-label">Passing Year</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.passing_year || '-'}</span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">Percentage / CGPA</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.percentage_marks || '-'}</span>
                   </div>
                 </div>
 
-                <div className="admin-profile-card-section" style={{ gridColumn: 'span 2' }}>
-                  <h4 className="admin-profile-section-title">About Employee</h4>
-                  <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#4b5563' }}>{selectedEmployee.about_me}</p>
+                {/* 3. Documents & Links */}
+                <div className="admin-profile-card-section">
+                  <h4 className="admin-profile-section-title">Documents & Links</h4>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">PAN Card Number</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.pan_card_number || '-'}</span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">Aadhaar Card Number</span>
+                    <span className="admin-profile-value">{selectedEmployeeProfile?.aadhar_card_number || '-'}</span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">LinkedIn Profile</span>
+                    <span className="admin-profile-value">
+                      {selectedEmployeeProfile?.linkedin_profile ? (
+                        <a 
+                          href={selectedEmployeeProfile.linkedin_profile} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          style={{ color: 'var(--active-blue)', textDecoration: 'underline' }}
+                        >
+                          View Profile
+                        </a>
+                      ) : '-'}
+                    </span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">10th Certificate</span>
+                    <span className="admin-profile-value">
+                      {selectedEmployeeProfile?.tenth_certificate || 'Not Submitted'}
+                    </span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">12th Certificate</span>
+                    <span className="admin-profile-value">
+                      {selectedEmployeeProfile?.twelfth_certificate || 'Not Submitted'}
+                    </span>
+                  </div>
+                  <div className="admin-profile-row">
+                    <span className="admin-profile-label">Bachelor's Certificate</span>
+                    <span className="admin-profile-value">
+                      {selectedEmployeeProfile?.bachelors_certificate || 'Not Submitted'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 4. Settings & About */}
+                <div className="admin-profile-card-section" style={{ gridColumn: 'span 3' }}>
+                  <h4 className="admin-profile-section-title">Work & Shift Settings</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '16px' }}>
+                    <div className="admin-profile-row" style={{ borderBottom: 'none' }}>
+                      <span className="admin-profile-label">Shift Details:</span>
+                      <span className="admin-profile-value">{selectedEmployee.shift}</span>
+                    </div>
+                    <div className="admin-profile-row" style={{ borderBottom: 'none' }}>
+                      <span className="admin-profile-label">Timezone:</span>
+                      <span className="admin-profile-value">{selectedEmployee.timezone}</span>
+                    </div>
+                    <div className="admin-profile-row" style={{ borderBottom: 'none' }}>
+                      <span className="admin-profile-label">Status:</span>
+                      <span className="admin-profile-value">{selectedEmployee.status}</span>
+                    </div>
+                  </div>
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                    <h5 style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--sidebar-bg)', marginBottom: '6px' }}>About Employee</h5>
+                    <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#4b5563' }}>{selectedEmployee.about_me}</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -499,23 +811,88 @@ export default function AdminPanel() {
                           <th>Start Date</th>
                           <th>End Date</th>
                           <th>Reason</th>
+                          <th>Remarks</th>
                           <th>Status</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {leaveHistory.map((app) => (
-                          <tr key={app.id}>
-                            <td style={{ fontWeight: 600 }}>{app.leave_type_name}</td>
-                            <td>{new Date(app.start_date).toLocaleDateString()}</td>
-                            <td>{new Date(app.end_date).toLocaleDateString()}</td>
-                            <td>{app.reason || '-'}</td>
-                            <td>
-                              <span className={`admin-leaves-history-status status-${app.status}`}>
-                                {app.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                        {leaveHistory.map((app) => {
+                          const isUpdating = adminApprovingIds[app.id];
+                          return (
+                            <tr key={app.id}>
+                              <td style={{ fontWeight: 600 }}>{app.leave_type_name}</td>
+                              <td>{new Date(app.start_date).toLocaleDateString()}</td>
+                              <td>{new Date(app.end_date).toLocaleDateString()}</td>
+                              <td>{app.reason || '-'}</td>
+                              <td>
+                                {app.status === 'pending' ? (
+                                  <input 
+                                    type="text" 
+                                    placeholder="Remarks..." 
+                                    style={{
+                                      border: '1px solid #cbd5e1',
+                                      borderRadius: '4px',
+                                      padding: '4px 8px',
+                                      fontSize: '11px',
+                                      width: '120px'
+                                    }}
+                                    value={adminRemarksMap[app.id] || ''}
+                                    onChange={(e) => setAdminRemarksMap(prev => ({ ...prev, [app.id]: e.target.value }))}
+                                    disabled={isUpdating}
+                                  />
+                                ) : (
+                                  app.approval_remarks || '-'
+                                )}
+                              </td>
+                              <td>
+                                <span className={`admin-leaves-history-status status-${app.status}`}>
+                                  {app.status}
+                                </span>
+                              </td>
+                              <td>
+                                {app.status === 'pending' ? (
+                                  <div style={{ display: 'flex', gap: '6px' }}>
+                                    <button 
+                                      onClick={() => handleAdminStatusUpdate(app.id, 'approved')}
+                                      style={{
+                                        backgroundColor: '#10b981',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '3px',
+                                        padding: '4px 8px',
+                                        fontSize: '11px',
+                                        cursor: 'pointer'
+                                      }}
+                                      disabled={isUpdating}
+                                    >
+                                      Approve
+                                    </button>
+                                    <button 
+                                      onClick={() => handleAdminStatusUpdate(app.id, 'rejected')}
+                                      style={{
+                                        backgroundColor: '#ef4444',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '3px',
+                                        padding: '4px 8px',
+                                        fontSize: '11px',
+                                        cursor: 'pointer'
+                                      }}
+                                      disabled={isUpdating}
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                    Reviewed
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}
@@ -549,7 +926,7 @@ export default function AdminPanel() {
                 <label>Full Name *</label>
                 <input
                   type="text"
-                  placeholder="e.g. Chetan Ghanghav"
+                  placeholder="Enter Full Name"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   required
@@ -560,7 +937,7 @@ export default function AdminPanel() {
                 <label>Employee ID *</label>
                 <input
                   type="text"
-                  placeholder="e.g. SPWHI012"
+                  placeholder="Enter Employee ID"
                   value={formId}
                   onChange={(e) => setFormId(e.target.value)}
                   required
@@ -591,7 +968,7 @@ export default function AdminPanel() {
                 <label>Email Address</label>
                 <input
                   type="email"
-                  placeholder="e.g. name@spwhitel.com"
+                  placeholder="Enter Email Address"
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
                 />
@@ -657,6 +1034,17 @@ export default function AdminPanel() {
             </div>
           </div>
         </div>
+      )}
+
+      {isEditProfileOpen && (
+        <EditEmployeeProfileModal
+          employee={selectedEmployee}
+          onClose={() => setIsEditProfileOpen(false)}
+          onUpdateSuccess={() => {
+            fetchProfileDetails(selectedEmployee.id);
+            fetchEmployeesAndMeta();
+          }}
+        />
       )}
     </div>
   );

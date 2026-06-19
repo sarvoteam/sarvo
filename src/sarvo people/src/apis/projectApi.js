@@ -7,6 +7,12 @@ export const projectApi = {
   createProject: async (projectData) => {
     return await api.post('/projects/create', projectData);
   },
+  assignProjectMembers: async (projectId, members) => {
+    return await api.post(`/projects/${projectId}/assign`, { members });
+  },
+  getProjectMembers: async (projectId) => {
+    return await api.get(`/projects/${projectId}/members`);
+  },
   getTasks: async () => {
     return await api.get('/projects/tasks');
   },

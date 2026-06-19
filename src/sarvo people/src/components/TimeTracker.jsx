@@ -10,7 +10,7 @@ import {
   Clock, 
   Trash2 
 } from 'lucide-react';
-import { projectApi } from '../../../apis/projectApi';
+import { projectApi } from '../apis/projectApi';
 
 export default function TimeTracker() {
   const [activeSubTab, setActiveSubTab] = useState('Time Logs');

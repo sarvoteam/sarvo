@@ -377,12 +377,14 @@
   outline: none;
   width: 100%;
   transition: border-color 0.2s;
+  background-color: #ffffff !important;
+  color: #111827 !important;
 }
 
 .form-group select:focus,
 .form-group input:focus,
 .form-group textarea:focus {
-  border-color: var(--active-blue);
+  border-color: var(--active-blue) !important;
 }
 
 .form-row {
@@ -415,17 +417,182 @@
 }
 
 .btn-submit {
-  background-color: var(--active-blue);
-  color: white;
+  background-color: #007bf5 !important;
+  color: #ffffff !important;
   border: none;
   padding: 8px 18px;
   border-radius: 4px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600 !important;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .btn-submit:hover {
-  background-color: #006ae0;
+  background-color: #006ae0 !important;
+}
+
+/* Leave History & Requests Styles */
+.leave-history-section {
+  margin-top: 24px;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.leave-history-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.leave-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.leave-table th {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  background-color: #f9fafb;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.leave-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: #374151;
+  vertical-align: middle;
+}
+
+.leave-table tr:last-child td {
+  border-bottom: none;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge.pending {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.status-badge.approved {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge.rejected {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+/* Action forms in requests list */
+.remarks-input {
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  width: 100%;
+  max-width: 200px;
+  outline: none;
+}
+
+.remarks-input:focus {
+  border-color: var(--active-blue);
+}
+
+.action-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-approve {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-approve:hover {
+  background-color: #059669;
+}
+
+.btn-reject {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-reject:hover {
+  background-color: #dc2626;
+}
+
+.compensatory-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  text-align: center;
+}
+
+.compensatory-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 12px;
+}
+
+.compensatory-card p {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.info-alert-box {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  border-radius: 6px;
+  padding: 14px 18px;
+  font-size: 12.5px;
+  text-align: left;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
 }
