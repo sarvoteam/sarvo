@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, Users, ArrowLeft, Eye, EyeOff, AlertCircle, CheckCircle, ShieldCheck, KeyRound, School } from 'lucide-react';
-import { authApi } from '../../../apis/authApi';
+import { authApi } from '../apis/authApi';
 
 const STATIC_ADMIN = {
   id: 1,

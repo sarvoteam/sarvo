@@ -25,8 +25,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import foliageBanner from '../assets/foliage_banner.png';
-import { dashboardApi } from '../../../apis/dashboardApi';
-import { employeeApi } from '../../../apis/employeeApi';
+import { dashboardApi } from '../apis/dashboardApi';
+import { employeeApi } from '../apis/employeeApi';
 
 const DEFAULT_LEAVE_TYPES = [
   { id: 1, name: 'Casual Leave', available: 4, booked: 0, icon_type: 'sun', color_theme: 'blue' },
@@ -397,34 +397,51 @@ export default function Dashboard() {
         </div>
 
         {/* Core metrics cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
           <div className="card" style={{ padding: '16px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Active Interns</span>
             <h4 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>
-              {metrics?.activeInterns?.count ?? 114} Students
+              {metrics ? `${metrics.activeInterns?.count} Interns` : '-'}
             </h4>
-            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{metrics?.activeInterns?.subText ?? 'Scaling to target: 1000+'}</p>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              {metrics ? (metrics.activeInterns?.subText || '-') : '-'}
+            </p>
+          </div>
+          <div className="card" style={{ padding: '16px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Students</span>
+            <h4 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--active-blue)', marginTop: '4px' }}>
+              {metrics ? `${metrics.activeStudents?.count} Students` : '-'}
+            </h4>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              {metrics ? (metrics.activeStudents?.subText || '-') : '-'}
+            </p>
           </div>
           <div className="card" style={{ padding: '16px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Training Batches</span>
             <h4 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--active-blue)', marginTop: '4px' }}>
-              {metrics?.trainingBatches?.count ?? 4} Active
+              {metrics ? `${metrics.trainingBatches?.count} Active` : '-'}
             </h4>
-            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Avg progress: {metrics?.trainingBatches?.avgProgress ?? 52.5}%</p>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Avg progress: {metrics?.trainingBatches?.avgProgress !== undefined ? `${metrics.trainingBatches.avgProgress}%` : '-'}
+            </p>
           </div>
           <div className="card" style={{ padding: '16px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Task Completion</span>
             <h4 style={{ fontSize: '22px', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>
-              {metrics?.taskCompletion?.rate ?? 91.2}%
+              {metrics ? `${metrics.taskCompletion?.rate}%` : '-'}
             </h4>
-            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{metrics?.taskCompletion?.subText ?? 'All-time cohorts average'}</p>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              {metrics ? (metrics.taskCompletion?.subText || '-') : '-'}
+            </p>
           </div>
           <div className="card" style={{ padding: '16px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Placement Ratio</span>
             <h4 style={{ fontSize: '22px', fontWeight: 800, color: '#f59e0b', marginTop: '4px' }}>
-              {metrics?.placementRatio?.rate ?? 84.5}%
+              {metrics ? `${metrics.placementRatio?.rate}%` : '-'}
             </h4>
-            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{metrics?.placementRatio?.subText ?? '84 out of 100 graduated'}</p>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              {metrics ? (metrics.placementRatio?.subText || '-') : '-'}
+            </p>
           </div>
         </div>
 
@@ -434,15 +451,7 @@ export default function Dashboard() {
           {/* Quick Actions Panel */}
           <div className="card" style={{ padding: '20px' }}>
             <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--sidebar-bg)', marginBottom: '14px' }}>Administrative Actions</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-              <div 
-                style={{ padding: '12px', background: 'var(--primary-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center', cursor: 'pointer' }}
-                onClick={() => setIsDrawerOpen(true)}
-              >
-                <Users size={18} style={{ color: 'var(--active-blue)', margin: '0 auto 6px' }} />
-                <strong style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-main)' }}>Add Employee</strong>
-                <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Role assignment</span>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div style={{ padding: '12px', background: 'var(--primary-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
                 <Award size={18} style={{ color: '#10b981', margin: '0 auto 6px' }} />
                 <strong style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-main)' }}>Certificates</strong>

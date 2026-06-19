@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Users, User, Calendar, Plus, X, FolderMinus, Sparkles, BookOpen, Check } from 'lucide-react';
-import { cohortApi } from '../../../apis/cohortApi';
+import { cohortApi } from '../apis/cohortApi';
+
+import BatchDetailsDrawer from './BatchDetailsDrawer';
+import StudentsSection from './StudentsSection';
 
 const INITIAL_BATCHES = [
   {
@@ -25,19 +28,19 @@ const INITIAL_BATCHES = [
   }
 ];
 
-export default function BatchSection({ currentUser }) {
+export default function BatchSection({ currentUser, subNavItem }) {
   const [batches, setBatches] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState(null);
   
   // Roster lists for selectors
-  const [availableInterns, setAvailableInterns] = useState([]);
   const [availableMentors, setAvailableMentors] = useState([]);
-  const [selectedInterns, setSelectedInterns] = useState([]);
 
   // Form States
   const [formName, setFormName] = useState('');
   const [formMentor, setFormMentor] = useState('');
   const [formStart, setFormStart] = useState('');
+  const [formEnd, setFormEnd] = useState('');
   const [formDesc, setFormDesc] = useState('');
 
   const isAdmin = currentUser?.role === 'Admin';
@@ -48,6 +51,8 @@ export default function BatchSection({ currentUser }) {
     mentorName: c.mentor_name || 'Unassigned',
     mentorEmail: c.mentor_email || '',
     startDate: c.start_date ? new Date(c.start_date).toISOString().split('T')[0] : '',
+    endDate: c.end_date ? new Date(c.end_date).toISOString().split('T')[0] : '',
+    status: c.status || 'Active',
     progress: c.progress || 0,
     studentsCount: c.students_count || 0,
     description: c.description
@@ -58,19 +63,19 @@ export default function BatchSection({ currentUser }) {
       // Load batches
       const data = await cohortApi.getCohorts();
       if (data && data.length > 0) {
-        setBatches(data.map(mapCohort));
+        const mapped = data.map(mapCohort);
+        setBatches(mapped);
+        
+        // Update currently viewed batch details if open
+        if (selectedBatch) {
+          const updated = mapped.find(b => b.id === selectedBatch.id);
+          if (updated) {
+            setSelectedBatch(updated);
+          }
+        }
       } else {
         setBatches([]);
       }
-
-      // Load available interns
-      const interns = await cohortApi.getAvailableInterns();
-      const mappedInterns = interns.map(i => ({
-        id: i.id,
-        name: `${i.first_name} ${i.last_name}`,
-        email: i.email
-      }));
-      setAvailableInterns(mappedInterns);
 
       // Load available mentors
       const mentors = await cohortApi.getAvailableMentors();
@@ -88,18 +93,10 @@ export default function BatchSection({ currentUser }) {
     }
   };
 
-  // Load batches and interns from database
+  // Load batches and mentors from database
   useEffect(() => {
     loadData();
   }, []);
-
-  const handleToggleInternSelection = (internEmail) => {
-    if (selectedInterns.includes(internEmail)) {
-      setSelectedInterns(selectedInterns.filter(e => e !== internEmail));
-    } else {
-      setSelectedInterns([...selectedInterns, internEmail]);
-    }
-  };
 
   const handleCreateBatch = async (e) => {
     e.preventDefault();
@@ -107,25 +104,16 @@ export default function BatchSection({ currentUser }) {
 
     try {
       const selectedMentor = availableMentors.find(m => m.id === formMentor);
-      const cohort = await cohortApi.createCohort({
+      await cohortApi.createCohort({
         name: formName,
         mentorId: selectedMentor?.id,
         mentorName: selectedMentor?.name,
         mentorEmail: selectedMentor?.email,
         startDate: formStart,
+        endDate: formEnd || null,
         progress: 0,
         description: formDesc
       });
-
-      // Add selected interns to the cohort
-      if (cohort && selectedInterns.length > 0) {
-        for (const email of selectedInterns) {
-          const internObj = availableInterns.find(i => i.email === email);
-          if (internObj) {
-            await cohortApi.addCohortMember(cohort.id, internObj.id);
-          }
-        }
-      }
 
       await loadData();
 
@@ -133,13 +121,35 @@ export default function BatchSection({ currentUser }) {
       setIsDrawerOpen(false);
       setFormName('');
       setFormStart('');
+      setFormEnd('');
       setFormDesc('');
-      setSelectedInterns([]);
       alert('New Batch created successfully!');
     } catch (err) {
       console.error('Failed to create batch:', err);
     }
   };
+
+  if (subNavItem === 'Students') {
+    return (
+      <div className="batches-container" style={{ padding: '24px', textAlign: 'left' }}>
+        <StudentsSection currentUser={currentUser} />
+      </div>
+    );
+  }
+
+  if (subNavItem === 'Roster Map') {
+    return (
+      <div className="batches-container" style={{ padding: '24px', textAlign: 'left' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-main)' }}>Roster Map</h2>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', marginBottom: '20px' }}>
+          Geographic and team structural distribution of current batches.
+        </p>
+        <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+          Interactive map layout and batch locations tracking modules will load here.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="batches-container" style={{ padding: '24px', textAlign: 'left' }}>
@@ -177,14 +187,39 @@ export default function BatchSection({ currentUser }) {
       {/* Batch Cards Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
         {batches.map(batch => (
-          <div key={batch.id} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifySelf: 'stretch', justifyContent: 'space-between' }}>
+          <div 
+            key={batch.id} 
+            className="card" 
+            onClick={() => setSelectedBatch(batch)}
+            style={{ 
+              padding: '20px', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifySelf: 'stretch', 
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+          >
             <div>
               <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--active-blue)', textTransform: 'uppercase' }}>
-                  Cohort
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--active-blue)', textTransform: 'uppercase' }}>
+                    Cohort
+                  </span>
+                  <span style={{
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    background: batch.status === 'Active' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                    color: batch.status === 'Active' ? '#10b981' : '#ef4444'
+                  }}>
+                    {batch.status}
+                  </span>
+                </div>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Calendar size={12} /> Started: {batch.startDate}
+                  <Calendar size={12} /> Duration: {batch.startDate} {batch.endDate ? `to ${batch.endDate}` : ''}
                 </span>
               </div>
 
@@ -206,7 +241,7 @@ export default function BatchSection({ currentUser }) {
                   </strong>
                 </div>
                 <div>
-                  <span>Total Interns</span>
+                  <span>Total Students</span>
                   <strong style={{ display: 'block', color: 'var(--text-main)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
                     <Users size={12} /> {batch.studentsCount} Students
                   </strong>
@@ -263,14 +298,26 @@ export default function BatchSection({ currentUser }) {
                 </select>
               </div>
 
-              <div className="admin-form-group">
-                <label>Start Date *</label>
-                <input
-                  type="date"
-                  value={formStart}
-                  onChange={(e) => setFormStart(e.target.value)}
-                  required
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                  <label>Start Date *</label>
+                  <input
+                    type="date"
+                    value={formStart}
+                    onChange={(e) => setFormStart(e.target.value)}
+                    required
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                  <label>End Date</label>
+                  <input
+                    type="date"
+                    value={formEnd}
+                    onChange={(e) => setFormEnd(e.target.value)}
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
 
               <div className="admin-form-group">
@@ -281,62 +328,6 @@ export default function BatchSection({ currentUser }) {
                   onChange={(e) => setFormDesc(e.target.value)}
                   rows={2}
                 />
-              </div>
-
-              {/* Intern Selection Checkboxes */}
-              <div className="admin-form-group">
-                <label>Assign Registered Interns ({selectedInterns.length} Selected)</label>
-                <div style={{
-                  maxHeight: '140px',
-                  overflowY: 'auto',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  background: 'var(--primary-bg)',
-                  padding: '10px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  marginTop: '4px'
-                }}>
-                  {availableInterns.map(intern => {
-                    const isSelected = selectedInterns.includes(intern.email);
-                    return (
-                      <div
-                        key={intern.id}
-                        onClick={() => handleToggleInternSelection(intern.email)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '6px 8px',
-                          background: isSelected ? 'rgba(0,123,245,0.05)' : 'none',
-                          border: isSelected ? '1px solid var(--active-blue)' : '1px solid transparent',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: 'var(--text-main)'
-                        }}
-                      >
-                        <div style={{
-                          width: '16px',
-                          height: '16px',
-                          borderRadius: '4px',
-                          border: '1.5px solid var(--text-muted)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: isSelected ? 'var(--active-blue)' : 'none',
-                          borderColor: isSelected ? 'var(--active-blue)' : 'var(--text-muted)'
-                        }}>
-                          {isSelected && <Check size={10} color="white" />}
-                        </div>
-                        <div>
-                          <strong>{intern.name}</strong> • <span style={{ color: 'var(--text-muted)' }}>{intern.email}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
 
               <div style={{ display: 'none' }}>
@@ -360,6 +351,14 @@ export default function BatchSection({ currentUser }) {
           </div>
         </div>
       )}
+
+      {/* BATCH DETAILS & ROSTER DRAWER */}
+      <BatchDetailsDrawer
+        selectedBatch={selectedBatch}
+        onClose={() => setSelectedBatch(null)}
+        isAdmin={isAdmin}
+        onStudentAdded={loadData}
+      />
 
     </div>
   );

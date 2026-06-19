@@ -18,5 +18,20 @@ export const cohortApi = {
   },
   getAvailableMentors: async () => {
     return await api.get('/cohorts/available-mentors');
+  },
+  getCohortStudents: async (cohortId) => {
+    return await api.get(`/cohorts/${cohortId}/students`);
+  },
+  addCohortStudent: async (cohortId, studentData) => {
+    return await api.post(`/cohorts/${cohortId}/students`, studentData);
+  },
+  getAllStudents: async () => {
+    return await api.get('/cohorts/students/all');
+  },
+  updateStudentProfile: async (studentId, profileData) => {
+    return await api.put(`/cohorts/students/${studentId}/profile`, profileData);
+  },
+  updateCohortStatus: async (cohortId, status) => {
+    return await api.put(`/cohorts/${cohortId}/status`, { status });
   }
 };

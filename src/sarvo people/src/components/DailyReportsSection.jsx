@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, AlertTriangle, FileText, Plus, X, MessageSquare, CheckCircle, RefreshCw } from 'lucide-react';
-import { dailyReportApi } from '../../../apis/dailyReportApi';
+import { dailyReportApi } from '../apis/dailyReportApi';
 
 const INITIAL_REPORTS = [
   {

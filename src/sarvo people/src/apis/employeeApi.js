@@ -12,5 +12,11 @@ export const employeeApi = {
   },
   getMeta: async () => {
     return await api.get('/employees/meta');
+  },
+  getEmployeeProfile: async (employeeId) => {
+    return await api.get(`/employees/${employeeId}/profile`);
+  },
+  updateEmployeeProfile: async (employeeId, profileData) => {
+    return await api.put(`/employees/${employeeId}/profile`, profileData);
   }
 };
