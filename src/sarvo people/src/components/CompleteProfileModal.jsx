@@ -37,6 +37,14 @@ export default function CompleteProfileModal({ student, onClose, onUpdateSuccess
   const [placementRole, setPlacementRole] = useState('');
   const [placementPackage, setPlacementPackage] = useState('');
 
+  // Apti, JD, Round States
+  const [aptiDetails, setAptiDetails] = useState('');
+  const [aptiDate, setAptiDate] = useState('');
+  const [jdDetails, setJdDetails] = useState('');
+  const [jdDate, setJdDate] = useState('');
+  const [roundDetails, setRoundDetails] = useState('');
+  const [roundDate, setRoundDate] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [alertMsg, setAlertMsg] = useState(null);
 
@@ -62,6 +70,13 @@ export default function CompleteProfileModal({ student, onClose, onUpdateSuccess
       setPlacementCompanyAddress(student.placement_company_address || '');
       setPlacementRole(student.placement_role || '');
       setPlacementPackage(student.placement_package || '');
+
+      setAptiDetails(student.apti_details || '');
+      setAptiDate(student.apti_date ? new Date(student.apti_date).toISOString().split('T')[0] : '');
+      setJdDetails(student.jd_details || '');
+      setJdDate(student.jd_date ? new Date(student.jd_date).toISOString().split('T')[0] : '');
+      setRoundDetails(student.round_details || '');
+      setRoundDate(student.round_date ? new Date(student.round_date).toISOString().split('T')[0] : '');
 
       setAlertMsg(null);
     }
@@ -89,7 +104,13 @@ export default function CompleteProfileModal({ student, onClose, onUpdateSuccess
         placementCompanyName: placementStatus === 'Placed' ? placementCompanyName : null,
         placementCompanyAddress: placementStatus === 'Placed' ? placementCompanyAddress : null,
         placementRole: placementStatus === 'Placed' ? placementRole : null,
-        placementPackage: placementStatus === 'Placed' ? placementPackage : null
+        placementPackage: placementStatus === 'Placed' ? placementPackage : null,
+        aptiDetails: aptiDetails || null,
+        aptiDate: aptiDate || null,
+        jdDetails: jdDetails || null,
+        jdDate: jdDate || null,
+        roundDetails: roundDetails || null,
+        roundDate: roundDate || null
       });
 
       setAlertMsg({ type: 'success', text: 'Student profile updated successfully!' });
@@ -488,6 +509,76 @@ export default function CompleteProfileModal({ student, onClose, onUpdateSuccess
                       rows={2}
                       style={{ padding: '8px 10px', fontSize: '12px', width: '100%' }}
                     />
+                  </div>
+                </>
+              )}
+
+              {placementStatus === 'In Process' && (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', borderTop: '1px solid var(--border-color)', paddingTop: '14px' }}>
+                    <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Aptitude (Apti) Details</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Cleared, 85 Marks, Pending"
+                        value={aptiDetails}
+                        onChange={(e) => setAptiDetails(e.target.value)}
+                        style={{ padding: '8px 10px', fontSize: '12px', width: '100%' }}
+                      />
+                    </div>
+                    <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Aptitude (Apti) Date</label>
+                      <input
+                        type="date"
+                        value={aptiDate}
+                        onChange={(e) => setAptiDate(e.target.value)}
+                        style={{ padding: '8px 10px', fontSize: '12px', width: '100%', height: '34px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Job Description (JD) Details</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. React Developer JD"
+                        value={jdDetails}
+                        onChange={(e) => setJdDetails(e.target.value)}
+                        style={{ padding: '8px 10px', fontSize: '12px', width: '100%' }}
+                      />
+                    </div>
+                    <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Job Description (JD) Date</label>
+                      <input
+                        type="date"
+                        value={jdDate}
+                        onChange={(e) => setJdDate(e.target.value)}
+                        style={{ padding: '8px 10px', fontSize: '12px', width: '100%', height: '34px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Interview Round Details</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Technical Round 1"
+                        value={roundDetails}
+                        onChange={(e) => setRoundDetails(e.target.value)}
+                        style={{ padding: '8px 10px', fontSize: '12px', width: '100%' }}
+                      />
+                    </div>
+                    <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Interview Round Date</label>
+                      <input
+                        type="date"
+                        value={roundDate}
+                        onChange={(e) => setRoundDate(e.target.value)}
+                        style={{ padding: '8px 10px', fontSize: '12px', width: '100%', height: '34px' }}
+                      />
+                    </div>
                   </div>
                 </>
               )}

@@ -16,7 +16,8 @@ import {
   Trophy,
   CheckSquare,
   MessageSquare,
-  Users
+  Users,
+  ClipboardList
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, user }) {
@@ -26,6 +27,7 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
       { id: 'home', label: 'Dashboard', icon: Home },
       { id: 'batches', label: 'Batches', icon: Layers },
       { id: 'admin', label: 'Employees', icon: ShieldCheck },
+      { id: 'tests', label: 'Test Settings', icon: ClipboardList },
       { id: 'attendance', label: 'Attendance', icon: Fingerprint },
       { id: 'leave', label: 'Leaves', icon: Umbrella },
       { id: 'lms', label: 'LMS Hub', icon: BookOpen },
@@ -42,6 +44,15 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
       { id: 'projects', label: 'Project reviews', icon: Folder },
       { id: 'attendance', label: 'Attendance', icon: Fingerprint },
       { id: 'leave', label: 'Approve Leaves', icon: Umbrella }
+    ],
+    Student: [
+      { id: 'home', label: 'My Space', icon: Home },
+      { id: 'lms', label: 'LMS Study', icon: BookOpen },
+      { id: 'tests', label: 'Interview Tests', icon: ClipboardList },
+      { id: 'projects', label: 'My Projects', icon: Folder },
+      { id: 'placements', label: 'Job Placements', icon: Briefcase },
+      { id: 'aihub', label: 'AI Prep Hub', icon: Cpu },
+      { id: 'certificates', label: 'My Certificate', icon: Award }
     ],
     Intern: [
       { id: 'home', label: 'My Space', icon: Home },
@@ -62,7 +73,9 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
     ? 'Admin' 
     : user?.role === 'Reporting Manager' 
       ? 'Reporting Manager' 
-      : 'Intern';
+      : user?.role === 'Student'
+        ? 'Student'
+        : 'Intern';
 
   const visibleMenuItems = menuConfig[userRole] || menuConfig['Intern'];
 

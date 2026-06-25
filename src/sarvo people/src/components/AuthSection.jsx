@@ -88,6 +88,9 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
     } else if (role === 'mentor') {
       setEmail('mentor@sarvo.com');
       setPassword('Mentor123');
+    } else if (role === 'student') {
+      setEmail('student@sarvo.com');
+      setPassword('student123');
     } else {
       setEmail('intern@sarvo.com');
       setPassword('Intern123');
@@ -107,7 +110,9 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
     setLoading(true);
 
     try {
-      const data = await authApi.login(email.trim(), password.trim());
+      const data = activeRole === 'student'
+        ? await authApi.studentLogin(email.trim(), password.trim())
+        : await authApi.login(email.trim(), password.trim());
       setSuccess('Authentication successful! Loading dashboard...');
       
       // Save details
@@ -144,7 +149,8 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
       skills: regSkills,
       github: regGithub || '',
       linkedin: regLinkedin || '',
-      phone: ''
+      phone: '',
+      role: activeRole === 'admin' ? 'Admin' : activeRole === 'mentor' ? 'Reporting Manager' : activeRole === 'student' ? 'Student' : 'Intern'
     };
 
     setTempInternData(internPayload);
@@ -165,11 +171,24 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
 
     setLoading(true);
     try {
-      const createdIntern = await authApi.register(tempInternData);
+      let createdUser;
+      if (tempInternData.role === 'Student') {
+        createdUser = await authApi.studentRegister({
+          firstName: tempInternData.name.split(' ')[0],
+          lastName: tempInternData.name.split(' ').slice(1).join(' ') || 'Student',
+          email: tempInternData.email,
+          password: tempInternData.password,
+          collegeName: tempInternData.college,
+          skills: tempInternData.skills,
+          linkedinProfile: tempInternData.linkedin
+        });
+      } else {
+        createdUser = await authApi.register(tempInternData);
+      }
       setSuccess('Email verified and registered successfully! You can now log in.');
-      setEmail(createdIntern.email);
+      setEmail(createdUser.email);
       setPassword(tempInternData.password);
-      setActiveRole('intern');
+      setActiveRole(tempInternData.role === 'Reporting Manager' ? 'mentor' : tempInternData.role === 'Student' ? 'student' : 'intern');
       
       setTimeout(() => {
         setView('login');
@@ -256,7 +275,7 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
             <>
               {/* Role Switch Tabs */}
               <div className="role-tabs">
-                {['intern', 'mentor', 'admin'].map((role) => (
+                {['student', 'intern', 'mentor', 'admin'].map((role) => (
                   <button
                     key={role}
                     type="button"
@@ -267,6 +286,8 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
                       <ShieldCheck size={14} />
                     ) : role === 'mentor' ? (
                       <User size={14} />
+                    ) : role === 'student' ? (
+                      <School size={14} />
                     ) : (
                       <Users size={14} />
                     )}
@@ -336,12 +357,12 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
               {/* Demo accounts hint */}
               <div className="auth-demo-hint">
                 <strong>Demo Credentials ({activeRole.toUpperCase()}):</strong>
-                <div>Email: <span className="fill-cred" onClick={() => setEmail(activeRole === 'admin' ? 'admin@sarvo.com' : activeRole === 'mentor' ? 'mentor@sarvo.com' : 'intern@sarvo.com')}>{activeRole === 'admin' ? 'admin@sarvo.com' : activeRole === 'mentor' ? 'mentor@sarvo.com' : 'intern@sarvo.com'}</span></div>
-                <div>Password: <span className="fill-cred" onClick={() => setPassword(activeRole === 'admin' ? 'admin123' : activeRole === 'mentor' ? 'Mentor123' : 'Intern123')}>{activeRole === 'admin' ? 'admin123' : activeRole === 'mentor' ? 'Mentor123' : 'Intern123'}</span></div>
+                <div>Email: <span className="fill-cred" onClick={() => setEmail(activeRole === 'admin' ? 'admin@sarvo.com' : activeRole === 'mentor' ? 'mentor@sarvo.com' : activeRole === 'student' ? 'student@sarvo.com' : 'intern@sarvo.com')}>{activeRole === 'admin' ? 'admin@sarvo.com' : activeRole === 'mentor' ? 'mentor@sarvo.com' : activeRole === 'student' ? 'student@sarvo.com' : 'intern@sarvo.com'}</span></div>
+                <div>Password: <span className="fill-cred" onClick={() => setPassword(activeRole === 'admin' ? 'admin123' : activeRole === 'mentor' ? 'Mentor123' : activeRole === 'student' ? 'student123' : 'Intern123')}>{activeRole === 'admin' ? 'admin123' : activeRole === 'mentor' ? 'Mentor123' : activeRole === 'student' ? 'student123' : 'Intern123'}</span></div>
               </div>
 
               <div className="auth-footer-link">
-                New Intern? <span onClick={() => setView('register')}>Create profile</span>
+                {activeRole === 'admin' ? 'New Admin? ' : activeRole === 'mentor' ? 'New Mentor? ' : activeRole === 'student' ? 'New Student? ' : 'New Intern? '} <span onClick={() => setView('register')}>Create profile</span>
               </div>
             </>
           )}
@@ -350,8 +371,8 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
           {view === 'register' && (
             <>
               <div className="auth-subheader">
-                <h3>Intern Registration</h3>
-                <p>Register to access training courses, projects, and placements.</p>
+                <h3>{activeRole === 'admin' ? 'Admin Registration' : activeRole === 'mentor' ? 'Mentor Registration' : activeRole === 'student' ? 'Student Registration' : 'Intern Registration'}</h3>
+                <p>{activeRole === 'admin' ? 'Register as a system administrator.' : activeRole === 'mentor' ? 'Register as a mentor / reporting manager.' : activeRole === 'student' ? 'Register as a student to access training courses, cohorts, and placement opportunities.' : 'Register to access training courses, projects, and placements.'}</p>
               </div>
 
               {error && (
@@ -405,7 +426,7 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
                 </div>
 
                 <div className="auth-form-group">
-                  <label>College / University *</label>
+                  <label>{activeRole === 'intern' ? 'College / University *' : 'Company / College / University *'}</label>
                   <div className="auth-input-wrapper">
                     <School size={16} className="auth-input-icon" />
                     <input

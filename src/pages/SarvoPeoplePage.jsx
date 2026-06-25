@@ -24,6 +24,9 @@ import CertificateSection from '../sarvo people/src/components/CertificateSectio
 import ReportsSection from '../sarvo people/src/components/ReportsSection';
 import BatchSection from '../sarvo people/src/components/BatchSection';
 import DailyReportsSection from '../sarvo people/src/components/DailyReportsSection';
+import StudentTestsSection from '../sarvo people/src/components/StudentTestsSection';
+import AdminTestsSection from '../sarvo people/src/components/AdminTestsSection';
+
 
 // Import Sarvo People styles (scoped within .sarvo-people-wrapper)
 import '../sarvo people/src/styles/sidebar.css';
@@ -121,6 +124,15 @@ export default function SarvoPeoplePage({
     } else if (activeTab === 'batches') {
       setActiveSubTab('Cohorts');
       setSubNavItem('Active Batches');
+    } else if (activeTab === 'tests') {
+      if (employee?.role === 'Admin') {
+        setActiveSubTab('Management');
+        setSubNavItem('Configure Questions');
+      } else {
+        setActiveSubTab('Assessments');
+        setSubNavItem('All Tests');
+      }
+
     } else if (activeTab === 'dailyreports') {
       setActiveSubTab('Work Logs');
       setSubNavItem('Daily Logs');
@@ -152,9 +164,12 @@ export default function SarvoPeoplePage({
                       ? ['Analytics Hub']
                       : activeTab === 'batches'
                         ? ['Cohorts']
-                        : activeTab === 'dailyreports'
-                          ? ['Work Logs']
-                          : ['My Space', 'Team', 'Organization'];
+                        : activeTab === 'tests'
+                          ? (employee?.role === 'Admin' ? ['Management'] : ['Assessments'])
+
+                          : activeTab === 'dailyreports'
+                            ? ['Work Logs']
+                            : ['My Space', 'Team', 'Organization'];
 
   const subNavLinks = activeTab === 'leave'
     ? ['Leave Summary', 'Leave Requests', 'Compensatory Request']
@@ -182,9 +197,12 @@ export default function SarvoPeoplePage({
                           ? ['SVG Graphs', 'Data Exporters']
                           : activeTab === 'batches'
                             ? ['Active Batches', 'Roster Map', 'Students']
-                            : activeTab === 'dailyreports'
-                              ? ['Daily Logs', 'Mentor Comments']
-                              : ['Overview', 'Dashboard', 'Calendar'];
+                            : activeTab === 'tests'
+                              ? (employee?.role === 'Admin' ? ['Configure Questions', 'Student Scores'] : ['All Tests'])
+
+                              : activeTab === 'dailyreports'
+                                ? ['Daily Logs', 'Mentor Comments']
+                                : ['Overview', 'Dashboard', 'Calendar'];
 
   // ── Show Login if not authenticated ──
   if (!isAuthenticated) {
@@ -361,6 +379,8 @@ export default function SarvoPeoplePage({
               <Route path="reports" element={<ReportsSection />} />
               <Route path="batches" element={<BatchSection currentUser={employee} subNavItem={subNavItem} />} />
               <Route path="dailyreports" element={<DailyReportsSection currentUser={employee} />} />
+              <Route path="tests" element={employee?.role === 'Admin' ? <AdminTestsSection currentUser={employee} subNavItem={subNavItem} /> : <StudentTestsSection currentUser={employee} />} />
+
               <Route path="*" element={<Navigate to="home" replace />} />
             </Routes>
           </div>
