@@ -18,13 +18,13 @@ const STATIC_ADMIN = {
 const STATIC_MENTOR = {
   id: 2,
   employee_id: 'SARVO002',
-  name: 'Aditya Patil',
-  role: 'Reporting Manager',
+  name: 'Om Mentor',
+  role: 'Mentor',
   department: 'Engineering',
   avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
   status: 'Checked-in',
   manager_id: 1,
-  email: 'mentor@sarvo.com',
+  email: 'om@sarvo.com',
   shift: 'General (10:30 AM - 06:30 PM)',
   skills: ['React', 'Node.js', 'SQL', 'System Design']
 };
@@ -32,13 +32,13 @@ const STATIC_MENTOR = {
 const DEFAULT_INTERN = {
   id: 3,
   employee_id: 'INT2026001',
-  name: 'Om Kolekar',
+  name: 'Akanksha Student',
   role: 'Intern',
   department: 'Engineering',
   avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
   status: 'Yet to check-in',
   manager_id: 2,
-  email: 'intern@sarvo.com',
+  email: 'akanksha@sarvo.com',
   shift: 'General (10:30 AM - 06:30 PM)',
   college: 'COEP Technological University',
   skills: ['HTML', 'CSS', 'JavaScript'],
@@ -84,13 +84,16 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
     setSuccess('');
     if (role === 'admin') {
       setEmail('admin@sarvo.com');
-      setPassword('admin123');
+      setPassword('sarvoadmin@2026');
     } else if (role === 'mentor') {
-      setEmail('mentor@sarvo.com');
-      setPassword('Mentor123');
+      setEmail('om@sarvo.com');
+      setPassword('sarvoadmin@2026');
+    } else if (role === 'student') {
+      setEmail('vaishnav@sarvo.com');
+      setPassword('sarvoadmin@2026');
     } else {
-      setEmail('intern@sarvo.com');
-      setPassword('Intern123');
+      setEmail('akanksha@sarvo.com');
+      setPassword('sarvoadmin@2026');
     }
   };
 
@@ -256,7 +259,7 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
             <>
               {/* Role Switch Tabs */}
               <div className="role-tabs">
-                {['intern', 'mentor', 'admin'].map((role) => (
+                {['student', 'intern', 'mentor', 'admin'].map((role) => (
                   <button
                     key={role}
                     type="button"
@@ -267,6 +270,8 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
                       <ShieldCheck size={14} />
                     ) : role === 'mentor' ? (
                       <User size={14} />
+                    ) : role === 'student' ? (
+                      <School size={14} />
                     ) : (
                       <Users size={14} />
                     )}
@@ -333,11 +338,19 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
                 </button>
               </form>
 
-              {/* Demo accounts hint */}
+               {/* Demo accounts hint */}
               <div className="auth-demo-hint">
                 <strong>Demo Credentials ({activeRole.toUpperCase()}):</strong>
-                <div>Email: <span className="fill-cred" onClick={() => setEmail(activeRole === 'admin' ? 'admin@sarvo.com' : activeRole === 'mentor' ? 'mentor@sarvo.com' : 'intern@sarvo.com')}>{activeRole === 'admin' ? 'admin@sarvo.com' : activeRole === 'mentor' ? 'mentor@sarvo.com' : 'intern@sarvo.com'}</span></div>
-                <div>Password: <span className="fill-cred" onClick={() => setPassword(activeRole === 'admin' ? 'admin123' : activeRole === 'mentor' ? 'Mentor123' : 'Intern123')}>{activeRole === 'admin' ? 'admin123' : activeRole === 'mentor' ? 'Mentor123' : 'Intern123'}</span></div>
+                <div>Email: <span className="fill-cred" onClick={() => setEmail(
+                  activeRole === 'admin' ? 'admin@sarvo.com' : 
+                  activeRole === 'mentor' ? 'om@sarvo.com' : 
+                  activeRole === 'intern' ? 'akanksha@sarvo.com' : 'vaishnav@sarvo.com'
+                )}>{
+                  activeRole === 'admin' ? 'admin@sarvo.com' : 
+                  activeRole === 'mentor' ? 'om@sarvo.com' : 
+                  activeRole === 'intern' ? 'akanksha@sarvo.com' : 'vaishnav@sarvo.com'
+                }</span></div>
+                <div>Password: <span className="fill-cred" onClick={() => setPassword('sarvoadmin@2026')}>sarvoadmin@2026</span></div>
               </div>
 
               <div className="auth-footer-link">

@@ -20,6 +20,7 @@ import {
 import { employeeApi } from '../apis/employeeApi';
 import { attendanceApi } from '../apis/attendanceApi';
 import { leaveApi } from '../apis/leaveApi';
+import { projectApi } from '../apis/projectApi';
 import EditEmployeeProfileModal from './EditEmployeeProfileModal';
 
 const getAvatarColor = (name) => {
@@ -41,6 +42,15 @@ const getAvatarColor = (name) => {
 };
 
 export default function AdminPanel() {
+  const currentUser = (() => {
+    try {
+      const saved = localStorage.getItem('sarvo_current_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  })();
+
   const [employees, setEmployees] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -55,6 +65,7 @@ export default function AdminPanel() {
   const [formName, setFormName] = useState('');
   const [formId, setFormId] = useState('');
   const [formRole, setFormRole] = useState(''); // Designation ID
+  const [formUserRole, setFormUserRole] = useState('Admin'); // System Role
   const [formDept, setFormDept] = useState(''); // Department ID
   const [formEmail, setFormEmail] = useState('');
   const [formMobile, setFormMobile] = useState('');
@@ -76,31 +87,41 @@ export default function AdminPanel() {
   // Alerts
   const [alertMsg, setAlertMsg] = useState(null);
 
+  // Project filtering state
+  const [projectsList, setProjectsList] = useState([]);
+  const [selectedProjectFilter, setSelectedProjectFilter] = useState('all');
+  const [projectMemberEmployeeIds, setProjectMemberEmployeeIds] = useState([]);
+
   // Load Employees and Org Meta
   const fetchEmployeesAndMeta = async () => {
     try {
       const data = await employeeApi.getEmployees();
-      const mappedEmps = data.map(emp => ({
-        id: emp.id,
-        employee_id: emp.employee_code,
-        name: `${emp.first_name} ${emp.last_name}`,
-        role: emp.designation_name || emp.role || 'Employee',
-        department: emp.department_name || 'Engineering',
-        avatar: `https://images.unsplash.com/photo-${1500000000000 + (emp.id * 100000)}?w=150` || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-        status: emp.status || 'Yet to check-in',
-        email: emp.email,
-        mobile: emp.phone || '9999999999',
-        work_phone: emp.phone || '9999999999',
-        timezone: 'India Standard Time (GMT+05:30)',
-        about_me: 'Registered employee',
-        shift: 'General (10:30 AM - 06:30 PM)'
-      }));
+      const mappedEmps = data
+        .filter(emp => emp.role?.toLowerCase() !== 'student')
+        .map(emp => ({
+          id: emp.id,
+          employee_id: emp.employee_code,
+          name: `${emp.first_name} ${emp.last_name}`,
+          role: emp.designation_name || emp.role || 'Employee',
+          department: emp.department_name || 'Engineering',
+          avatar: `https://images.unsplash.com/photo-${1500000000000 + (emp.id * 100000)}?w=150` || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+          status: emp.status || 'Yet to check-in',
+          email: emp.email,
+          mobile: emp.phone || '9999999999',
+          work_phone: emp.phone || '9999999999',
+          timezone: 'India Standard Time (GMT+05:30)',
+          about_me: 'Registered employee',
+          shift: 'General (10:30 AM - 06:30 PM)'
+        }));
       setEmployees(mappedEmps);
 
       const meta = await employeeApi.getMeta();
       setOrgMeta(meta);
       if (meta.departments.length > 0) setFormDept(meta.departments[0].id);
       if (meta.designations.length > 0) setFormRole(meta.designations[0].id);
+
+      const projs = await projectApi.getProjects();
+      setProjectsList(projs || []);
 
       setIsBackendLive(true);
     } catch (err) {
@@ -112,6 +133,23 @@ export default function AdminPanel() {
   useEffect(() => {
     fetchEmployeesAndMeta();
   }, []);
+
+  useEffect(() => {
+    if (selectedProjectFilter === 'all') {
+      setProjectMemberEmployeeIds([]);
+      return;
+    }
+    const fetchProjectMembers = async () => {
+      try {
+        const members = await projectApi.getProjectMembers(selectedProjectFilter);
+        const empIds = (members || []).map(m => m.employee_id || m.student_employee_id).filter(id => id);
+        setProjectMemberEmployeeIds(empIds);
+      } catch (err) {
+        console.error('Failed to fetch project members:', err);
+      }
+    };
+    fetchProjectMembers();
+  }, [selectedProjectFilter]);
 
   const fetchProfileDetails = async (empId) => {
     try {
@@ -132,7 +170,44 @@ export default function AdminPanel() {
       // Fetch Attendance logs for selected employee
       try {
         const attData = await attendanceApi.getWeeklyLogs(empId);
-        setAttendanceLogs(attData);
+        
+        // Map to last 7 days
+        const daysOfWeek = [];
+        const shortDaysNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+          const dayOfWeek = d.getDay();
+          
+          const log = attData.find(l => {
+            const lDateStr = new Date(l.date).getFullYear() + '-' + String(new Date(l.date).getMonth() + 1).padStart(2, '0') + '-' + String(new Date(l.date).getDate()).padStart(2, '0');
+            return lDateStr === dateStr;
+          });
+          
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+          const isToday = i === 0;
+          
+          let status = 'Absent';
+          if (log) {
+            status = log.status === 'present' ? 'Present' : 'Absent';
+          } else if (isWeekend) {
+            status = 'Weekend';
+          }
+          
+          daysOfWeek.push({
+            date: dateStr,
+            dayName: shortDaysNames[dayOfWeek],
+            dayNum: d.getDate(),
+            isToday,
+            status,
+            check_in: log ? log.check_in_time : null,
+            check_out: log ? log.check_out_time : null,
+            total_hours: log ? Number(log.total_hours) : 0.00
+          });
+        }
+        setAttendanceLogs(daysOfWeek);
       } catch (e) {
         console.error('Failed to fetch attendance logs:', e);
       }
@@ -180,6 +255,9 @@ export default function AdminPanel() {
 
   // Master Search Filtering
   const filteredEmployees = employees.filter(emp => {
+    if (selectedProjectFilter !== 'all' && !projectMemberEmployeeIds.includes(emp.id)) {
+      return false;
+    }
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
     return (
@@ -217,21 +295,21 @@ export default function AdminPanel() {
       lastName,
       email: formEmail || `${firstName.toLowerCase()}@sarvo.com`,
       phone: formMobile || formPhone || '9999999999',
-      role: 'Employee', // Default role
-      departmentId: Number(formDept),
-      designationId: Number(formRole)
+      role: formUserRole,
+      departmentId: formDept,
+      designationId: formRole
     };
 
     try {
       await employeeApi.addEmployee(empData);
-      setAlertMsg({ type: 'success', text: 'Employee added successfully!' });
+      alert('registered successfull and credentials sent successfully');
+      setAlertMsg({ type: 'success', text: 'registered successfull and credentials sent successfully' });
       await fetchEmployeesAndMeta();
       resetForm();
-      setTimeout(() => {
-        setIsDrawerOpen(false);
-        setAlertMsg(null);
-      }, 1500);
+      setIsDrawerOpen(false);
+      setAlertMsg(null);
     } catch (err) {
+      alert(err.message || 'Failed to add employee.');
       setAlertMsg({ type: 'error', text: err.message || 'Failed to add employee.' });
     }
   };
@@ -239,6 +317,7 @@ export default function AdminPanel() {
   const resetForm = () => {
     setFormName('');
     setFormId('');
+    setFormUserRole('Admin');
     if (orgMeta.departments.length > 0) setFormDept(orgMeta.departments[0].id);
     if (orgMeta.designations.length > 0) setFormRole(orgMeta.designations[0].id);
     setFormEmail('');
@@ -290,13 +369,42 @@ export default function AdminPanel() {
     return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
   };
 
-  const getProgressWidthPercent = (day) => {
-    if (!day.check_in) return '0%';
-    const end = day.check_out ? new Date(day.check_out) : new Date();
-    const start = new Date(day.check_in);
-    const durationMs = end - start;
-    const percent = Math.min(100, (durationMs / 28800000) * 100);
-    return `${percent}%`;
+  const formatTime = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
+  const getTimelineStyle = (day) => {
+    if (!day.check_in) return { left: '0%', width: '0%' };
+    const dateParts = day.date.split('-');
+    const year = parseInt(dateParts[0], 10);
+    const month = parseInt(dateParts[1], 10) - 1;
+    const dateNum = parseInt(dateParts[2], 10);
+    
+    const shiftStart = new Date(year, month, dateNum, 10, 30, 0, 0);
+    const shiftEnd = new Date(year, month, dateNum, 18, 30, 0, 0);
+    const totalShiftMs = shiftEnd - shiftStart;
+    
+    const checkInTime = new Date(day.check_in);
+    const checkOutTime = day.check_out ? new Date(day.check_out) : new Date();
+    
+    const leftMs = checkInTime - shiftStart;
+    let leftPercent = (leftMs / totalShiftMs) * 100;
+    if (leftPercent < 0) leftPercent = 0;
+    if (leftPercent > 100) leftPercent = 100;
+    
+    const durationMs = checkOutTime - checkInTime;
+    let widthPercent = (durationMs / totalShiftMs) * 100;
+    if (widthPercent < 0) widthPercent = 0;
+    if (leftPercent + widthPercent > 100) {
+      widthPercent = 100 - leftPercent;
+    }
+    
+    return {
+      left: `${leftPercent}%`,
+      width: `${widthPercent}%`
+    };
   };
 
   return (
@@ -315,24 +423,52 @@ export default function AdminPanel() {
 
       {/* 2. Master Search Box */}
       <div className="admin-master-search-wrapper" onClick={(e) => e.stopPropagation()}>
-        <div className="admin-search-input-box">
-          <Search className="admin-search-icon" size={18} />
-          <input
-            type="text"
-            className="admin-search-input"
-            placeholder="Search employees by Name, Employee ID, Department, or Role..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setShowSuggestions(true);
-            }}
-            onFocus={() => setShowSuggestions(true)}
-          />
-          {searchQuery && (
-            <button className="admin-search-clear-btn" onClick={() => setSearchQuery('')}>
-              <X size={16} />
-            </button>
-          )}
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', width: '100%' }}>
+          <div className="admin-search-input-box" style={{ flexGrow: 1 }}>
+            <Search className="admin-search-icon" size={18} />
+            <input
+              type="text"
+              className="admin-search-input"
+              placeholder="Search employees by Name, Employee ID, Department, or Role..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+            />
+            {searchQuery && (
+              <button className="admin-search-clear-btn" onClick={() => setSearchQuery('')}>
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
+          <div className="project-filter-dropdown-container">
+            <select
+              value={selectedProjectFilter}
+              onChange={(e) => setSelectedProjectFilter(e.target.value)}
+              className="admin-project-select"
+              style={{
+                padding: '10px 14px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                backgroundColor: '#ffffff',
+                color: '#1f2937',
+                fontSize: '13px',
+                fontWeight: 600,
+                outline: 'none',
+                minWidth: '180px',
+                cursor: 'pointer',
+                transition: 'border-color 0.2s'
+              }}
+            >
+              <option value="all">All Projects</option>
+              {projectsList.map(proj => (
+                <option key={proj.id} value={proj.id}>{proj.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Search Suggestions list */}
@@ -382,56 +518,79 @@ export default function AdminPanel() {
                       <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Employee ID</th>
                       <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Designation</th>
                       <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Department</th>
+                      <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Email</th>
+                      <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Mobile</th>
                       <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredEmployees.map(emp => (
-                      <tr 
-                        key={emp.employee_id} 
-                        onClick={() => setSelectedEmployee(emp)}
-                        style={{ 
-                          borderBottom: '1px solid var(--border-color)',
-                          cursor: 'pointer',
-                          transition: 'background 0.2s'
-                        }}
-                        className="table-row-hover"
-                      >
-                        <td style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          {(() => {
-                            const colors = getAvatarColor(emp.name);
-                            return (
-                              <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                backgroundColor: colors.bg,
-                                color: colors.text,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '12.5px',
-                                fontWeight: 700,
-                                textTransform: 'uppercase',
-                                border: `1px solid ${colors.text}33`,
-                                flexShrink: 0
-                              }}>
-                                {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
-                              </div>
-                            );
-                          })()}
-                          <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>{emp.name}</strong>
-                        </td>
-                        <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.employee_id}</td>
-                        <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.role}</td>
-                        <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.department}</td>
-                        <td style={{ padding: '14px 18px' }}>
-                          <span className={`admin-card-status-pill ${emp.status === 'Checked-in' ? 'status-checked-in' : ''}`}>
-                            {emp.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredEmployees.map(emp => {
+                      const isCurrentUser = emp.id === currentUser?.id;
+                      return (
+                        <tr 
+                          key={emp.employee_id} 
+                          onClick={() => setSelectedEmployee(emp)}
+                          style={{ 
+                            borderBottom: '1px solid var(--border-color)',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s',
+                            backgroundColor: isCurrentUser ? 'rgba(0, 123, 245, 0.08)' : 'transparent'
+                          }}
+                          className="table-row-hover"
+                        >
+                          <td style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {(() => {
+                              const colors = getAvatarColor(emp.name);
+                              return (
+                                <div style={{
+                                  width: '32px',
+                                  height: '32px',
+                                  borderRadius: '50%',
+                                  backgroundColor: colors.bg,
+                                  color: colors.text,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '12.5px',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  border: `1px solid ${colors.text}33`,
+                                  flexShrink: 0
+                                }}>
+                                  {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
+                                </div>
+                              );
+                            })()}
+                            <strong style={{ fontSize: '13px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {emp.name}
+                              {isCurrentUser && (
+                                <span style={{
+                                  fontSize: '10px',
+                                  backgroundColor: 'var(--active-blue, #007bf5)',
+                                  color: '#ffffff',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontWeight: 700,
+                                  letterSpacing: '0.5px'
+                                }}>
+                                  You
+                                </span>
+                              )}
+                            </strong>
+                          </td>
+                          <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.employee_id}</td>
+                          <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.role}</td>
+                          <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.department}</td>
+                          <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.email}</td>
+                          <td style={{ padding: '14px 18px', fontSize: '12.5px', color: 'var(--text-main)' }}>{emp.mobile}</td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <span className={`admin-card-status-pill ${emp.status === 'Checked-in' ? 'status-checked-in' : ''}`}>
+                              {emp.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -731,10 +890,16 @@ export default function AdminPanel() {
                               ) : day.check_in ? (
                                 <div 
                                   className="timeline-present-progress-bar"
-                                  style={{ width: getProgressWidthPercent(day) }}
+                                  style={getTimelineStyle(day)}
                                 >
-                                  <span className="progress-dot start"></span>
-                                  <span className="progress-dot end"></span>
+                                  <span className="progress-dot start">
+                                    <span className="dot-time-label">{formatTime(day.check_in)}</span>
+                                  </span>
+                                  <span className="progress-dot end">
+                                    <span className="dot-time-label">
+                                      {day.check_out ? formatTime(day.check_out) : 'Active'}
+                                    </span>
+                                  </span>
                                 </div>
                               ) : (
                                 <div className="timeline-weekend-bar" style={{ background: '#f9fafb', border: '1px dotted #e5e7eb' }}>
@@ -946,22 +1111,31 @@ export default function AdminPanel() {
 
               <div className="admin-form-row">
                 <div className="admin-form-group">
-                  <label>Role / Designation *</label>
+                  <label>Role *</label>
+                  <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)}>
+                    <option value="Admin">Admin</option>
+                    <option value="Intern">Intern</option>
+                    <option value="Mentor">Mentor</option>
+                  </select>
+                </div>
+
+                <div className="admin-form-group">
+                  <label>Designation *</label>
                   <select value={formRole} onChange={(e) => setFormRole(e.target.value)}>
                     {orgMeta.designations.map(d => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
                   </select>
                 </div>
+              </div>
 
-                <div className="admin-form-group">
-                  <label>Department *</label>
-                  <select value={formDept} onChange={(e) => setFormDept(e.target.value)}>
-                    {orgMeta.departments.map(d => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="admin-form-group">
+                <label>Department *</label>
+                <select value={formDept} onChange={(e) => setFormDept(e.target.value)}>
+                  {orgMeta.departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="admin-form-group">

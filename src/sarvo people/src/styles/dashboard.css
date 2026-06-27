@@ -153,6 +153,13 @@
   background-color: #fff1f0;
 }
 
+.btn-checkin.disabled {
+  border-color: #9ca3af !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+  background-color: transparent !important;
+}
+
 /* Small Cards (Manager, Members) */
 .small-card-title {
   font-size: 12px;

@@ -27,6 +27,9 @@ import {
 import foliageBanner from '../assets/foliage_banner.png';
 import { dashboardApi } from '../apis/dashboardApi';
 import { employeeApi } from '../apis/employeeApi';
+import { cohortApi } from '../apis/cohortApi';
+import { leaveApi } from '../apis/leaveApi';
+import { attendanceApi } from '../apis/attendanceApi';
 
 const DEFAULT_LEAVE_TYPES = [
   { id: 1, name: 'Casual Leave', available: 4, booked: 0, icon_type: 'sun', color_theme: 'blue' },
@@ -37,11 +40,24 @@ const DEFAULT_LEAVE_TYPES = [
   { id: 6, name: 'Sick Leave', available: 12, booked: 0, icon_type: 'cross', color_theme: 'purple' }
 ];
 
+const THEME_MAP = {
+  'Casual Leave': { icon_type: 'sun', color_theme: 'blue' },
+  'Compensatory Off': { icon_type: 'co', color_theme: 'green' },
+  'Earned Leave': { icon_type: 'clock', color_theme: 'green-light' },
+  'Leave Without Pay': { icon_type: 'lwop', color_theme: 'red' },
+  'Paternity Leave': { icon_type: 'baby', color_theme: 'orange' },
+  'Sick Leave': { icon_type: 'cross', color_theme: 'purple' }
+};
+
 export default function Dashboard() {
   const [employee, setEmployee] = useState(null);
   const [attendance, setAttendance] = useState([]);
   const [timerText, setTimerText] = useState('00 : 00 : 00');
   const [metrics, setMetrics] = useState(null);
+
+  // Student Batch State
+  const [studentBatch, setStudentBatch] = useState(null);
+  const [batchLoading, setBatchLoading] = useState(false);
   
   // Profile Inner Tabs
   const [activeInnerTab, setActiveInnerTab] = useState('Attendance');
@@ -51,7 +67,7 @@ export default function Dashboard() {
   // Leave Tab States
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
-  const [selectedLeaveType, setSelectedLeaveType] = useState('Casual Leave');
+  const [selectedLeaveTypeId, setSelectedLeaveTypeId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
@@ -84,6 +100,43 @@ export default function Dashboard() {
     };
     fetchOrgMetadata();
   }, []);
+
+  // Fetch student's cohort/batch data
+  useEffect(() => {
+    if (!employee || employee.role !== 'Student') return;
+    const fetchStudentBatch = async () => {
+      try {
+        setBatchLoading(true);
+        const allStudents = await cohortApi.getAllStudents();
+        const me = allStudents.find(
+          (s) => s.email?.toLowerCase() === employee.email?.toLowerCase()
+        );
+        if (!me || !me.cohort_id) return;
+
+        const cohorts = await cohortApi.getCohorts();
+        const myCohort = cohorts.find((c) => c.id === me.cohort_id);
+        if (myCohort) {
+          setStudentBatch({
+            name: myCohort.name,
+            startDate: myCohort.start_date
+              ? new Date(myCohort.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : 'N/A',
+            endDate: myCohort.end_date
+              ? new Date(myCohort.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : 'Ongoing',
+            progress: myCohort.progress || 0,
+            mentorName: myCohort.mentor_name || null,
+            mentorTitle: myCohort.mentor_designation || 'Mentor',
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch student batch:', err);
+      } finally {
+        setBatchLoading(false);
+      }
+    };
+    fetchStudentBatch();
+  }, [employee]);
 
   const resetAddEmployeeForm = () => {
     setFormName('');
@@ -139,6 +192,95 @@ export default function Dashboard() {
     }
   };
 
+  const fetchLeaveBalances = async () => {
+    try {
+      const balances = await leaveApi.getBalances();
+      const mapped = balances.map(b => {
+        const theme = THEME_MAP[b.leave_type_name] || { icon_type: 'sun', color_theme: 'blue' };
+        return {
+          id: b.leave_type_id,
+          leave_balance_id: b.id,
+          name: b.leave_type_name,
+          available: Number(b.allocated_days) - Number(b.used_days),
+          booked: Number(b.used_days),
+          icon_type: theme.icon_type,
+          color_theme: theme.color_theme
+        };
+      });
+      setLeaveTypes(mapped);
+      
+      const allowed = mapped.filter(t => t.name !== 'Leave Without Pay' && t.name !== 'Compensatory Off');
+      if (allowed.length > 0) {
+        setSelectedLeaveTypeId(allowed[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to fetch leave balances:', err);
+    }
+  };
+
+  const fetchAttendanceLogs = async () => {
+    try {
+      const statusRes = await attendanceApi.getTodayStatus();
+      
+      setEmployee(prev => {
+        if (!prev) return prev;
+        let statusText = 'Yet to check-in';
+        if (statusRes.checkedIn && !statusRes.checkedOut) {
+          statusText = 'Checked-in';
+        } else if (statusRes.checkedIn && statusRes.checkedOut) {
+          statusText = 'Checked-out';
+        }
+        return {
+          ...prev,
+          status: statusText
+        };
+      });
+
+      const backendLogs = await attendanceApi.getWeeklyLogs();
+      
+      const daysOfWeek = [];
+      const shortDaysNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        const dayOfWeek = d.getDay();
+        
+        const log = backendLogs.find(l => {
+          const lDateStr = new Date(l.date).getFullYear() + '-' + String(new Date(l.date).getMonth() + 1).padStart(2, '0') + '-' + String(new Date(l.date).getDate()).padStart(2, '0');
+          return lDateStr === dateStr;
+        });
+        
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const isToday = i === 0;
+        
+        let status = 'Absent';
+        if (log) {
+          status = log.status === 'present' ? 'Present' : 'Absent';
+        } else if (isWeekend) {
+          status = 'Weekend';
+        }
+        
+        daysOfWeek.push({
+          date: dateStr,
+          dayName: shortDaysNames[dayOfWeek],
+          dayNum: d.getDate(),
+          isToday,
+          status,
+          check_in: log ? log.check_in_time : null,
+          check_out: log ? log.check_out_time : null,
+          shift_name: 'General',
+          total_hours: log ? Number(log.total_hours) : 0.00
+        });
+      }
+      
+      setAttendance(daysOfWeek);
+    } catch (err) {
+      console.error('Failed to fetch attendance logs:', err);
+    }
+  };
+
   // Fetch initial user data
   useEffect(() => {
     const savedUser = localStorage.getItem('sarvo_current_user');
@@ -154,22 +296,8 @@ export default function Dashboard() {
       }
     }
 
-    const localAtt = localStorage.getItem('sarvo_attendance');
-    if (localAtt) {
-      setAttendance(JSON.parse(localAtt));
-    } else {
-      const defaultAtt = getMockWeeklyLogs();
-      setAttendance(defaultAtt);
-      localStorage.setItem('sarvo_attendance', JSON.stringify(defaultAtt));
-    }
-
-    const localLeaves = localStorage.getItem('sarvo_leaves');
-    if (localLeaves) {
-      setLeaveTypes(JSON.parse(localLeaves));
-    } else {
-      setLeaveTypes([...DEFAULT_LEAVE_TYPES]);
-      localStorage.setItem('sarvo_leaves', JSON.stringify(DEFAULT_LEAVE_TYPES));
-    }
+    fetchAttendanceLogs();
+    fetchLeaveBalances();
   }, []);
 
   // Set up live timer tick
@@ -246,63 +374,22 @@ export default function Dashboard() {
     return logs;
   };
 
-  const handleCheckIn = () => {
-    const updatedEmp = { ...employee, status: 'Checked-in' };
-    setEmployee(updatedEmp);
-    localStorage.setItem('sarvo_current_user', JSON.stringify(updatedEmp));
-
-    // Update in list
-    const registeredStr = localStorage.getItem('sarvo_registered_interns');
-    if (registeredStr) {
-      const registered = JSON.parse(registeredStr);
-      const idx = registered.findIndex(r => r.email === employee.email);
-      if (idx !== -1) {
-        registered[idx].status = 'Checked-in';
-        localStorage.setItem('sarvo_registered_interns', JSON.stringify(registered));
-      }
+  const handleCheckIn = async () => {
+    try {
+      await attendanceApi.checkIn();
+      await fetchAttendanceLogs();
+    } catch (err) {
+      window.alert(err.message || 'Check-in failed');
     }
-
-    const now = new Date();
-    const updatedAttendance = attendance.map(log => {
-      if (log.isToday) {
-        return {
-          ...log,
-          check_in: now.toISOString(),
-          status: 'Present'
-        };
-      }
-      return log;
-    });
-    setAttendance(updatedAttendance);
-    localStorage.setItem('sarvo_attendance', JSON.stringify(updatedAttendance));
   };
 
-  const handleCheckOut = () => {
-    const updatedEmp = { ...employee, status: 'Yet to check-in' };
-    setEmployee(updatedEmp);
-    localStorage.setItem('sarvo_current_user', JSON.stringify(updatedEmp));
-
-    const registeredStr = localStorage.getItem('sarvo_registered_interns');
-    if (registeredStr) {
-      const registered = JSON.parse(registeredStr);
-      const idx = registered.findIndex(r => r.email === employee.email);
-      if (idx !== -1) {
-        registered[idx].status = 'Yet to check-in';
-        localStorage.setItem('sarvo_registered_interns', JSON.stringify(registered));
-      }
+  const handleCheckOut = async () => {
+    try {
+      await attendanceApi.checkOut();
+      await fetchAttendanceLogs();
+    } catch (err) {
+      window.alert(err.message || 'Check-out failed');
     }
-
-    const updatedAttendance = attendance.map(log => {
-      if (log.isToday) {
-        return {
-          ...log,
-          check_out: new Date().toISOString()
-        };
-      }
-      return log;
-    });
-    setAttendance(updatedAttendance);
-    localStorage.setItem('sarvo_attendance', JSON.stringify(updatedAttendance));
   };
 
   const handleSaveAboutMe = () => {
@@ -312,44 +399,23 @@ export default function Dashboard() {
     setIsEditingAbout(false);
   };
 
-  const handleSubmitLeave = (e) => {
+  const handleSubmitLeave = async (e) => {
     e.preventDefault();
-    if (!startDate || !endDate) return;
+    if (!startDate || !endDate || !selectedLeaveTypeId) return;
 
-    const diffTime = Math.abs(new Date(endDate) - new Date(startDate));
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-    const updatedLeaves = leaveTypes.map(t => {
-      if (t.name === selectedLeaveType) {
-        return {
-          ...t,
-          available: Math.max(0, t.available - diffDays),
-          booked: t.booked + diffDays
-        };
-      }
-      return t;
-    });
-
-    setLeaveTypes(updatedLeaves);
-    localStorage.setItem('sarvo_leaves', JSON.stringify(updatedLeaves));
-    
-    // Add leave request to log
-    const existingStr = localStorage.getItem('sarvo_leave_applications');
-    const existing = existingStr ? JSON.parse(existingStr) : [];
-    existing.push({
-      id: Date.now(),
-      leave_type_name: selectedLeaveType,
-      start_date: startDate,
-      end_date: endDate,
-      reason,
-      status: 'Pending',
-      internEmail: employee.email,
-      internName: employee.name
-    });
-    localStorage.setItem('sarvo_leave_applications', JSON.stringify(existing));
-
-    closeLeaveModal();
-    alert('Leave applied successfully!');
+    try {
+      await leaveApi.applyLeave({
+        leaveTypeId: selectedLeaveTypeId,
+        startDate,
+        endDate,
+        reason
+      });
+      alert('Leave applied successfully!');
+      closeLeaveModal();
+      await fetchLeaveBalances();
+    } catch (err) {
+      alert(err.message || 'Leave application failed');
+    }
   };
 
   const closeLeaveModal = () => {
@@ -377,10 +443,12 @@ export default function Dashboard() {
   };
 
   const isCheckedIn = employee?.status === 'Checked-in';
+  const isCheckedOut = employee?.status === 'Checked-out';
 
   // Render role layout
   const isSystemAdmin = employee?.role === 'Admin';
-  const isMentor = employee?.role === 'Reporting Manager';
+  const isMentor = employee?.role === 'Mentor';
+  const isStudent = employee?.role === 'Student';
 
   // VIEW 1: SYSTEM ADMIN DASHBOARD
   if (isSystemAdmin) {
@@ -705,7 +773,154 @@ export default function Dashboard() {
     );
   }
 
-  // VIEW 3: INTERN / STUDENT DEFAULT DASHBOARD (timer, leave, logs summary)
+  // VIEW 3: STUDENT ACADEMIC DASHBOARD
+  if (isStudent) {
+    const today = new Date();
+    const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
+    const dateStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const greeting = today.getHours() < 12 ? 'Good Morning' : today.getHours() < 17 ? 'Good Afternoon' : 'Good Evening';
+    const firstName = employee?.first_name || employee?.name?.split(' ')[0] || 'Student';
+
+    return (
+      <div className="main-content" style={{ padding: '0', overflow: 'auto' }}>
+
+        {/* Hero Welcome Banner */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0a1628 0%, #0d2044 40%, #0a2a5c 70%, #0f3460 100%)',
+          padding: '32px 36px 28px',
+          position: 'relative',
+          overflow: 'hidden',
+          borderBottom: '1px solid rgba(255,255,255,0.06)'
+        }}>
+          {/* Decorative circles */}
+          <div style={{ position: 'absolute', top: '-40px', right: '120px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(0, 123, 245, 0.08)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: '-30px', right: '60px', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(0, 210, 255, 0.06)', pointerEvents: 'none' }} />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px', position: 'relative', zIndex: 1 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <span style={{ background: 'rgba(0, 123, 245, 0.25)', border: '1px solid rgba(0, 123, 245, 0.4)', color: '#60a5fa', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }}>
+                  🎓 STUDENT PORTAL
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11.5px' }}>{dayName}, {dateStr}</span>
+              </div>
+              <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'white', margin: '0 0 6px', letterSpacing: '-0.3px' }}>
+                {greeting}, {firstName}! 👋
+              </h1>
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)', margin: 0 }}>
+                {employee?.employee_id || 'SARVO_STU'} &nbsp;•&nbsp; {employee?.department || 'Engineering'} Department
+              </p>
+            </div>
+
+            {/* Profile Avatar */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              <div style={{
+                width: '64px', height: '64px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #007bf5 0%, #00d2ff 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '24px', fontWeight: 800, color: 'white',
+                border: '3px solid rgba(255,255,255,0.15)',
+                boxShadow: '0 4px 20px rgba(0, 123, 245, 0.4)'
+              }}>
+                {firstName.charAt(0)}
+              </div>
+              <span style={{ fontSize: '10px', color: '#10b981', fontWeight: 700, background: 'rgba(16,185,129,0.15)', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(16,185,129,0.3)' }}>Active</span>
+            </div>
+          </div>
+
+          {/* Quick Stats Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginTop: '24px', position: 'relative', zIndex: 1 }}>
+            {[
+              { label: 'Attendance', value: '82%', icon: '📅', color: '#10b981', desc: 'This month' },
+              { label: 'LMS Progress', value: '68%', icon: '📚', color: '#60a5fa', desc: 'Course completion' },
+              { label: 'Projects Done', value: '3/5', icon: '🗂️', color: '#f59e0b', desc: 'Assigned tasks' },
+              { label: 'Batch Rank', value: '#4', icon: '🏆', color: '#a78bfa', desc: 'Out of 12 students' },
+            ].map((stat, i) => (
+              <div key={i} style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '12px',
+                padding: '14px 16px',
+                backdropFilter: 'blur(10px)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '18px' }}>{stat.icon}</span>
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{stat.label}</span>
+                </div>
+                <div style={{ fontSize: '22px', fontWeight: 800, color: stat.color }}>{stat.value}</div>
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{stat.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Body */}
+        <div style={{ padding: '24px 30px', display: 'flex', justifyContent: 'center' }}>
+
+          {/* SINGLE COLUMN — Batch & Mentor */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '480px' }}>
+
+            {/* Batch & Mentor Info — Dynamic */}
+            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '20px', boxShadow: 'var(--card-shadow)' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px' }}>🏫</span> My Batch
+              </h3>
+
+              {batchLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[80, 60, 40].map((w, i) => (
+                    <div key={i} style={{ height: '14px', width: `${w}%`, background: 'var(--border-color)', borderRadius: '6px', opacity: 0.5 }} />
+                  ))}
+                </div>
+              ) : !studentBatch ? (
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '16px', textAlign: 'center', background: 'var(--primary-bg)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                  You are not currently assigned to any batch.
+                </div>
+              ) : (
+                <>
+                  <div style={{ background: 'linear-gradient(135deg, rgba(0,123,245,0.08), rgba(0,210,255,0.04))', border: '1px solid rgba(0,123,245,0.15)', borderRadius: '12px', padding: '14px 16px', marginBottom: '14px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>{studentBatch.name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Started {studentBatch.startDate} &nbsp;•&nbsp; Ends {studentBatch.endDate}
+                    </div>
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Batch Progress</span>
+                        <span style={{ color: '#007bf5', fontWeight: 700 }}>{studentBatch.progress}%</span>
+                      </div>
+                      <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '10px', overflow: 'hidden' }}>
+                        <div style={{ width: `${studentBatch.progress}%`, height: '100%', background: 'linear-gradient(90deg, #007bf5, #00d2ff)', borderRadius: '10px', transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {studentBatch.mentorName && (
+                    <>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assigned Mentor</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: 'var(--primary-bg)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'linear-gradient(135deg, #007bf5, #00d2ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                          {studentBatch.mentorName.charAt(0)}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>{studentBatch.mentorName}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{studentBatch.mentorTitle}</div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // VIEW 4: INTERN DEFAULT DASHBOARD (timer, leave, logs summary)
   return (
     <div className="main-content">
       {/* Top Banner Cover */}
@@ -736,20 +951,29 @@ export default function Dashboard() {
             <div className="profile-id">{employee?.employee_id || 'SARVO_INT'} - {employee?.name}</div>
             <div className="profile-role">{employee?.role} • {employee?.department}</div>
             
-            <div className={`profile-status ${isCheckedIn ? 'checked-in' : 'yet-checkin'}`}>
-              {employee?.status}
-            </div>
+            {employee?.role !== 'Student' ? (
+              <>
+                <div className={`profile-status ${isCheckedIn ? 'checked-in' : 'yet-checkin'}`}>
+                  {employee?.status}
+                </div>
 
-            <div className="profile-timer">
-              {timerText}
-            </div>
+                <div className="profile-timer">
+                  {timerText}
+                </div>
 
-            <button 
-              className={`btn-checkin ${isCheckedIn ? 'active' : ''}`}
-              onClick={isCheckedIn ? handleCheckOut : handleCheckIn}
-            >
-              {isCheckedIn ? 'Check-out' : 'Check-in'}
-            </button>
+                <button 
+                  className={`btn-checkin ${isCheckedIn ? 'active' : ''} ${isCheckedOut ? 'disabled' : ''}`}
+                  onClick={isCheckedIn ? handleCheckOut : handleCheckIn}
+                  disabled={isCheckedOut}
+                >
+                  {isCheckedOut ? 'Checked-out' : (isCheckedIn ? 'Check-out' : 'Check-in')}
+                </button>
+              </>
+            ) : (
+              <div style={{ marginTop: '15px', padding: '8px 12px', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                Student Training Space (Read-Only)
+              </div>
+            )}
           </div>
 
           {/* Department / Manager Widget */}
@@ -973,11 +1197,11 @@ export default function Dashboard() {
                     </div>
 
                     <div className="db-leave-right">
-                      {type.available > 0 && (
+                      {type.name !== 'Leave Without Pay' && type.name !== 'Compensatory Off' && type.available > 0 && (
                         <button 
                           className="db-btn-apply-leave"
                           onClick={() => {
-                            setSelectedLeaveType(type.name);
+                            setSelectedLeaveTypeId(type.id);
                             setIsLeaveModalOpen(true);
                           }}
                         >
@@ -1010,12 +1234,12 @@ export default function Dashboard() {
               <div className="form-group">
                 <label>Leave Type *</label>
                 <select 
-                  value={selectedLeaveType} 
-                  onChange={(e) => setSelectedLeaveType(e.target.value)}
+                  value={selectedLeaveTypeId} 
+                  onChange={(e) => setSelectedLeaveTypeId(e.target.value)}
                   required
                 >
-                  {leaveTypes.filter(t => t.name !== 'Leave Without Pay').map(t => (
-                    <option key={t.id} value={t.name}>{t.name} (Available: {t.available})</option>
+                  {leaveTypes.filter(t => t.name !== 'Leave Without Pay' && t.name !== 'Compensatory Off').map(t => (
+                    <option key={t.id} value={t.id}>{t.name} (Available: {t.available})</option>
                   ))}
                 </select>
               </div>

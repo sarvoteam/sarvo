@@ -1,691 +1,462 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Play, Download, Award, FileText, CheckCircle2, ChevronRight, BarChart3, AlertCircle, Clock } from 'lucide-react';
-import { lmsApi } from '../apis/lmsApi';
+import { X, ChevronRight, ChevronLeft, Layers, Calendar, User, GraduationCap, AlertCircle, Plus, BookOpen } from 'lucide-react';
+import { cohortApi } from '../apis/cohortApi';
+import { Save } from 'lucide-react';
 
-const COURSES_DATA = [
-  {
-    id: 1,
-    title: 'MERN Stack Developer BootCamp',
-    category: 'Full-Stack',
-    duration: '8 weeks',
-    progress: 75,
-    lessons: [
-      { id: 101, title: 'Introduction to Node.js & NPM', type: 'video', duration: '22 mins', completed: true, videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 102, title: 'Express.js Routing and Middlewares', type: 'video', duration: '35 mins', completed: true, videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 103, title: 'MongoDB Schemas with Mongoose', type: 'pdf', size: '2.4 MB', completed: true },
-      { id: 104, title: 'React Hooks Deep Dive (State, Effect, Memo)', type: 'video', duration: '48 mins', completed: false, videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 105, title: 'JWT Authentication & RBAC in Express', type: 'pdf', size: '1.8 MB', completed: false }
-    ],
-    quizzes: [
-      { id: 201, title: 'Node.js & Express Fundamentals', questionsCount: 5, difficulty: 'Easy', timeLimit: 60 }
-    ]
-  },
-  {
-    id: 2,
-    title: 'UI/UX Design Essentials',
-    category: 'Design',
-    duration: '4 weeks',
-    progress: 30,
-    lessons: [
-      { id: 301, title: 'Introduction to Figma & Vector Tools', type: 'video', duration: '18 mins', completed: true, videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 302, title: 'Visual Hierarchy and Color Theories', type: 'pdf', size: '4.2 MB', completed: false },
-      { id: 303, title: 'Responsive Layouts & Auto-Layout Figma', type: 'video', duration: '30 mins', completed: false }
-    ],
-    quizzes: [
-      { id: 401, title: 'Design Principles & Layouts', questionsCount: 5, difficulty: 'Medium', timeLimit: 90 }
-    ]
-  },
-  {
-    id: 3,
-    title: 'System Design & Scalability',
-    category: 'Architecture',
-    duration: '6 weeks',
-    progress: 0,
-    lessons: [
-      { id: 501, title: 'Vertical vs Horizontal Scaling', type: 'pdf', size: '3.1 MB', completed: false },
-      { id: 502, title: 'Caching Strategies: Redis & Memcached', type: 'video', duration: '40 mins', completed: false },
-      { id: 503, title: 'Database Sharding and Replication', type: 'video', duration: '55 mins', completed: false }
-    ],
-    quizzes: [
-      { id: 601, title: 'Scaling & Caching Architectures', questionsCount: 5, difficulty: 'Hard', timeLimit: 120 }
-    ]
-  }
-];
+const SESSION_TYPES = ['Lecture','Lab / Hands-On','Quiz / Assessment','Self-Study','Mentor Session','Project Work','Review & Recap'];
 
-const QUIZ_QUESTIONS = {
-  201: [
-    {
-      id: 1,
-      q: 'Which core module in Node.js is used to handle file operations?',
-      options: ['path', 'fs', 'http', 'os'],
-      answer: 1,
-      explanation: 'The "fs" (File System) module allows you to work with the file system on your computer.'
-    },
-    {
-      id: 2,
-      q: 'What is the purpose of middleware in Express.js?',
-      options: [
-        'To connect to the database directly',
-        'To compile React components into HTML',
-        'To execute code and modify request/response objects',
-        'To compress images automatically'
-      ],
-      answer: 2,
-      explanation: 'Middleware functions have access to the request (req) and response (res) objects, and can execute code, modify them, or end the request-response cycle.'
-    },
-    {
-      id: 3,
-      q: 'Which database model mapping technique is used by Mongoose?',
-      options: ['SQL Schema mapping', 'ORM (Object Relational Mapping)', 'ODM (Object Document Mapping)', 'Key-Value indexing'],
-      answer: 2,
-      explanation: 'Mongoose is an ODM (Object Document Mapper) library for MongoDB and Node.js. It manages relationships between data, provides schema validation, etc.'
-    },
-    {
-      id: 4,
-      q: 'What does JWT stand for?',
-      options: ['Java Web Token', 'JSON Web Token', 'JSON Web Tool', 'Joint Web Transit'],
-      answer: 1,
-      explanation: 'JWT stands for JSON Web Token. It is a compact, URL-safe means of representing claims to be transferred between two parties.'
-    },
-    {
-      id: 5,
-      q: 'In Express routing, what is req.params used for?',
-      options: [
-        'To read query parameters like ?page=2',
-        'To read parameters matched in the route path like /user/:id',
-        'To read JSON body fields',
-        'To read cookies from requests'
-      ],
-      answer: 1,
-      explanation: 'req.params is an object containing properties mapped to the named route "parameters". For example, if you have the route /user/:name, then the "name" property is available as req.params.name.'
-    }
-  ]
+const TYPE_COLORS = {
+  'Lecture':           { bg:'rgba(0,123,245,0.12)',   color:'#007bf5',  light:'rgba(0,123,245,0.06)'   },
+  'Lab / Hands-On':    { bg:'rgba(16,185,129,0.12)',  color:'#10b981',  light:'rgba(16,185,129,0.06)'  },
+  'Quiz / Assessment': { bg:'rgba(245,158,11,0.12)',  color:'#f59e0b',  light:'rgba(245,158,11,0.06)'  },
+  'Self-Study':        { bg:'rgba(167,139,250,0.12)', color:'#a78bfa',  light:'rgba(167,139,250,0.06)' },
+  'Mentor Session':    { bg:'rgba(251,113,133,0.12)', color:'#fb7185',  light:'rgba(251,113,133,0.06)' },
+  'Project Work':      { bg:'rgba(251,146,60,0.12)',  color:'#fb923c',  light:'rgba(251,146,60,0.06)'  },
+  'Review & Recap':    { bg:'rgba(99,102,241,0.12)',  color:'#6366f1',  light:'rgba(99,102,241,0.06)'  },
 };
 
-export default function LMSSection() {
-  const [activeCourse, setActiveCourse] = useState(COURSES_DATA[0]);
-  const [selectedLesson, setSelectedLesson] = useState(null);
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [quizDetails, setQuizDetails] = useState(null);
-  
-  // Interactive Quiz States
-  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(30);
-  const [quizScore, setQuizScore] = useState(0);
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  // Quiz timer
-  useEffect(() => {
-    if (!showQuiz || quizSubmitted || timeLeft <= 0) return;
-    const interval = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          // Auto submit when time runs out
-          clearInterval(interval);
-          handleQuizSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [showQuiz, currentQuestionIdx, quizSubmitted, timeLeft]);
+function toISO(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function daysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
 
-  const startQuiz = (quiz) => {
-    const questions = QUIZ_QUESTIONS[quiz.id];
-    if (!questions) {
-      alert('Quiz questions for this course are coming soon!');
-      return;
-    }
-    setQuizDetails({
-      ...quiz,
-      questions
-    });
-    setCurrentQuestionIdx(0);
-    setSelectedAnswers({});
-    setQuizSubmitted(false);
-    setTimeLeft(30);
-    setShowQuiz(true);
-  };
-
-  const handleOptionSelect = (optIdx) => {
-    if (quizSubmitted) return;
-    setSelectedAnswers({
-      ...selectedAnswers,
-      [currentQuestionIdx]: optIdx
-    });
-  };
-
-  const nextQuestion = () => {
-    if (currentQuestionIdx < quizDetails.questions.length - 1) {
-      setCurrentQuestionIdx(currentQuestionIdx + 1);
-      setTimeLeft(30);
-    }
-  };
-
-  const prevQuestion = () => {
-    if (currentQuestionIdx > 0) {
-      setCurrentQuestionIdx(currentQuestionIdx - 1);
-      setTimeLeft(30);
-    }
-  };
-
-  const handleQuizSubmit = () => {
-    setQuizSubmitted(true);
-    
-    // Calculate Score
-    let correctCount = 0;
-    quizDetails.questions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.answer) {
-        correctCount++;
-      }
-    });
-
-    const scorePct = Math.round((correctCount / quizDetails.questions.length) * 100);
-    setQuizScore(scorePct);
-
-    // Save score to database
-    lmsApi.saveQuizGrade({
-      quizId: String(quizDetails.id),
-      quizName: quizDetails.title,
-      score: scorePct,
-      totalQuestions: quizDetails.questions.length,
-      passed: scorePct >= 50
-    }).catch(err => console.error('Failed to save quiz grade:', err));
-  };
-
-  const exitQuiz = () => {
-    setShowQuiz(false);
-    setQuizDetails(null);
-  };
+// ── Read-only Day View Modal (Student) ──
+function DayViewModal({ iso, entry, onClose }) {
+  const [y, m, d] = iso.split('-');
+  const label = new Date(+y, +m-1, +d).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  const tc = entry ? (TYPE_COLORS[entry.type] || TYPE_COLORS['Lecture']) : null;
 
   return (
-    <div className="lms-container" style={{ padding: '24px' }}>
-      
-      {/* Quiz Modal Player */}
-      {showQuiz && quizDetails && (
-        <div className="modal-overlay">
-          <div className="modal-content-card" style={{ maxWidth: '640px', padding: '24px' }}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Award size={20} className="icon-blue" />
-                <h3>{quizDetails.title}</h3>
-              </div>
-              <button className="modal-close-btn" onClick={exitQuiz}>Exit Quiz</button>
-            </div>
-
-            {!quizSubmitted ? (
-              <div className="quiz-player-body" style={{ textAlign: 'left', marginTop: '16px' }}>
-                {/* Progress Indicators */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '13px', fontWeight: 600 }}>
-                  <span style={{ color: 'var(--text-muted)' }}>
-                    Question {currentQuestionIdx + 1} of {quizDetails.questions.length}
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: timeLeft < 10 ? 'var(--text-red)' : 'var(--text-muted)' }}>
-                    <Clock size={14} /> Time: {timeLeft}s
-                  </span>
-                </div>
-
-                {/* Question */}
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '20px', lineHeight: '1.5' }}>
-                  {quizDetails.questions[currentQuestionIdx].q}
-                </h4>
-
-                {/* Options */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {quizDetails.questions[currentQuestionIdx].options.map((opt, oIdx) => {
-                    const isSelected = selectedAnswers[currentQuestionIdx] === oIdx;
-                    return (
-                      <button
-                        key={oIdx}
-                        onClick={() => handleOptionSelect(oIdx)}
-                        style={{
-                          width: '100%',
-                          textAlign: 'left',
-                          padding: '14px 16px',
-                          border: isSelected ? '2px solid var(--active-blue)' : '1px solid var(--border-color)',
-                          borderRadius: '10px',
-                          background: isSelected ? 'rgba(0, 123, 245, 0.05)' : 'var(--card-bg)',
-                          color: 'var(--text-main)',
-                          fontSize: '13.5px',
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          background: isSelected ? 'var(--active-blue)' : 'var(--primary-bg)',
-                          color: isSelected ? 'white' : 'var(--text-muted)',
-                          marginRight: '12px',
-                          fontSize: '11px',
-                          fontWeight: 700
-                        }}>
-                          {String.fromCharCode(65 + oIdx)}
-                        </span>
-                        {opt}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Navigation Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
-                  <button
-                    disabled={currentQuestionIdx === 0}
-                    onClick={prevQuestion}
-                    style={{
-                      padding: '8px 16px',
-                      border: '1px solid var(--border-color)',
-                      background: 'none',
-                      color: 'var(--text-main)',
-                      borderRadius: '8px',
-                      cursor: currentQuestionIdx === 0 ? 'not-allowed' : 'pointer',
-                      opacity: currentQuestionIdx === 0 ? 0.5 : 1
-                    }}
-                  >
-                    Previous
-                  </button>
-                  {currentQuestionIdx < quizDetails.questions.length - 1 ? (
-                    <button
-                      onClick={nextQuestion}
-                      style={{
-                        padding: '8px 20px',
-                        border: 'none',
-                        background: 'var(--active-blue)',
-                        color: 'white',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: 600
-                      }}
-                    >
-                      Next Question
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleQuizSubmit}
-                      style={{
-                        padding: '8px 24px',
-                        border: 'none',
-                        background: '#10b981',
-                        color: 'white',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: 700,
-                        boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)'
-                      }}
-                    >
-                      Submit Quiz
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              // Quiz Submission Scorecard & Review
-              <div className="quiz-result-body" style={{ textAlign: 'left', marginTop: '16px' }}>
-                <div style={{
-                  background: 'var(--primary-bg)',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  textAlign: 'center',
-                  marginBottom: '24px',
-                  border: '1px solid var(--border-color)'
-                }}>
-                  <div style={{ fontSize: '32px', fontWeight: 800, color: quizScore >= 70 ? '#10b981' : '#f59e0b' }}>
-                    {quizScore}%
-                  </div>
-                  <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 600 }}>
-                    {quizScore >= 70 ? 'Congratulations! You Passed!' : 'Keep practicing to improve!'}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                    Passing Score: 70% | Score Saved to Performance Record
-                  </div>
-                </div>
-
-                <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '16px' }}>Review Answers:</h4>
-                <div style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '6px' }}>
-                  {quizDetails.questions.map((q, idx) => {
-                    const userAns = selectedAnswers[idx];
-                    const isCorrect = userAns === q.answer;
-                    return (
-                      <div key={q.id} style={{
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '10px',
-                        padding: '14px',
-                        background: 'var(--card-bg)'
-                      }}>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '8px' }}>
-                          <span style={{
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            background: isCorrect ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            color: isCorrect ? '#10b981' : '#ef4444',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            marginTop: '2px'
-                          }}>
-                            {isCorrect ? 'Correct' : 'Incorrect'}
-                          </span>
-                          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>{q.q}</span>
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                          Your answer: <span style={{ fontWeight: 600, color: isCorrect ? '#10b981' : '#ef4444' }}>{q.options[userAns] || 'Unanswered'}</span>
-                        </div>
-                        {!isCorrect && (
-                          <div style={{ fontSize: '12px', color: '#10b981', marginTop: '4px' }}>
-                            Correct answer: <span style={{ fontWeight: 600 }}>{q.options[q.answer]}</span>
-                          </div>
-                        )}
-                        <div style={{
-                          marginTop: '8px',
-                          padding: '8px',
-                          borderRadius: '6px',
-                          background: 'var(--primary-bg)',
-                          fontSize: '11.5px',
-                          color: 'var(--text-muted)',
-                          lineHeight: '1.4'
-                        }}>
-                          <strong>Explanation:</strong> {q.explanation}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
-                  <button
-                    onClick={exitQuiz}
-                    style={{
-                      padding: '10px 24px',
-                      border: 'none',
-                      background: 'var(--active-blue)',
-                      color: 'white',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: 700
-                    }}
-                  >
-                    Finish & Close
-                  </button>
-                </div>
-              </div>
-            )}
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
+      <div style={{ background:'var(--card-bg)', border:'1px solid var(--border-color)', borderRadius:'18px', width:'100%', maxWidth:'480px', boxShadow:'0 20px 60px rgba(0,0,0,0.2)', overflow:'hidden' }}>
+        {/* Header */}
+        <div style={{ padding:'20px 24px 16px', borderBottom:'1px solid var(--border-color)', display:'flex', alignItems:'flex-start', justifyContent:'space-between' }}>
+          <div>
+            <div style={{ fontSize:'11px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'4px' }}>Day Schedule</div>
+            <div style={{ fontSize:'16px', fontWeight:800, color:'var(--text-main)' }}>{label}</div>
           </div>
+          <button onClick={onClose} style={{ background:'var(--primary-bg)', border:'1px solid var(--border-color)', borderRadius:'8px', padding:'6px', cursor:'pointer', color:'var(--text-muted)', display:'flex' }}>
+            <X size={15}/>
+          </button>
         </div>
-      )}
-
-      {/* Grid Layout: Left sidebar with course selection, Right side with lessons */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px', textAlign: 'left' }}>
-        
-        {/* Left Side: Courses list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="card" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--sidebar-bg)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <BookOpen size={18} className="icon-blue" />
-              My Training Programs
-            </h3>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {COURSES_DATA.map((course) => {
-                const isActive = activeCourse.id === course.id;
-                return (
-                  <div
-                    key={course.id}
-                    onClick={() => { setActiveCourse(course); setSelectedLesson(null); }}
-                    style={{
-                      padding: '14px',
-                      borderRadius: '12px',
-                      border: isActive ? '2px solid var(--active-blue)' : '1px solid var(--border-color)',
-                      background: isActive ? 'rgba(0, 123, 245, 0.03)' : 'var(--card-bg)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--active-blue)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                      {course.category}
-                    </div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
-                      {course.title}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                      <span>{course.duration}</span>
-                      <span>{course.progress}% Complete</span>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div style={{ width: '100%', height: '5px', background: 'var(--primary-bg)', borderRadius: '10px', marginTop: '8px', overflow: 'hidden' }}>
-                      <div style={{ width: `${course.progress}%`, height: '100%', background: 'var(--active-blue)', borderRadius: '10px' }} />
-                    </div>
+        {/* Content */}
+        <div style={{ padding:'22px 24px 24px', display:'flex', flexDirection:'column', gap:'16px' }}>
+          {entry ? (
+            <>
+              <div>
+                <div style={{ fontSize:'11px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'8px' }}>Session Type</div>
+                <span style={{ display:'inline-block', padding:'5px 14px', borderRadius:'20px', fontSize:'12.5px', fontWeight:700, background: tc.bg, color: tc.color, border:`1px solid ${tc.bg}` }}>
+                  {entry.type}
+                </span>
+              </div>
+              <div>
+                <div style={{ fontSize:'11px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'6px' }}>Topic</div>
+                <div style={{ fontSize:'15px', fontWeight:700, color:'var(--text-main)' }}>{entry.topic}</div>
+              </div>
+              {entry.description && (
+                <div>
+                  <div style={{ fontSize:'11px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'6px' }}>Details</div>
+                  <div style={{ fontSize:'13px', color:'var(--text-muted)', lineHeight:1.6, background:'var(--primary-bg)', padding:'12px 14px', borderRadius:'10px', border:'1px solid var(--border-color)' }}>
+                    {entry.description}
                   </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ textAlign:'center', padding:'20px 0', color:'var(--text-muted)' }}>
+              <Calendar size={28} style={{ opacity:0.3, marginBottom:'8px' }}/>
+              <div style={{ fontSize:'13px', fontWeight:600 }}>No topic scheduled for this day</div>
+            </div>
+          )}
+        </div>
+        <div style={{ padding:'0 24px 20px', display:'flex', justifyContent:'flex-end' }}>
+          <button onClick={onClose} style={{ padding:'8px 20px', border:'1px solid var(--border-color)', borderRadius:'8px', fontSize:'12px', fontWeight:600, color:'var(--text-muted)', background:'none', cursor:'pointer' }}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Edit Modal (Admin) ──
+function DayModal({ iso, entry, onClose, onSave }) {
+  const [y, m, d] = iso.split('-');
+  const label = new Date(+y, +m-1, +d).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  const [topic, setTopic] = useState(entry?.topic || '');
+  const [type, setType]   = useState(entry?.type || 'Lecture');
+  const [desc, setDesc]   = useState(entry?.description || '');
+  const tc = TYPE_COLORS[type] || TYPE_COLORS['Lecture'];
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
+      <div style={{ background:'var(--card-bg)', border:'1px solid var(--border-color)', borderRadius:'18px', width:'100%', maxWidth:'520px', boxShadow:'0 20px 60px rgba(0,0,0,0.2)', overflow:'hidden' }}>
+        <div style={{ padding:'20px 24px 16px', borderBottom:'1px solid var(--border-color)', display:'flex', alignItems:'flex-start', justifyContent:'space-between' }}>
+          <div>
+            <div style={{ fontSize:'11px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'4px' }}>Learning Plan</div>
+            <div style={{ fontSize:'16px', fontWeight:800, color:'var(--text-main)' }}>{label}</div>
+          </div>
+          <button onClick={onClose} style={{ background:'var(--primary-bg)', border:'1px solid var(--border-color)', borderRadius:'8px', padding:'6px', cursor:'pointer', color:'var(--text-muted)', display:'flex' }}>
+            <X size={15}/>
+          </button>
+        </div>
+        <div style={{ padding:'20px 24px', display:'flex', flexDirection:'column', gap:'14px' }}>
+          <div>
+            <label style={{ fontSize:'11.5px', fontWeight:700, color:'var(--text-muted)', display:'block', marginBottom:'6px' }}>SESSION TYPE</label>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'8px' }}>
+              {SESSION_TYPES.map(t => {
+                const c = TYPE_COLORS[t]||TYPE_COLORS['Lecture'];
+                return (
+                  <button key={t} onClick={()=>setType(t)}
+                    style={{ padding:'5px 12px', border:`1.5px solid ${type===t?c.color:'var(--border-color)'}`, borderRadius:'20px', fontSize:'11.5px', fontWeight:700, cursor:'pointer', background:type===t?c.bg:'transparent', color:type===t?c.color:'var(--text-muted)', transition:'all 0.15s' }}>
+                    {t}
+                  </button>
                 );
               })}
             </div>
           </div>
-
-          {/* Quick Learning Analytics */}
-          <div className="card" style={{ padding: '20px' }}>
-            <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
-              <BarChart3 size={16} /> Learning Analytics
-            </h4>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Completed Lessons</span>
-                <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>4 / 11 Modules</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Time Spent Study</span>
-                <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>6.8 Hours</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Average Quiz Score</span>
-                <span style={{ fontWeight: 600, color: '#10b981' }}>80%</span>
-              </div>
-            </div>
+          <div>
+            <label style={{ fontSize:'11.5px', fontWeight:700, color:'var(--text-muted)', display:'block', marginBottom:'6px' }}>TOPIC TITLE</label>
+            <input type="text" placeholder="e.g. Introduction to React Hooks" value={topic} onChange={e=>setTopic(e.target.value)} autoFocus
+              style={{ width:'100%', padding:'10px 14px', border:'1px solid var(--border-color)', borderRadius:'10px', fontSize:'13.5px', fontWeight:600, background:'var(--primary-bg)', color:'var(--text-main)', outline:'none' }}/>
+          </div>
+          <div>
+            <label style={{ fontSize:'11.5px', fontWeight:700, color:'var(--text-muted)', display:'block', marginBottom:'6px' }}>DETAILS / NOTES</label>
+            <textarea placeholder="What will be covered? Add objectives, tasks, or notes..." value={desc} onChange={e=>setDesc(e.target.value)} rows={3}
+              style={{ width:'100%', padding:'10px 14px', border:'1px solid var(--border-color)', borderRadius:'10px', fontSize:'12.5px', background:'var(--primary-bg)', color:'var(--text-main)', resize:'vertical', outline:'none', fontFamily:'inherit' }}/>
           </div>
         </div>
-
-        {/* Right Side: Active Course Syllabus & Video Player */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          
-          {/* Active Lesson Video Panel */}
-          {selectedLesson && selectedLesson.type === 'video' && (
-            <div className="card" style={{ padding: '16px' }}>
-              <div style={{
-                position: 'relative',
-                paddingTop: '56.25%', /* 16:9 Aspect Ratio */
-                borderRadius: '10px',
-                overflow: 'hidden',
-                background: '#000',
-                marginBottom: '12px'
-              }}>
-                <iframe
-                  title="Lesson Video"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    border: 'none'
-                  }}
-                  src={selectedLesson.videoUrl}
-                  allowFullScreen
-                />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>{selectedLesson.title}</h4>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Video Tutorial • {selectedLesson.duration}</p>
-                </div>
-                <button
-                  style={{
-                    padding: '8px 16px',
-                    border: 'none',
-                    background: 'var(--active-blue)',
-                    color: 'white',
-                    borderRadius: '8px',
-                    fontWeight: 600,
-                    fontSize: '12px',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => {
-                    // Toggle locally completed
-                    selectedLesson.completed = true;
-                    setActiveCourse({ ...activeCourse });
-                  }}
-                >
-                  Mark as Complete
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Syllabus Content list */}
-          <div className="card" style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--sidebar-bg)' }}>{activeCourse.title}</h3>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Syllabus Breakdown & Interactive Assessments</p>
-              </div>
-            </div>
-
-            {/* Syllabus Rows */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {activeCourse.lessons.map((lesson) => (
-                <div
-                  key={lesson.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '14px 16px',
-                    background: 'var(--primary-bg)',
-                    borderRadius: '10px',
-                    border: '1px solid var(--border-color)',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                    {lesson.completed ? (
-                      <CheckCircle2 size={18} style={{ color: '#10b981', flexShrink: 0 }} />
-                    ) : (
-                      <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: '2px solid var(--border-color)', flexShrink: 0 }} />
-                    )}
-
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>
-                        {lesson.title}
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                        {lesson.type === 'video' ? 'Video Lesson • ' + lesson.duration : 'PDF Resource • ' + lesson.size}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {lesson.type === 'video' ? (
-                      <button
-                        onClick={() => setSelectedLesson(lesson)}
-                        style={{
-                          padding: '6px 12px',
-                          border: 'none',
-                          background: 'rgba(0, 123, 245, 0.08)',
-                          color: 'var(--active-blue)',
-                          borderRadius: '6px',
-                          fontSize: '11.5px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        <Play size={12} fill="var(--active-blue)" /> Play Lesson
-                      </button>
-                    ) : (
-                      <a
-                        href="#download-pdf"
-                        onClick={(e) => { e.preventDefault(); alert('Downloading PDF resources summary: ' + lesson.title); }}
-                        style={{
-                          padding: '6px 12px',
-                          border: 'none',
-                          background: 'rgba(16, 185, 129, 0.08)',
-                          color: '#10b981',
-                          borderRadius: '6px',
-                          fontSize: '11.5px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        <Download size={12} /> Download
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Quizzes List */}
-            {activeCourse.quizzes && activeCourse.quizzes.length > 0 && (
-              <div style={{ marginTop: '28px' }}>
-                <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '12px' }}>Quizzes & Knowledge Checks</h4>
-                
-                {activeCourse.quizzes.map((quiz) => (
-                  <div
-                    key={quiz.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '16px',
-                      background: 'rgba(245, 158, 11, 0.03)',
-                      border: '1px dashed #f59e0b',
-                      borderRadius: '12px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <Award size={22} style={{ color: '#f59e0b' }} />
-                      <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-main)' }}>{quiz.title}</div>
-                        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          {quiz.questionsCount} Questions • Time Limit: {quiz.timeLimit}s • Level: {quiz.difficulty}
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => startQuiz(quiz)}
-                      style={{
-                        padding: '8px 16px',
-                        border: 'none',
-                        background: '#f59e0b',
-                        color: 'white',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 10px rgba(245, 158, 11, 0.15)'
-                      }}
-                    >
-                      Start Quiz
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        <div style={{ padding:'14px 24px 20px', borderTop:'1px solid var(--border-color)', display:'flex', justifyContent:'flex-end', gap:'8px' }}>
+          <button onClick={onClose} style={{ padding:'8px 16px', border:'1px solid var(--border-color)', borderRadius:'8px', fontSize:'12px', fontWeight:600, color:'var(--text-muted)', background:'none', cursor:'pointer' }}>Cancel</button>
+          <button onClick={()=>onSave({ topic, type, description: desc })} disabled={!topic.trim()}
+            style={{ padding:'8px 20px', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:700, color:'white', background: topic.trim()?'var(--active-blue)':'var(--border-color)', cursor: topic.trim()?'pointer':'not-allowed' }}>
+            Save Day
+          </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Shared Month Grid ──
+function MonthGrid({ path, calYear, calMonth, onPrevMonth, onNextMonth, onDayClick, readOnly, batchName, batchStart, batchEnd, configuredCount }) {
+  const totalDays = daysInMonth(calYear, calMonth);
+  const todayISO = toISO(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
+      {/* Month nav bar */}
+      <div style={{ background:'var(--card-bg)', borderBottom:'1px solid var(--border-color)', padding:'12px 22px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+        <div>
+          <div style={{ fontSize:'14px', fontWeight:800, color:'var(--text-main)' }}>{batchName}</div>
+          <div style={{ fontSize:'11px', color:'var(--text-muted)' }}>{batchStart} → {batchEnd} &nbsp;•&nbsp; {configuredCount} days scheduled</div>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:'8px', background:'var(--primary-bg)', border:'1px solid var(--border-color)', borderRadius:'10px', padding:'5px 12px' }}>
+          <button onClick={onPrevMonth} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', display:'flex', padding:'2px' }}><ChevronLeft size={15}/></button>
+          <span style={{ fontSize:'13px', fontWeight:800, color:'var(--text-main)', minWidth:'120px', textAlign:'center' }}>{MONTHS[calMonth]} {calYear}</span>
+          <button onClick={onNextMonth} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', display:'flex', padding:'2px' }}><ChevronRight size={15}/></button>
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div style={{ flex:1, overflowY:'auto', padding:'20px 24px' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:'12px' }}>
+          {Array.from({ length: totalDays }, (_, i) => {
+            const day = i + 1;
+            const iso = toISO(calYear, calMonth, day);
+            const entry = path[iso];
+            const tc = entry ? (TYPE_COLORS[entry.type] || TYPE_COLORS['Lecture']) : null;
+            const isToday = iso === todayISO;
+
+            return (
+              <div key={iso} onClick={() => onDayClick(iso)}
+                style={{ background: entry ? tc.light : 'var(--card-bg)', border:`1.5px solid ${entry ? tc.bg : isToday ? 'rgba(0,123,245,0.3)' : 'var(--border-color)'}`, borderRadius:'14px', padding:'14px 12px', cursor: (readOnly && !entry) ? 'default' : 'pointer', minHeight:'86px', display:'flex', flexDirection:'column', gap:'5px', transition:'all 0.18s', position:'relative', boxShadow: entry ? `0 2px 10px ${tc.bg}` : 'none' }}
+                onMouseOver={e => { if(entry || !readOnly) { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow=entry?`0 6px 18px ${tc.bg}`:'0 4px 14px rgba(0,0,0,0.06)'; }}}
+                onMouseOut={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow=entry?`0 2px 10px ${tc.bg}`:'none'; }}
+              >
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                  <span style={{ fontSize:'13px', fontWeight:800, color: entry?tc.color:isToday?'var(--active-blue)':'var(--text-muted)' }}>{day}</span>
+                  {entry
+                    ? <span style={{ fontSize:'9px', fontWeight:700, padding:'2px 5px', borderRadius:'8px', background:tc.bg, color:tc.color }}>{entry.type.split(' ')[0]}</span>
+                    : (!readOnly && <Plus size={12} color="var(--text-muted)" style={{ opacity:0.35 }}/>)
+                  }
+                </div>
+                {entry?.topic
+                  ? <div style={{ fontSize:'11.5px', fontWeight:700, color:'var(--text-main)', lineHeight:1.3, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{entry.topic}</div>
+                  : (!readOnly && <div style={{ fontSize:'10.5px', color:'var(--text-muted)', opacity:0.4, fontStyle:'italic' }}>Click to add</div>)
+                }
+                {isToday && <span style={{ position:'absolute', top:'7px', left:'7px', width:'5px', height:'5px', borderRadius:'50%', background:'var(--active-blue)', display:'block' }}/>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ──
+export default function LMSSection({ currentUser }) {
+  const isStudent = currentUser?.role === 'Student';
+  const isMentor  = currentUser?.role === 'Mentor';
+
+  const getFullName = (user) => {
+    if (!user) return '';
+    if (user.first_name) {
+      return `${user.first_name} ${user.last_name || ''}`.trim();
+    }
+    return user.name || '';
+  };
+
+  const [batches, setBatches]             = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [selectedBatch, setSelectedBatch] = useState(null);
+  const [learningPaths, setLearningPaths] = useState({});
+  const [modalDate, setModalDate]         = useState(null);
+  const today = new Date();
+  const [calYear, setCalYear]   = useState(today.getFullYear());
+  const [calMonth, setCalMonth] = useState(today.getMonth());
+
+  const fmtDate = (str) => { if(!str) return 'N/A'; return new Date(str).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); };
+  const prevMonth = () => { if(calMonth===0){setCalMonth(11);setCalYear(y=>y-1);}else setCalMonth(m=>m-1); };
+  const nextMonth = () => { if(calMonth===11){setCalMonth(0);setCalYear(y=>y+1);}else setCalMonth(m=>m+1); };
+
+  useEffect(()=>{
+    const load = async () => {
+      try {
+        const cohorts = await cohortApi.getCohorts();
+        setBatches(cohorts || []);
+
+        if (isStudent) {
+          // Auto-find and open the student's own batch
+          const allStudents = await cohortApi.getAllStudents();
+          const me = allStudents.find(s => s.email?.toLowerCase() === currentUser?.email?.toLowerCase());
+          if (me?.cohort_id) {
+            const myBatch = cohorts.find(c => c.id === me.cohort_id);
+            if (myBatch) {
+              setSelectedBatch(myBatch);
+              if(myBatch.start_date){ const d=new Date(myBatch.start_date); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }
+              const saved = localStorage.getItem(`lms_path_${myBatch.id}`);
+              setLearningPaths(prev=>({ ...prev, [myBatch.id]: saved ? JSON.parse(saved) : {} }));
+            }
+          }
+        } else if (isMentor) {
+          // Auto-find and open if the mentor only has 1 batch assigned
+          const mentorName = getFullName(currentUser).toLowerCase();
+          const mentorEmail = (currentUser?.email || '').toLowerCase();
+          const myBatches = cohorts.filter(b => 
+            (b.mentor_email && b.mentor_email.toLowerCase() === mentorEmail) ||
+            (b.mentor_name && b.mentor_name.toLowerCase() === mentorName)
+          );
+          if (myBatches.length === 1) {
+            const myBatch = myBatches[0];
+            setSelectedBatch(myBatch);
+            if(myBatch.start_date){ const d=new Date(myBatch.start_date); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }
+            const saved = localStorage.getItem(`lms_path_${myBatch.id}`);
+            setLearningPaths(prev=>({ ...prev, [myBatch.id]: saved ? JSON.parse(saved) : {} }));
+          }
+        }
+      } catch(err) {
+        console.error('LMS load error:', err);
+        setBatches([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const openBatch = (batch) => {
+    setSelectedBatch(batch);
+    if(batch.start_date){ const d=new Date(batch.start_date); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }
+    const saved = localStorage.getItem(`lms_path_${batch.id}`);
+    setLearningPaths(prev=>({ ...prev, [batch.id]: saved ? JSON.parse(saved) : {} }));
+  };
+
+  const getPath = () => learningPaths[selectedBatch?.id] || {};
+
+  const saveEntry = (iso, data) => {
+    const updated = { ...getPath(), [iso]: data };
+    setLearningPaths(prev => ({ ...prev, [selectedBatch.id]: updated }));
+    try { localStorage.setItem(`lms_path_${selectedBatch.id}`, JSON.stringify(updated)); } catch {}
+    setModalDate(null);
+  };
+
+  const handleDayClick = (iso) => {
+    if (isStudent || isMentor) {
+      // Students/Mentors: only open if there's something to view
+      const entry = getPath()[iso];
+      if (entry) setModalDate(iso);
+    } else {
+      setModalDate(iso);
+    }
+  };
+
+  const path = getPath();
+  const configuredCount = Object.keys(path).length;
+
+  // ── LOADING ──
+  if (loading) {
+    return (
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', color:'var(--text-muted)', fontSize:'13px' }}>
+        Loading...
+      </div>
+    );
+  }
+
+  // ── STUDENT: no batch found ──
+  if (isStudent && !selectedBatch) {
+    return (
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:'100%', gap:'12px', color:'var(--text-muted)' }}>
+        <BookOpen size={36} style={{ opacity:0.3 }}/>
+        <div style={{ fontSize:'15px', fontWeight:600 }}>You are not assigned to any batch yet.</div>
+        <div style={{ fontSize:'12.5px' }}>Contact your admin or mentor to get assigned.</div>
+      </div>
+    );
+  }
+
+  // ── MONTH GRID (student/mentor read-only OR admin with batch selected) ──
+  if (selectedBatch) {
+    const readOnly = isStudent || isMentor;
+    return (
+      <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
+
+        {/* Modals */}
+        {modalDate && (isStudent || isMentor) && (
+          <DayViewModal iso={modalDate} entry={path[modalDate]} onClose={()=>setModalDate(null)}/>
+        )}
+        {modalDate && !isStudent && !isMentor && (
+          <DayModal iso={modalDate} entry={path[modalDate]} onClose={()=>setModalDate(null)} onSave={(data)=>saveEntry(modalDate, data)}/>
+        )}
+
+        {/* Back button for admin and mentor */}
+        {!isStudent && (
+          <div style={{ background:'var(--card-bg)', borderBottom:'1px solid var(--border-color)', padding:'10px 20px', flexShrink:0 }}>
+            <button onClick={()=>setSelectedBatch(null)} style={{ background:'var(--primary-bg)', border:'1px solid var(--border-color)', borderRadius:'8px', padding:'5px 12px', cursor:'pointer', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:'5px', fontSize:'12px', fontWeight:600 }}>
+              <ChevronLeft size={13}/> {isMentor ? 'My Batches' : 'All Batches'}
+            </button>
+          </div>
+        )}
+
+        <MonthGrid
+          path={path}
+          calYear={calYear} calMonth={calMonth}
+          onPrevMonth={prevMonth} onNextMonth={nextMonth}
+          onDayClick={handleDayClick}
+          readOnly={readOnly}
+          batchName={selectedBatch.name}
+          batchStart={fmtDate(selectedBatch.start_date)}
+          batchEnd={fmtDate(selectedBatch.end_date)}
+          configuredCount={configuredCount}
+        />
+      </div>
+    );
+  }
+
+  // ── MENTOR: own batch list ──
+  if (isMentor) {
+    const mentorName = getFullName(currentUser).toLowerCase();
+    const mentorEmail = (currentUser?.email || '').toLowerCase();
+    const myBatches = batches.filter(b => 
+      (b.mentor_email && b.mentor_email.toLowerCase() === mentorEmail) ||
+      (b.mentor_name && b.mentor_name.toLowerCase() === mentorName)
+    );
+    return (
+      <div style={{ padding:'28px 32px' }}>
+        <div style={{ marginBottom:'24px' }}>
+          <h2 style={{ fontSize:'19px', fontWeight:800, color:'var(--text-main)', margin:0, display:'flex', alignItems:'center', gap:'10px' }}>
+            <GraduationCap size={21} color="var(--active-blue)"/> My Batch Schedules
+          </h2>
+          <p style={{ fontSize:'12px', color:'var(--text-muted)', marginTop:'5px' }}>Click a batch to view its monthly learning schedule.</p>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:'18px' }}>
+          {myBatches.map(batch => {
+            const saved = localStorage.getItem(`lms_path_${batch.id}`);
+            const dayCount = saved ? Object.keys(JSON.parse(saved)).length : 0;
+            return (
+              <div key={batch.id} onClick={()=>openBatch(batch)}
+                style={{ background:'var(--card-bg)', border:'1px solid var(--border-color)', borderRadius:'16px', padding:'22px', cursor:'pointer', transition:'all 0.2s', boxShadow:'var(--card-shadow)', position:'relative' }}
+                onMouseOver={e=>{e.currentTarget.style.borderColor='rgba(0,123,245,0.4)';e.currentTarget.style.boxShadow='0 4px 20px rgba(0,123,245,0.1)';} }
+                onMouseOut={e=>{e.currentTarget.style.borderColor='var(--border-color)';e.currentTarget.style.boxShadow='var(--card-shadow)';} }
+              >
+                <div style={{ position:'absolute', top:'14px', right:'14px' }}>
+                  <span style={{ fontSize:'10px', fontWeight:700, padding:'3px 9px', borderRadius:'20px', background: dayCount>0?'rgba(16,185,129,0.1)':'rgba(245,158,11,0.1)', color: dayCount>0?'#10b981':'#f59e0b', border:`1px solid ${dayCount>0?'rgba(16,185,129,0.2)':'rgba(245,158,11,0.2)'}` }}>
+                    {dayCount>0?`${dayCount} Days Set`:'No Schedule Yet'}
+                  </span>
+                </div>
+                <div style={{ width:'40px', height:'40px', borderRadius:'12px', background:'rgba(0,123,245,0.08)', border:'1px solid rgba(0,123,245,0.15)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'12px' }}>
+                  <BookOpen size={19} color="var(--active-blue)"/>
+                </div>
+                <div style={{ fontSize:'15px', fontWeight:800, color:'var(--text-main)', marginBottom:'6px', paddingRight:'80px' }}>{batch.name}</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:'3px', marginBottom:'14px' }}>
+                  <div style={{ fontSize:'11.5px', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:'5px' }}><Calendar size={10}/> {fmtDate(batch.start_date)} – {fmtDate(batch.end_date)}</div>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end' }}>
+                  <span style={{ display:'flex', alignItems:'center', gap:'4px', fontSize:'12px', fontWeight:700, color:'var(--active-blue)' }}>View Schedule <ChevronRight size={13}/></span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ── ADMIN: Batch list ──
+  return (
+    <div style={{ padding:'28px 32px' }}>
+      <div style={{ marginBottom:'24px' }}>
+        <h2 style={{ fontSize:'19px', fontWeight:800, color:'var(--text-main)', margin:0, display:'flex', alignItems:'center', gap:'10px' }}>
+          <GraduationCap size={21} color="var(--active-blue)"/> LMS — Batch Learning Paths
+        </h2>
+        <p style={{ fontSize:'12px', color:'var(--text-muted)', marginTop:'5px' }}>Select a batch to build its monthly learning schedule.</p>
+      </div>
+
+      {batches.length===0 ? (
+        <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text-muted)' }}>
+          <AlertCircle size={34} style={{ marginBottom:'12px', opacity:0.4 }}/>
+          <div style={{ fontSize:'15px', fontWeight:600 }}>No batches found</div>
+        </div>
+      ) : (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:'18px' }}>
+          {batches.map(batch => {
+            const saved = localStorage.getItem(`lms_path_${batch.id}`);
+            const dayCount = saved ? Object.keys(JSON.parse(saved)).length : 0;
+            const isConfigured = dayCount > 0;
+            return (
+              <div key={batch.id} onClick={()=>openBatch(batch)}
+                style={{ background:'var(--card-bg)', border:'1px solid var(--border-color)', borderRadius:'16px', padding:'22px', cursor:'pointer', transition:'all 0.2s', boxShadow:'var(--card-shadow)', position:'relative' }}
+                onMouseOver={e=>{e.currentTarget.style.borderColor='rgba(0,123,245,0.4)';e.currentTarget.style.boxShadow='0 4px 20px rgba(0,123,245,0.1)';}}
+                onMouseOut={e=>{e.currentTarget.style.borderColor='var(--border-color)';e.currentTarget.style.boxShadow='var(--card-shadow)';}}
+              >
+                <div style={{ position:'absolute', top:'14px', right:'14px' }}>
+                  <span style={{ fontSize:'10px', fontWeight:700, padding:'3px 9px', borderRadius:'20px', background:isConfigured?'rgba(16,185,129,0.1)':'rgba(245,158,11,0.1)', color:isConfigured?'#10b981':'#f59e0b', border:`1px solid ${isConfigured?'rgba(16,185,129,0.2)':'rgba(245,158,11,0.2)'}` }}>
+                    {isConfigured?`${dayCount} Days Set`:'Not Configured'}
+                  </span>
+                </div>
+                <div style={{ width:'40px', height:'40px', borderRadius:'12px', background:'rgba(0,123,245,0.08)', border:'1px solid rgba(0,123,245,0.15)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'12px' }}>
+                  <Layers size={19} color="var(--active-blue)"/>
+                </div>
+                <div style={{ fontSize:'15px', fontWeight:800, color:'var(--text-main)', marginBottom:'6px', paddingRight:'80px' }}>{batch.name}</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:'3px', marginBottom:'14px' }}>
+                  {batch.mentor_name && <div style={{ fontSize:'11.5px', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:'5px' }}><User size={10}/> {batch.mentor_name}</div>}
+                  <div style={{ fontSize:'11.5px', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:'5px' }}><Calendar size={10}/> {fmtDate(batch.start_date)} – {fmtDate(batch.end_date)}</div>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                  <span style={{ fontSize:'11px', color:'var(--text-muted)', background:'var(--primary-bg)', padding:'3px 8px', borderRadius:'6px', border:'1px solid var(--border-color)' }}>{batch.status||'Active'}</span>
+                  <span style={{ display:'flex', alignItems:'center', gap:'4px', fontSize:'12px', fontWeight:700, color:'var(--active-blue)' }}>
+                    {isConfigured?'Edit Path':'Setup Path'} <ChevronRight size={13}/>
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

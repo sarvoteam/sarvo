@@ -38,6 +38,8 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 main {
@@ -49,7 +51,7 @@ body {
   color: var(--text-primary);
   font-family: var(--font-body);
   line-height: 1.6;
-  overflow-x: hidden;
+  overflow: visible;
   transition: background-color 0.5s ease, color 0.5s ease;
 }
 
