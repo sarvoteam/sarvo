@@ -9,8 +9,8 @@ const INITIAL_BATCHES = [
   {
     id: 1,
     name: 'Summer Full-Stack BootCamp 2026',
-    mentorName: 'Aditya Patil',
-    mentorEmail: 'mentor@sarvo.com',
+    mentorName: 'Om Mentor',
+    mentorEmail: 'om@sarvo.com',
     startDate: '2026-06-01',
     progress: 75,
     studentsCount: 1,
@@ -44,6 +44,26 @@ export default function BatchSection({ currentUser, subNavItem }) {
   const [formDesc, setFormDesc] = useState('');
 
   const isAdmin = currentUser?.role === 'Admin';
+  const isMentor = currentUser?.role === 'Mentor';
+
+  const getFullName = (user) => {
+    if (!user) return '';
+    if (user.first_name) {
+      return `${user.first_name} ${user.last_name || ''}`.trim();
+    }
+    return user.name || '';
+  };
+
+  const displayedBatches = isMentor
+    ? batches.filter(batch => {
+        const mentorName = getFullName(currentUser).toLowerCase();
+        const mentorEmail = (currentUser?.email || '').toLowerCase();
+        return (
+          (batch.mentorEmail && batch.mentorEmail.toLowerCase() === mentorEmail) ||
+          (batch.mentorName && batch.mentorName.toLowerCase() === mentorName)
+        );
+      })
+    : batches;
 
   const mapCohort = (c) => ({
     id: c.id,
@@ -185,84 +205,90 @@ export default function BatchSection({ currentUser, subNavItem }) {
       </div>
 
       {/* Batch Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
-        {batches.map(batch => (
-          <div 
-            key={batch.id} 
-            className="card" 
-            onClick={() => setSelectedBatch(batch)}
-            style={{ 
-              padding: '20px', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              justifySelf: 'stretch', 
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              transition: 'transform 0.2s, box-shadow 0.2s'
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--active-blue)', textTransform: 'uppercase' }}>
-                    Cohort
-                  </span>
-                  <span style={{
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    background: batch.status === 'Active' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                    color: batch.status === 'Active' ? '#10b981' : '#ef4444'
-                  }}>
-                    {batch.status}
-                  </span>
-                </div>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Calendar size={12} /> Duration: {batch.startDate} {batch.endDate ? `to ${batch.endDate}` : ''}
-                </span>
-              </div>
-
-              <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '8px' }}>
-                {batch.name}
-              </h4>
-              
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '14px' }}>
-                {batch.description}
-              </p>
-            </div>
-
-            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px', marginTop: '10px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                <div>
-                  <span>Assigned Mentor</span>
-                  <strong style={{ display: 'block', color: 'var(--text-main)', marginTop: '2px' }}>
-                    {batch.mentorName}
-                  </strong>
-                </div>
-                <div>
-                  <span>Total Students</span>
-                  <strong style={{ display: 'block', color: 'var(--text-main)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <Users size={12} /> {batch.studentsCount} Students
-                  </strong>
-                </div>
-              </div>
-
-              {/* Progress bar */}
+      {displayedBatches.length === 0 ? (
+        <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', width: '100%' }}>
+          No cohorts assigned to you yet.
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
+          {displayedBatches.map(batch => (
+            <div 
+              key={batch.id} 
+              className="card" 
+              onClick={() => setSelectedBatch(batch)}
+              style={{ 
+                padding: '20px', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifySelf: 'stretch', 
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+            >
               <div>
-                <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  <span>Course Syllabus Progress</span>
-                  <strong>{batch.progress}%</strong>
+                <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--active-blue)', textTransform: 'uppercase' }}>
+                      Cohort
+                    </span>
+                    <span style={{
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      background: batch.status === 'Active' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                      color: batch.status === 'Active' ? '#10b981' : '#ef4444'
+                    }}>
+                      {batch.status}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Calendar size={12} /> Duration: {batch.startDate} {batch.endDate ? `to ${batch.endDate}` : ''}
+                  </span>
                 </div>
-                <div style={{ width: '100%', height: '6px', background: 'var(--primary-bg)', borderRadius: '10px', overflow: 'hidden' }}>
-                  <div style={{ width: `${batch.progress}%`, height: '100%', background: 'var(--active-blue)', borderRadius: '10px' }} />
+
+                <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '8px' }}>
+                  {batch.name}
+                </h4>
+                
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '14px' }}>
+                  {batch.description}
+                </p>
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px', marginTop: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                  <div>
+                    <span>Assigned Mentor</span>
+                    <strong style={{ display: 'block', color: 'var(--text-main)', marginTop: '2px' }}>
+                      {batch.mentorName}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Total Students</span>
+                    <strong style={{ display: 'block', color: 'var(--text-main)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <Users size={12} /> {batch.studentsCount} Students
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div>
+                  <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    <span>Course Syllabus Progress</span>
+                    <strong>{batch.progress}%</strong>
+                  </div>
+                  <div style={{ width: '100%', height: '6px', background: 'var(--primary-bg)', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ width: `${batch.progress}%`, height: '100%', background: 'var(--active-blue)', borderRadius: '10px' }} />
+                  </div>
                 </div>
               </div>
-            </div>
 
-          </div>
-        ))}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ADMIN DRAWER MODAL FOR CREATE BATCH */}
       {isDrawerOpen && (

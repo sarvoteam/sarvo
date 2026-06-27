@@ -1,4 +1,5 @@
 import React from 'react';
+import sarvoLogo from '../../../assets/sarvo.jpg';
 import {
   Home,
   Layers,
@@ -32,16 +33,18 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
       { id: 'projects', label: 'Projects', icon: Folder },
       { id: 'placements', label: 'Placements', icon: Briefcase },
       { id: 'certificates', label: 'Certificates', icon: Award },
-      { id: 'reports', label: 'Analytics', icon: BarChart2 }
+      { id: 'reports', label: 'Analytics', icon: BarChart2 },
+      { id: 'competitions', label: 'Competitions', icon: Trophy }
     ],
-    'Reporting Manager': [
+    Mentor: [
       { id: 'home', label: 'Dashboard', icon: Home },
       { id: 'batches', label: 'My Batches', icon: Layers },
+      { id: 'lms', label: 'LMS Schedule', icon: BookOpen },
       { id: 'dailyreports', label: 'Intern Logs', icon: Activity },
       { id: 'tasks', label: 'Tasks Manager', icon: CheckSquare },
       { id: 'projects', label: 'Project reviews', icon: Folder },
       { id: 'attendance', label: 'Attendance', icon: Fingerprint },
-      { id: 'leave', label: 'Approve Leaves', icon: Umbrella }
+      { id: 'leave', label: 'Leaves', icon: Umbrella }
     ],
     Intern: [
       { id: 'home', label: 'My Space', icon: Home },
@@ -54,23 +57,48 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
       { id: 'certificates', label: 'My Certificate', icon: Award },
       { id: 'leave', label: 'Leaves', icon: Umbrella },
       { id: 'attendance', label: 'Attendance', icon: Fingerprint }
+    ],
+    Student: [
+      { id: 'home', label: 'My Space', icon: Home },
+      { id: 'student_batch', label: 'Batch Details', icon: Layers },
+      { id: 'student_attendance', label: 'My Attendance', icon: Fingerprint },
+      { id: 'projects', label: 'My Projects', icon: Folder },
+      { id: 'lms', label: 'LMS Study', icon: BookOpen }
     ]
   };
-
+ 
   // Resolve role list
   const userRole = user?.role === 'Admin' 
     ? 'Admin' 
-    : user?.role === 'Reporting Manager' 
-      ? 'Reporting Manager' 
-      : 'Intern';
-
+    : user?.role === 'Mentor' 
+      ? 'Mentor' 
+      : user?.role === 'Student'
+        ? 'Student'
+        : 'Intern';
+ 
   const visibleMenuItems = menuConfig[userRole] || menuConfig['Intern'];
 
   return (
     <aside className="sidebar">
       {/* Brand Logo */}
-      <div className="sidebar-logo" style={{ background: 'linear-gradient(135deg, var(--active-blue), #00d2ff)', color: 'white', fontWeight: 800, fontSize: '18px' }}>
-        S
+      <div className="sidebar-logo" style={{ 
+        width: '32px', 
+        height: '32px', 
+        minWidth: '32px', 
+        minHeight: '32px', 
+        borderRadius: '50%', 
+        overflow: 'hidden', 
+        background: 'none',
+        padding: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <img 
+          src={sarvoLogo} 
+          alt="Sarvo Logo" 
+          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+        />
       </div>
 
       {/* Navigation Menu */}

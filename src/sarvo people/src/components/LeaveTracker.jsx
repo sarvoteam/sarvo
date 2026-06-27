@@ -61,7 +61,7 @@ export default function LeaveTracker({ subNavItem = 'Leave Summary', user }) {
   const [remarksMap, setRemarksMap] = useState({});
   const [approvingIds, setApprovingIds] = useState({});
 
-  const isPrivileged = user?.role === 'Admin' || user?.role === 'HR' || user?.role === 'Reporting Manager';
+  const isPrivileged = user?.role === 'Admin' || user?.role === 'HR';
 
   // Fetch leave types, holidays, and applications
   const fetchLeaveData = async () => {
@@ -383,7 +383,7 @@ export default function LeaveTracker({ subNavItem = 'Leave Summary', user }) {
       )}
 
       {/* ==================== VIEW 2: LEAVE REQUESTS ==================== */}
-      {subNavItem === 'Leave Requests' && (
+      {(subNavItem === 'Leave Requests' || subNavItem === 'My Requests') && (
         <>
           {isPrivileged ? (
             /* Privileged View: Approve/Reject requests from interns */
