@@ -26,6 +26,7 @@ import BatchSection from '../sarvo people/src/components/BatchSection';
 import DailyReportsSection from '../sarvo people/src/components/DailyReportsSection';
 import StudentTestsSection from '../sarvo people/src/components/StudentTestsSection';
 import AdminTestsSection from '../sarvo people/src/components/AdminTestsSection';
+import JobApplicationsPanel from '../sarvo people/src/components/JobApplicationsPanel';
 
 
 // Import Sarvo People styles (scoped within .sarvo-people-wrapper)
@@ -121,6 +122,9 @@ export default function SarvoPeoplePage({
     } else if (activeTab === 'reports') {
       setActiveSubTab('Analytics Hub');
       setSubNavItem('SVG Graphs');
+    } else if (activeTab === 'jobapplications') {
+      setActiveSubTab('Recruitment');
+      setSubNavItem('All Applications');
     } else if (activeTab === 'batches') {
       setActiveSubTab('Cohorts');
       setSubNavItem('Active Batches');
@@ -162,6 +166,8 @@ export default function SarvoPeoplePage({
                     ? ['Credentials']
                     : activeTab === 'reports'
                       ? ['Analytics Hub']
+                      : activeTab === 'jobapplications'
+                        ? ['Recruitment']
                       : activeTab === 'batches'
                         ? ['Cohorts']
                         : activeTab === 'tests'
@@ -195,6 +201,8 @@ export default function SarvoPeoplePage({
                         ? ['My Certificates', 'Public Verification']
                         : activeTab === 'reports'
                           ? ['SVG Graphs', 'Data Exporters']
+                          : activeTab === 'jobapplications'
+                            ? ['All Applications']
                           : activeTab === 'batches'
                             ? ['Active Batches', 'Roster Map', 'Students']
                             : activeTab === 'tests'
@@ -377,6 +385,7 @@ export default function SarvoPeoplePage({
               <Route path="aihub" element={<AIFeaturesSection currentUser={employee} />} />
               <Route path="certificates" element={<CertificateSection currentUser={employee} />} />
               <Route path="reports" element={<ReportsSection />} />
+              <Route path="jobapplications" element={<JobApplicationsPanel />} />
               <Route path="batches" element={<BatchSection currentUser={employee} subNavItem={subNavItem} />} />
               <Route path="dailyreports" element={<DailyReportsSection currentUser={employee} />} />
               <Route path="tests" element={employee?.role === 'Admin' ? <AdminTestsSection currentUser={employee} subNavItem={subNavItem} /> : <StudentTestsSection currentUser={employee} />} />

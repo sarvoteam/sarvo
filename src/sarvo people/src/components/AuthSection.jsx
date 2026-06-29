@@ -459,13 +459,19 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
                   />
                 </div>
 
-                <div className="auth-form-row">
+                 <div className="auth-form-row">
                   <div className="auth-form-group">
                     <label>GitHub Profile URL</label>
                     <input
-                      type="url"
+                      type="text"
                       value={regGithub}
                       onChange={(e) => setRegGithub(e.target.value)}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim();
+                        if (val && !/^https?:\/\//i.test(val)) {
+                          setRegGithub(`https://${val}`);
+                        }
+                      }}
                       placeholder="https://github.com/..."
                       style={{
                         width: '100%',
@@ -482,9 +488,15 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
                   <div className="auth-form-group">
                     <label>LinkedIn Profile URL</label>
                     <input
-                      type="url"
+                      type="text"
                       value={regLinkedin}
                       onChange={(e) => setRegLinkedin(e.target.value)}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim();
+                        if (val && !/^https?:\/\//i.test(val)) {
+                          setRegLinkedin(`https://${val}`);
+                        }
+                      }}
                       placeholder="https://linkedin.com/in/..."
                       style={{
                         width: '100%',

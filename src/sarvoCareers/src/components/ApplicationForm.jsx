@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, Upload, Link2, CheckCircle2, X } from 'lucide-react';
 import { FaLinkedin } from 'react-icons/fa';
+import { jobApi } from '../../../sarvo people/src/apis/jobApi';
 
 const ApplicationForm = ({ job, onClose }) => {
   const [formData, setFormData] = useState({
@@ -31,7 +32,16 @@ const ApplicationForm = ({ job, onClose }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const getBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -42,11 +52,35 @@ const ApplicationForm = ({ job, onClose }) => {
 
     setIsSubmitting(true);
 
-    // Simulate submission delay
-    setTimeout(() => {
+    try {
+      const nameParts = formData.name.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || 'Candidate';
+      
+      const resumeBase64 = await getBase64(resume);
+      
+      const payload = {
+        firstName,
+        lastName,
+        email: formData.email,
+        phone: formData.phone,
+        resumeUrl: '',
+        resumeBase64,
+        resumeName: resume.name,
+        coverLetter: formData.coverLetter || '',
+        linkedin: formData.linkedin || '',
+        portfolio: formData.portfolio || ''
+      };
+
+      await jobApi.applyForJob(job.id, payload);
+      
       setIsSubmitting(false);
       setSubmitted(true);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to submit application. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -157,11 +191,17 @@ const ApplicationForm = ({ job, onClose }) => {
                 <input
                   id="linkedin-input"
                   name="linkedin"
-                  type="url"
+                  type="text"
                   className="form-control"
                   placeholder="https://linkedin.com/in/username"
                   value={formData.linkedin}
                   onChange={handleInputChange}
+                  onBlur={(e) => {
+                    const val = e.target.value.trim();
+                    if (val && !/^https?:\/\//i.test(val)) {
+                      setFormData(prev => ({ ...prev, linkedin: `https://${val}` }));
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -173,11 +213,17 @@ const ApplicationForm = ({ job, onClose }) => {
                 <input
                   id="portfolio-input"
                   name="portfolio"
-                  type="url"
+                  type="text"
                   className="form-control"
                   placeholder="https://myportfolio.com"
                   value={formData.portfolio}
                   onChange={handleInputChange}
+                  onBlur={(e) => {
+                    const val = e.target.value.trim();
+                    if (val && !/^https?:\/\//i.test(val)) {
+                      setFormData(prev => ({ ...prev, portfolio: `https://${val}` }));
+                    }
+                  }}
                 />
               </div>
             </div>

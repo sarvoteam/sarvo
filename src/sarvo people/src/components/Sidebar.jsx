@@ -33,6 +33,7 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
       { id: 'lms', label: 'LMS Hub', icon: BookOpen },
       { id: 'projects', label: 'Projects', icon: Folder },
       { id: 'placements', label: 'Placements', icon: Briefcase },
+      { id: 'jobapplications', label: 'Job Apply', icon: ClipboardList },
       { id: 'certificates', label: 'Certificates', icon: Award },
       { id: 'reports', label: 'Analytics', icon: BarChart2 }
     ],

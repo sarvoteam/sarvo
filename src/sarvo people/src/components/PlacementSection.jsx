@@ -22,12 +22,12 @@ export default function PlacementSection({ currentUser }) {
       const mappedJobs = jobsData.map(j => {
         // Find if current user applied (matches by email)
         const userApp = appsData.find(a => 
-          Number(a.job_id) === Number(j.id) && 
+          a.job_id === j.id && 
           a.email.toLowerCase() === currentUser?.email?.toLowerCase()
         );
 
         // For Admin, show the first application details so they can perform updates
-        const anyApp = appsData.find(a => Number(a.job_id) === Number(j.id));
+        const anyApp = appsData.find(a => a.job_id === j.id);
         const activeApp = isAdminOrMentor ? anyApp : userApp;
 
         return {
