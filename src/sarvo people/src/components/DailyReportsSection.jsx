@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, AlertTriangle, FileText, Plus, X, MessageSquare, CheckCircle, RefreshCw } from 'lucide-react';
 import { dailyReportApi } from '../apis/dailyReportApi';
+import { cohortApi } from '../apis/cohortApi';
 
 const INITIAL_REPORTS = [
   {
@@ -41,7 +42,18 @@ export default function DailyReportsSection({ currentUser }) {
   const [activeReport, setActiveReport] = useState(null);
   const [feedbackText, setFeedbackText] = useState('');
 
-  const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Reporting Manager';
+  const [mentorStudentEmails, setMentorStudentEmails] = useState([]);
+
+  const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Mentor';
+  const isMentor = currentUser?.role === 'Mentor';
+
+  const getFullName = (user) => {
+    if (!user) return '';
+    if (user.first_name) {
+      return `${user.first_name} ${user.last_name || ''}`.trim();
+    }
+    return user.name || '';
+  };
 
   // Map database reports format to frontend component requirements
   const mapReport = (dbRow) => ({
@@ -71,7 +83,31 @@ export default function DailyReportsSection({ currentUser }) {
 
   // Load reports
   useEffect(() => {
-    loadReports();
+    const init = async () => {
+      await loadReports();
+      if (isMentor) {
+        try {
+          const cohorts = await cohortApi.getCohorts();
+          const mentorName = getFullName(currentUser).toLowerCase();
+          const mentorEmail = (currentUser?.email || '').toLowerCase();
+          const myBatchIds = cohorts
+            .filter(b => 
+              (b.mentor_email && b.mentor_email.toLowerCase() === mentorEmail) ||
+              (b.mentor_name && b.mentor_name.toLowerCase() === mentorName)
+            )
+            .map(b => b.id);
+
+          const allStudents = await cohortApi.getAllStudents();
+          const myEmails = allStudents
+            .filter(s => myBatchIds.includes(s.cohort_id))
+            .map(s => (s.email || '').toLowerCase());
+          setMentorStudentEmails(myEmails);
+        } catch (err) {
+          console.error('Failed to load mentor students:', err);
+        }
+      }
+    };
+    init();
   }, []);
 
   const handleInternSubmit = async (e) => {
@@ -118,9 +154,11 @@ export default function DailyReportsSection({ currentUser }) {
     }
   };
 
-  const visibleReports = isAdminOrMentor
+  const visibleReports = currentUser?.role === 'Admin'
     ? reports
-    : reports.filter(r => r.internEmail === currentUser?.email);
+    : isMentor
+      ? reports.filter(r => mentorStudentEmails.includes((r.internEmail || '').toLowerCase()))
+      : reports.filter(r => r.internEmail === currentUser?.email);
 
   return (
     <div className="daily-reports-container" style={{ padding: '24px', textAlign: 'left' }}>

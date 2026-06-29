@@ -12,7 +12,7 @@
   font-family: var(--font-body);
   padding: 2rem 2rem 6rem;
   position: relative;
-  overflow-x: hidden;
+  overflow: visible;
 }
 
 /* Background Blobs */

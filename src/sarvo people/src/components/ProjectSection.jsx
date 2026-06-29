@@ -25,7 +25,8 @@ const normalizeProject = (p) => {
     assignedTo: p.assignedTo || p.assigned_to_email || 'Development Team',
     deadline: p.deadline || (p.end_date ? new Date(p.end_date).toLocaleDateString() : 'No Deadline'),
     description: p.description || 'No description provided.',
-    category: p.category || 'Company Project'
+    category: p.category || 'Company Project',
+    assignedEmails: p.assigned_emails || []
   };
 };
 
@@ -58,7 +59,7 @@ export default function ProjectSection({ currentUser }) {
   const [allStudents, setAllStudents] = useState([]);
 
   const isAdmin = currentUser?.role === 'Admin';
-  const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Reporting Manager' || currentUser?.role === 'admin' || currentUser?.role === 'mentor';
+  const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Mentor' || currentUser?.role === 'admin' || currentUser?.role === 'mentor';
 
   const loadProjects = async () => {
     try {
@@ -210,7 +211,10 @@ export default function ProjectSection({ currentUser }) {
   // Filter projects if Intern (only see their assigned ones)
   const visibleProjects = isAdminOrMentor
     ? projects
-    : projects.filter(p => p.assignedToEmail === currentUser?.email);
+    : projects.filter(p => 
+        (p.assignedEmails && p.assignedEmails.includes(currentUser?.email)) ||
+        p.assignedToEmail === currentUser?.email
+      );
 
   useEffect(() => {
     if (visibleProjects.length > 0) {
@@ -513,7 +517,7 @@ export default function ProjectSection({ currentUser }) {
                 Assign Mentors / Admins
               </label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '120px', overflowY: 'auto', padding: '8px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--primary-bg)' }}>
-                {allEmployees.filter(emp => emp.role === 'Admin' || emp.role === 'Reporting Manager').map(emp => {
+                {allEmployees.filter(emp => emp.role === 'Admin' || emp.role === 'Mentor').map(emp => {
                   const isAssigned = tempAssignedMembers.some(m => (m.employee_id === emp.id || m.employeeId === emp.id) && (m.role === 'Mentor' || m.role === 'Admin'));
                   return (
                     <label key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '4px 10px', background: isAssigned ? 'rgba(0,123,245,0.08)' : 'var(--card-bg)', border: `1px solid ${isAssigned ? 'var(--active-blue)' : 'var(--border-color)'}`, borderRadius: '6px', cursor: 'pointer' }}>
@@ -577,7 +581,7 @@ export default function ProjectSection({ currentUser }) {
 
               {assignmentTab === 'employees' ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '150px', overflowY: 'auto', padding: '8px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--primary-bg)' }}>
-                  {allEmployees.filter(emp => emp.role !== 'Admin' && emp.role !== 'Reporting Manager').map(emp => {
+                  {allEmployees.filter(emp => emp.role !== 'Admin' && emp.role !== 'Mentor' && emp.role !== 'Intern' && emp.role !== 'Student').map(emp => {
                     const isAssigned = tempAssignedMembers.some(m => (m.employee_id === emp.id || m.employeeId === emp.id) && m.role === 'Member');
                     return (
                       <label key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '4px 10px', background: isAssigned ? 'rgba(0,123,245,0.08)' : 'var(--card-bg)', border: `1px solid ${isAssigned ? 'var(--active-blue)' : 'var(--border-color)'}`, borderRadius: '6px', cursor: 'pointer' }}>
@@ -718,7 +722,20 @@ export default function ProjectSection({ currentUser }) {
                               </span>
                             </td>
                             <td style={{ padding: '10px 12px', color: 'var(--text-muted)', fontWeight: 500 }}>
-                              {m.role}
+                              {(() => {
+                                const rawRole = isStudent ? (m.student_role || 'Student') : (m.employee_role || m.role || 'Member');
+                                const labelMap = {
+                                  'Reporting Manager': 'Mentor',
+                                  'employee': 'Employee',
+                                  'Admin': 'Admin',
+                                  'Intern': 'Intern',
+                                  'Student': 'Student',
+                                  'HR': 'HR',
+                                  'Member': 'Member',
+                                  'Mentor': 'Mentor'
+                                };
+                                return labelMap[rawRole] || rawRole;
+                              })()}
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                               <button

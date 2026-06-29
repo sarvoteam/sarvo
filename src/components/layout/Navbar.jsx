@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Rocket, Sun, Moon, Users, Briefcase, ChevronRight, MoreVertical } from 'lucide-react';
+import { Menu, X, Rocket, Sun, Moon, Users, Briefcase, ChevronRight, MoreVertical, Trophy } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import logo from '../../assets/SarvoLogo.png';
 import TransparentLogo from '../common/TransparentLogo';
+import sarvoLogo from '../../assets/sarvo.jpg';
 
 
 
@@ -54,10 +55,30 @@ const Navbar = () => {
         
         {/* Logo */}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 900, letterSpacing: '-0.03em', textDecoration: 'none' }}>
-          <div style={{ width: 'clamp(32px, 8vw, 40px)', height: 'clamp(32px, 8vw, 40px)', background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 16px rgba(79, 70, 229, 0.3)' }}>
-            <Rocket size={18} />
+          <div style={{ 
+            width: 'clamp(32px, 8vw, 40px)', 
+            height: 'clamp(32px, 8vw, 40px)', 
+            borderRadius: '50%', 
+            overflow: 'hidden', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            boxShadow: '0 8px 16px rgba(79, 70, 229, 0.3)' 
+          }}>
+            <img 
+              src={sarvoLogo} 
+              alt="Sarvo Logo" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
           </div>
-          <span className="gradient-text">SARVO</span>
+          <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '3px' }}>
+            <span style={{
+              fontWeight: 900,
+              letterSpacing: '0.06em',
+              color: '#1d4ed8'
+            }}>SARVO</span>
+            <span className="gradient-text">ᵖʳⁱᵐᵉ</span>
+          </span>
         </Link>
 
 
@@ -283,6 +304,59 @@ const Navbar = () => {
                         <ChevronRight size={14} style={{ opacity: 0.4 }} />
                       </motion.div>
                     </Link>
+
+                    {/* Sarvo Competition Option */}
+                    <Link
+                      to="/sarvo-competitions"
+                      id="sarvo-competitions-link"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setIsMoreMenuOpen(false)}
+                    >
+                      <motion.div
+                        whileHover={{ x: 2 }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          padding: '0.7rem 0.8rem',
+                          borderRadius: '12px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          color: location.pathname === '/sarvo-competitions' ? 'var(--accent-primary)' : 'var(--text-primary)',
+                          background: location.pathname === '/sarvo-competitions' ? 'rgba(79,70,229,0.1)' : 'transparent',
+                        }}
+                        onMouseOver={e => {
+                          e.currentTarget.style.background = 'rgba(79,70,229,0.08)';
+                        }}
+                        onMouseOut={e => {
+                          e.currentTarget.style.background = location.pathname === '/sarvo-competitions' ? 'rgba(79,70,229,0.1)' : 'transparent';
+                        }}
+                      >
+                        <div style={{
+                          width: '34px',
+                          height: '34px',
+                          borderRadius: '10px',
+                          background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          flexShrink: 0,
+                          boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+                        }}>
+                          <Trophy size={16} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.88rem', lineHeight: 1.2 }}>
+                            Sarvo Competition
+                          </div>
+                          <div style={{ fontSize: '0.72rem', opacity: 0.5, marginTop: '2px' }}>
+                            Participate & Win Prizes
+                          </div>
+                        </div>
+                        <ChevronRight size={14} style={{ opacity: 0.4 }} />
+                      </motion.div>
+                    </Link>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -395,6 +469,28 @@ const Navbar = () => {
             >
               <Briefcase size={18} />
               Sarvo Careers
+            </Link>
+
+            {/* Sarvo Competitions in mobile menu */}
+            <Link
+              to="/sarvo-competitions"
+              style={{
+                padding: '0.9rem 1.2rem',
+                borderRadius: '12px',
+                fontWeight: 600,
+                fontSize: '1rem',
+                textDecoration: 'none',
+                color: location.pathname === '/sarvo-competitions' ? 'var(--accent-primary)' : 'var(--text-primary)',
+                background: location.pathname === '/sarvo-competitions' ? 'rgba(79,70,229,0.08)' : 'transparent',
+                border: location.pathname === '/sarvo-competitions' ? '1px solid rgba(79,70,229,0.2)' : '1px solid transparent',
+                transition: 'var(--transition-smooth)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem'
+              }}
+            >
+              <Trophy size={18} />
+              Sarvo Competitions
             </Link>
 
             <Link to="/contact" style={{ marginTop: '0.5rem' }}>

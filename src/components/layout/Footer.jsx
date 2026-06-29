@@ -4,6 +4,7 @@ import { Rocket } from 'lucide-react';
 import { FaGithub, FaTwitter, FaLinkedin, FaInstagram } from 'react-icons/fa';
 import logo from '../../assets/SarvoLogo.png';
 import TransparentLogo from '../common/TransparentLogo';
+import sarvoLogo from '../../assets/sarvo.jpg';
 
 const Footer = () => {
   const companyLinks = [
@@ -35,10 +36,24 @@ const Footer = () => {
           {/* Brand */}
           <div className="footer-brand" style={{ gridColumn: 'span 2' }}>
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1.5rem', fontWeight: 900, marginBottom: '1.5rem', textDecoration: 'none' }}>
-              <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                <Rocket size={20} />
-              </div>
-              <span className="gradient-text">SARVO</span>
+              <img 
+                src={sarvoLogo} 
+                alt="Sarvo Logo" 
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  objectFit: 'cover'
+                }} 
+              />
+              <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '3px' }}>
+                <span style={{
+                  fontWeight: 900,
+                  letterSpacing: '0.06em',
+                  color: '#1d4ed8'
+                }}>SARVO</span>
+                <span className="gradient-text">ᵖʳⁱᵐᵉ</span>
+              </span>
             </Link>
             <p style={{ color: 'var(--text-secondary)', maxWidth: '300px', lineHeight: 1.7, marginBottom: '2rem', fontSize: '0.95rem' }}>
               Crafting high-end digital solutions for the next generation of businesses.
@@ -97,7 +112,7 @@ const Footer = () => {
         </div>
 
         <div style={{ paddingTop: '2rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          <p>© {new Date().getFullYear()} SARVO Tech. All rights reserved. Built with 💜 for the next generation.</p>
+          <p>© {new Date().getFullYear()} SARVO ᵖʳⁱᵐᵉ. All rights reserved.</p>
         </div>
       </div>
 

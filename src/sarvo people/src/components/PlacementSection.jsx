@@ -7,7 +7,7 @@ export default function PlacementSection({ currentUser }) {
   const [activeJob, setActiveJob] = useState(null);
   const [applying, setApplying] = useState(false);
 
-  const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Reporting Manager' || currentUser?.role === 'admin' || currentUser?.role === 'mentor';
+  const isAdminOrMentor = currentUser?.role === 'Admin' || currentUser?.role === 'Mentor' || currentUser?.role === 'admin' || currentUser?.role === 'mentor';
 
   const loadJobsAndApps = async () => {
     try {

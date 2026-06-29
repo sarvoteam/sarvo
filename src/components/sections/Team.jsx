@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { FaGithub, FaLinkedin, FaTwitter } from "react-icons/fa";
+import { useTheme } from "../../context/ThemeContext";
 
 import AankshaImg from "../../../Photo/Aanksha.jpeg";
 import OmImg from "../../../Photo/Om.jpeg";
@@ -10,33 +11,8 @@ import VaishnavImg from "../../../Photo/Vaishnav.jpeg";
 
 const team = [
   {
-    name: "Vaishnav",
-    role: "CEO & Co-Founder",
-    subRole: "Developer",
-    image: VaishnavImg,
-    socials: {
-      twitter: "#",
-      linkedin: "https://www.linkedin.com/in/vaishnav-ghadge",
-      github: "https://github.com/ItsVaishnav",
-    },
-    color: "var(--accent-primary)",
-  },
-  {
-    name: "Rohit",
-    role: "CEO & Co-Founder",
-    subRole: "Developer",
-    image: RohitImg,
-    socials: {
-      twitter: "#",
-      linkedin: "https://www.linkedin.com/in/rohit-ghanghav6633",
-      github: "https://github.com/Rohit4589",
-    },
-    color: "var(--accent-secondary)",
-  },
-  {
     name: "Sanika",
-    role: "CEO & Co-Founder",
-    subRole: "Developer",
+    roles: ["CTO", "Co-Founder"],
     image: SanikaImg,
     socials: {
       twitter: "#",
@@ -46,21 +22,8 @@ const team = [
     color: "#ec4899",
   },
   {
-    name: "Om",
-    role: "CEO & Co-Founder",
-    subRole: "Developer",
-    image: OmImg,
-    socials: {
-      twitter: "#",
-      linkedin: "https://www.linkedin.com/in/omkolekar27/",
-      github: "https://github.com/OmKolekar",
-    },
-    color: "#10b981",
-  },
-  {
     name: "Aanksha",
-    role: "CEO & Co-Founder",
-    subRole: "Developer",
+    roles: ["CMO", "Co-Founder"],
     image: AankshaImg,
     socials: {
       twitter: "#",
@@ -68,6 +31,39 @@ const team = [
       github: "https://github.com/akanksha04codeit",
     },
     color: "#f59e0b",
+  },
+  {
+    name: "Rohit",
+    roles: ["COO", " CHRO", "Co-Founder"],
+    image: RohitImg,
+    socials: {
+      twitter: "#",
+      linkedin: "https://www.linkedin.com/in/rohit-ghanghav6633",
+      github: "https://github.com/Rohit4589",
+    },
+    color: "var(--accent-secondary)",
+  },
+  {
+    name: "Vaishnav",
+    roles: ["CPO", "Co-Founder"],
+    image: VaishnavImg,
+    socials: {
+      twitter: "#",
+      linkedin: "https://www.linkedin.com/in/vaishnav-ghadge",
+      github: "https://github.com/ItsVaishnav",
+    },
+    color: "var(--accent-primary)",
+  },
+  {
+    name: "Om",
+    roles: ["CBO", " CFO", "Co-Founder"],
+    image: OmImg,
+    socials: {
+      twitter: "#",
+      linkedin: "https://www.linkedin.com/in/omkolekar27/",
+      github: "https://github.com/OmKolekar",
+    },
+    color: "#10b981",
   },
 ];
 
@@ -92,10 +88,12 @@ const cardVariants = {
 };
 
 const Team = () => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   return (
     <section
       id="team"
-      style={{ padding: "10rem 0", position: "relative", overflow: "hidden" }}
+      style={{ padding: "1.5rem 0 4rem", position: "relative", overflow: "hidden" }}
     >
       {/* Decorative Blobs */}
       <div
@@ -114,19 +112,31 @@ const Team = () => {
       ></div>
 
       <div className="container">
-        <div style={{ textAlign: "center", marginBottom: "6rem" }}>
+        {/* Full-bleed heading strip */}
+        <div style={{
+          margin: "0 calc(-50vw + 50%)",
+          padding: "1.2rem calc(50vw - 50%)",
+          background: isDark
+            ? "rgba(255,255,255,0.04)"
+            : "rgba(255,255,255,0.92)",
+          borderTop: "1px solid rgba(99,102,241,0.12)",
+          borderBottom: "1px solid rgba(99,102,241,0.12)",
+          backdropFilter: "blur(12px)",
+          marginBottom: "2rem",
+          textAlign: "center",
+        }}>
           <motion.span
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             style={{
               color: "var(--accent-primary)",
-              fontWeight: "700",
-              letterSpacing: "0.4em",
-              textTransform: "uppercase",
-              fontSize: "0.75rem",
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+              fontSize: "2rem",
+              fontFamily: "'Caveat', cursive",
               display: "block",
-              marginBottom: "1.2rem",
+              marginBottom: "0.4rem",
             }}
           >
             Visionaries
@@ -136,6 +146,7 @@ const Team = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="section-title"
+            style={{ margin: 0 }}
           >
             Meet Our <span className="gradient-text">Leadership</span>
           </motion.h2>
@@ -149,9 +160,9 @@ const Team = () => {
           className="team-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
-            gap: "2.5rem",
-            maxWidth: "1200px",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            gap: "1rem",
+            maxWidth: "100%",
             margin: "0 auto",
           }}
         >
@@ -163,15 +174,13 @@ const Team = () => {
                 whileHover={{ y: -15 }}
                 style={{
                   width: "100%",
-                  maxWidth: "400px",
-                  justifySelf: "center"
                 }}
               >
                 <div
                   className="glass"
                   style={{
-                    padding: "2rem",
-                    borderRadius: "32px",
+                    padding: "1.8rem",
+                    borderRadius: "28px",
                     overflow: "hidden",
                     position: "relative",
                     transition: "border-color 0.3s ease",
@@ -202,7 +211,7 @@ const Team = () => {
                       marginBottom: "2rem",
                       borderRadius: "24px",
                       overflow: "hidden",
-                      aspectRatio: "1/1",
+                      aspectRatio: "3/4",
                     }}
                   >
                     <motion.img
@@ -231,45 +240,75 @@ const Team = () => {
                     />
                   </div>
 
-                  <h3
-                    className="gradient-text"
-                    style={{
-                      fontSize: "clamp(1.8rem, 4vw, 2.2rem)",
-                      marginBottom: "0.4rem",
-                      fontWeight: "800",
-                      letterSpacing: "-0.03em",
-                      fontFamily: "var(--font-heading)",
-                    }}
-                  >
-                    {member.name}
-                  </h3>
+                  {/* Name with full-bleed bg strip */}
+                  <div style={{
+                    margin: "0.5rem -1.8rem",
+                    padding: "0.6rem 1.8rem",
+                    background: isDark
+                      ? "linear-gradient(90deg, rgba(99,102,241,0.12) 0%, rgba(99,102,241,0.06) 100%)"
+                      : "linear-gradient(90deg, rgba(30,58,138,0.07) 0%, rgba(30,58,138,0.03) 100%)",
+                    borderLeft: isDark ? "3px solid rgba(129,140,248,0.5)" : "3px solid rgba(30,58,138,0.4)",
+                    marginBottom: "0.75rem",
+                  }}>
+                    <h3
+                      style={{
+                        fontSize: "1.25rem",
+                        margin: 0,
+                        fontWeight: 700,
+                        letterSpacing: "0.04em",
+                        fontFamily: "Georgia, 'Times New Roman', serif",
+                        lineHeight: 1.2,
+                        textAlign: "center",
+                        color: isDark ? "#c7d2fe" : "#1e3a8a",
+                      }}
+                    >
+                      {member.name}
+                    </h3>
+                  </div>
 
-                  <p
-                    style={{
-                      color: member.color,
+                  {/* Role labels */}
+                  <div style={{
+                    textAlign: "center",
+                    marginBottom: "0.75rem",
+                    minHeight: "3rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "4px",
+                  }}>
+                    {/* Title roles — bold strong, comma-separated */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0", flexWrap: "nowrap" }}>
+                      {member.roles.slice(0, -1).map((r, i) => (
+                        <span key={i} style={{
+                          color: "var(--text-primary)",
+                          fontWeight: 800,
+                          fontSize: "0.78rem",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.12em",
+                          fontFamily: "'Outfit', 'Inter', sans-serif",
+                          whiteSpace: "nowrap",
+                        }}>
+                          {r}{i < member.roles.length - 2 ? ", " : ""}
+                        </span>
+                      ))}
+                    </div>
+                    {/* Co-Founder — strong, theme-aware */}
+                    <span style={{
+                      color: isDark ? "#818cf8" : "#1e3a8a",
                       fontWeight: 700,
-                      fontSize: "0.9rem",
-                      marginBottom: "0.3rem",
+                      fontSize: "0.64rem",
                       textTransform: "uppercase",
-                      letterSpacing: "0.12em",
-                    }}
-                  >
-                    {member.role}
-                  </p>
+                      letterSpacing: "0.18em",
+                      fontFamily: "'Inter', sans-serif",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {member.roles[member.roles.length - 1]}
+                    </span>
+                  </div>
 
-                  <p
-                    style={{
-                      color: "var(--text-secondary)",
-                      fontWeight: 500,
-                      fontSize: "0.85rem",
-                      marginBottom: "2rem",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.2em",
-                      opacity: 0.8,
-                    }}
-                  >
-                    {member.subRole}
-                  </p>
+                  {/* Thin separator above socials */}
+                  <div style={{ height: "1px", background: "var(--glass-border)", marginBottom: "1.2rem" }} />
 
                   <div
                     style={{

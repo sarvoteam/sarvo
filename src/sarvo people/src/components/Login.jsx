@@ -6,7 +6,7 @@ const DEFAULT_EMPLOYEES = [
     id: 1,
     employee_id: 'SPWHI001',
     name: 'Admin S.',
-    role: 'Reporting Manager',
+    role: 'Mentor',
     department: 'Administration',
     avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
     status: 'Yet to check-in',
@@ -53,25 +53,27 @@ const DEFAULT_EMPLOYEES = [
 ];
 
 export default function Login({ onLoginSuccess }) {
-  const [roleMode, setRoleMode] = useState('employee'); // employee, admin, student
-  const [email, setEmail] = useState('rohit.g@spwhitel.com');
-  const [password, setPassword] = useState('employee123');
+  const [roleMode, setRoleMode] = useState('employee'); // employee, admin
+  const [email, setEmail] = useState('rohit@sarvo.com');
+  const [password, setPassword] = useState('sarvoadmin@2026');
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const handleRoleChange = (role) => {
-    setRoleMode(role);
-    if (role === 'admin') {
-      setEmail('admin@spwhitel.com');
-      setPassword('admin123');
-    } else if (role === 'student') {
-      setEmail('student@spwhitel.com');
-      setPassword('student123');
-    } else {
-      setEmail('rohit.g@spwhitel.com');
-      setPassword('employee123');
-    }
-    setErrorMsg(null);
-  };
+ const handleRoleChange = (role) => {
+  setRoleMode(role);
+
+  if (role === 'admin') {
+    setEmail('admin@sarvo.com');
+    setPassword('sarvoadmin@2026');
+  } else if (role === 'student') {
+    setEmail('student@sarvo.com');
+    setPassword('student123');
+  } else {
+    setEmail('rohit@sarvo.com');
+    setPassword('sarvoadmin@2026');
+  }
+
+  setErrorMsg(null);
+};
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -129,7 +131,7 @@ export default function Login({ onLoginSuccess }) {
       }
 
       // Check role-based password
-      const isAdmin = user.role === 'Reporting Manager' || user.role === 'Admin' || user.department === 'Administration';
+      const isAdmin = user.role === 'Mentor' || user.role === 'Admin' || user.department === 'Administration';
       const expectedPassword = isAdmin ? 'admin123' : 'employee123';
 
       if (password !== expectedPassword) {

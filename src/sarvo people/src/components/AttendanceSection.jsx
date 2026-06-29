@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { attendanceApi } from '../apis/attendanceApi';
 import { authApi } from '../apis/authApi';
+import { cohortApi } from '../apis/cohortApi';
 
 export default function AttendanceSection({ subNavItem = 'Attendance Summary', activeSubTab = 'My Data', user }) {
   const [employee, setEmployee] = useState(null);
@@ -32,7 +33,6 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
   const [remarksMap, setRemarksMap] = useState({});
   const [actionLoading, setActionLoading] = useState({});
   const [alert, setAlert] = useState(null);
-
   // Stats calculation
   const [stats, setStats] = useState({
     payableDays: 2,
@@ -43,7 +43,108 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
     weekend: 2
   });
 
-  const isPrivileged = user?.role === 'Admin' || user?.role === 'Reporting Manager' || user?.role === 'HR';
+  const isPrivileged = user?.role === 'Admin' || user?.role === 'Mentor' || user?.role === 'HR';
+
+  // Student Attendance states (Mentors / Admins)
+  const [teamDate, setTeamDate] = useState(new Date().toISOString().split('T')[0]);
+  const [studentRoster, setStudentRoster] = useState([]);
+  const [loadingRoster, setLoadingRoster] = useState(false);
+  const [tempTimes, setTempTimes] = useState({}); // { [studentId]: { checkIn: '09:30', checkOut: '18:30' } }
+
+  const [batches, setBatches] = useState([]);
+  const [selectedCohortId, setSelectedCohortId] = useState('');
+  const [loadingBatches, setLoadingBatches] = useState(false);
+
+  const fetchBatches = async () => {
+    setLoadingBatches(true);
+    try {
+      const data = await cohortApi.getCohorts();
+      setBatches(data || []);
+      if (data && data.length > 0) {
+        setSelectedCohortId(data[0].id);
+      } else {
+        setSelectedCohortId('');
+      }
+    } catch (err) {
+      console.error('Failed to fetch batches:', err);
+    } finally {
+      setLoadingBatches(false);
+    }
+  };
+
+  const fetchStudentRoster = async (date, cohortId = selectedCohortId) => {
+    if (!cohortId) {
+      setStudentRoster([]);
+      return;
+    }
+    setLoadingRoster(true);
+    try {
+      const data = await attendanceApi.getStudentsStatus(date, cohortId);
+      setStudentRoster(data || []);
+      
+      // Initialize tempTimes
+      const times = {};
+      (data || []).forEach(s => {
+        const checkInTimeStr = s.check_in_time 
+          ? new Date(s.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+          : '09:30';
+        const checkOutTimeStr = s.check_out_time 
+          ? new Date(s.check_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+          : '18:30';
+        times[s.id] = { checkIn: checkInTimeStr, checkOut: checkOutTimeStr };
+      });
+      setTempTimes(times);
+    } catch (err) {
+      console.error('Failed to fetch student roster:', err);
+    } finally {
+      setLoadingRoster(false);
+    }
+  };
+
+  const handleMarkStudentAttendance = async (studentId, status) => {
+    try {
+      const times = tempTimes[studentId] || { checkIn: '10:30', checkOut: '18:30' };
+      const checkInDateTime = status === 'present' ? new Date(`${teamDate}T${times.checkIn}:00`).toISOString() : null;
+      const checkOutDateTime = status === 'present' ? new Date(`${teamDate}T${times.checkOut}:00`).toISOString() : null;
+      
+      await attendanceApi.markStudentAttendance(studentId, teamDate, status, checkInDateTime, checkOutDateTime);
+      await fetchStudentRoster(teamDate, selectedCohortId);
+      setAlert({ type: 'success', text: `Successfully marked student ${status}` });
+      setTimeout(() => setAlert(null), 3000);
+    } catch (err) {
+      setAlert({ type: 'error', text: err.message || 'Failed to mark attendance' });
+      setTimeout(() => setAlert(null), 3000);
+    }
+  };
+
+  const handleMarkAll = async (status) => {
+    try {
+      for (const student of studentRoster) {
+        const times = tempTimes[student.id] || { checkIn: '10:30', checkOut: '18:30' };
+        const checkInDateTime = status === 'present' ? new Date(`${teamDate}T${times.checkIn}:00`).toISOString() : null;
+        const checkOutDateTime = status === 'present' ? new Date(`${teamDate}T${times.checkOut}:00`).toISOString() : null;
+        await attendanceApi.markStudentAttendance(student.id, teamDate, status, checkInDateTime, checkOutDateTime);
+      }
+      await fetchStudentRoster(teamDate, selectedCohortId);
+      setAlert({ type: 'success', text: `Successfully marked all students as ${status}` });
+      setTimeout(() => setAlert(null), 3000);
+    } catch (err) {
+      setAlert({ type: 'error', text: err.message || 'Failed to mark all attendance' });
+      setTimeout(() => setAlert(null), 3000);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSubTab === 'Team' && (subNavItem === 'Attendance Summary' || !subNavItem)) {
+      fetchBatches();
+    }
+  }, [activeSubTab, subNavItem]);
+
+  useEffect(() => {
+    if (activeSubTab === 'Team' && (subNavItem === 'Attendance Summary' || !subNavItem)) {
+      fetchStudentRoster(teamDate, selectedCohortId);
+    }
+  }, [activeSubTab, subNavItem, teamDate, selectedCohortId]);
 
   const fetchData = async () => {
     try {
@@ -51,9 +152,15 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
       const meData = await authApi.getProfile();
       
       const statusRes = await attendanceApi.getTodayStatus();
+      let statusText = 'Yet to check-in';
+      if (statusRes.checkedIn && !statusRes.checkedOut) {
+        statusText = 'Checked-in';
+      } else if (statusRes.checkedIn && statusRes.checkedOut) {
+        statusText = 'Checked-out';
+      }
       const meWithStatus = {
         ...meData,
-        status: statusRes.checkedIn && !statusRes.checkedOut ? 'Checked-in' : 'Yet to check-in'
+        status: statusText
       };
       setEmployee(meWithStatus);
 
@@ -178,8 +285,10 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
     };
   }, [employee, attendance, subNavItem]);
 
+  const isCheckedIn = employee?.status === 'Checked-in';
+  const isCheckedOut = employee?.status === 'Checked-out';
+
   const handleCheckInToggle = async () => {
-    const isCheckedIn = employee?.status === 'Checked-in';
     try {
       if (isCheckedIn) {
         await attendanceApi.checkOut();
@@ -188,7 +297,8 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
       }
       fetchData();
     } catch (err) {
-      alert(err.message || 'Action failed');
+      setAlert({ type: 'error', text: err.message || 'Action failed' });
+      setTimeout(() => setAlert(null), 3000);
     }
   };
 
@@ -235,8 +345,6 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
     }
   };
 
-  const isCheckedIn = employee?.status === 'Checked-in';
-
   const calculateHoursWorked = (day) => {
     if (day.status === 'Absent' || day.status === 'Weekend') return '00:00';
     if (!day.check_in) return '00:00';
@@ -251,14 +359,42 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
     return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
   };
 
-  const getProgressWidthPercent = (day) => {
-    if (!day.check_in) return '0%';
-    const end = day.check_out ? new Date(day.check_out) : new Date();
-    const start = new Date(day.check_in);
+  const formatTime = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
+  const getTimelineStyle = (day) => {
+    if (!day.check_in) return { left: '0%', width: '0%' };
+    const dateParts = day.date.split('-');
+    const year = parseInt(dateParts[0], 10);
+    const month = parseInt(dateParts[1], 10) - 1;
+    const dateNum = parseInt(dateParts[2], 10);
     
-    const durationMs = end - start;
-    const percent = Math.min(100, (durationMs / 28800000) * 100);
-    return `${percent}%`;
+    const shiftStart = new Date(year, month, dateNum, 10, 30, 0, 0);
+    const shiftEnd = new Date(year, month, dateNum, 18, 30, 0, 0);
+    const totalShiftMs = shiftEnd - shiftStart;
+    
+    const checkInTime = new Date(day.check_in);
+    const checkOutTime = day.check_out ? new Date(day.check_out) : new Date();
+    
+    const leftMs = checkInTime - shiftStart;
+    let leftPercent = (leftMs / totalShiftMs) * 100;
+    if (leftPercent < 0) leftPercent = 0;
+    if (leftPercent > 100) leftPercent = 100;
+    
+    const durationMs = checkOutTime - checkInTime;
+    let widthPercent = (durationMs / totalShiftMs) * 100;
+    if (widthPercent < 0) widthPercent = 0;
+    if (leftPercent + widthPercent > 100) {
+      widthPercent = 100 - leftPercent;
+    }
+    
+    return {
+      left: `${leftPercent}%`,
+      width: `${widthPercent}%`
+    };
   };
 
   // --- RENDER REGULARIZATION TAB ---
@@ -293,7 +429,7 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
 
             {!isPrivileged ? (
               <div style={{ padding: '30px', textAlign: 'center', color: '#ef4444', fontWeight: 600 }}>
-                Access Denied: Only Administrators, Reporting Managers, and HR coordinators can view this tab.
+                Access Denied: Only Administrators, Mentors, and HR coordinators can view this tab.
               </div>
             ) : regRequests.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
@@ -614,14 +750,14 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
               <ul style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <li>Representing the company at client installations, site surveys, or outdoor work.</li>
                 <li>Participating in campus recruitment drives, training sessions, or public seminars.</li>
-                <li>Attending cohort events or workshops sanctioned by reporting managers.</li>
+                <li>Attending cohort events or workshops sanctioned by mentors.</li>
               </ul>
             </div>
 
             <div>
               <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>How does it work?</h3>
               <p style={{ margin: 0 }}>
-                On Duty applications must be submitted directly to your Reporting Manager or HR Coordinator prior to or immediately following the off-site day. Once approved, the days are marked as payable in your attendance profile, and you are exempt from the daily portal check-in.
+                On Duty applications must be submitted directly to your Mentor or HR Coordinator prior to or immediately following the off-site day. Once approved, the days are marked as payable in your attendance profile, and you are exempt from the daily portal check-in.
               </p>
             </div>
 
@@ -646,6 +782,311 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
     );
   }
 
+  // --- RENDER TEAM STUDENT ATTENDANCE FOR MENTOR/ADMIN ---
+  if (activeSubTab === 'Team' && (subNavItem === 'Attendance Summary' || !subNavItem)) {
+    return (
+      <div className="attendance-section-container">
+        {alert && (
+          <div style={{
+            padding: '12px 18px',
+            borderRadius: '6px',
+            backgroundColor: alert.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            color: alert.type === 'success' ? '#10b981' : '#ef4444',
+            border: `1px solid ${alert.type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '13px',
+            fontWeight: 600,
+            marginBottom: '15px'
+          }}>
+            <AlertCircle size={16} />
+            <span>{alert.text}</span>
+          </div>
+        )}
+
+        <div className="attendance-timeline-card" style={{ padding: '24px' }}>
+          {/* Header Controls */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            gap: '20px', 
+            flexWrap: 'wrap',
+            borderBottom: '1px solid var(--border-color)',
+            paddingBottom: '16px',
+            marginBottom: '20px'
+          }}>
+            <div>
+              <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>Student Roster Attendance</h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', margin: 0 }}>
+                Select a date and click status indicators to mark students present/absent like a roll call.
+              </p>
+            </div>
+
+            {/* Date Picker & Bulk Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Batch Selector Dropdown */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Select Batch</span>
+                {loadingBatches ? (
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '8px 12px' }}>Loading...</div>
+                ) : batches.length === 0 ? (
+                  <div style={{ fontSize: '12.5px', color: '#ef4444', fontWeight: 600, padding: '8px 12px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.15)', whiteSpace: 'nowrap' }}>No Batches Assigned</div>
+                ) : (
+                  <select
+                    value={selectedCohortId}
+                    onChange={(e) => setSelectedCohortId(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '12.5px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--card-bg)',
+                      color: 'var(--text-main)',
+                      outline: 'none',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      minWidth: '200px',
+                      transition: 'border-color 0.2s'
+                    }}
+                  >
+                    {batches.map((batch) => (
+                      <option key={batch.id} value={batch.id}>
+                        {batch.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Attendance Date</span>
+                <input
+                  type="date"
+                  value={teamDate}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setTeamDate(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    fontSize: '12.5px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-main)',
+                    outline: 'none',
+                    fontWeight: 600
+                  }}
+                />
+              </div>
+ 
+              <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                <button
+                  onClick={() => handleMarkAll('present')}
+                  style={{
+                    padding: '8px 12px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    color: '#10b981',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Mark All Present
+                </button>
+                <button
+                  onClick={() => handleMarkAll('absent')}
+                  style={{
+                    padding: '8px 12px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    color: '#ef4444',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Mark All Absent
+                </button>
+              </div>
+            </div>
+          </div>
+ 
+          {/* Roster Table */}
+          {loadingRoster ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+              Loading student roster...
+            </div>
+          ) : studentRoster.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+              {!selectedCohortId ? 'Please select a batch to view students and mark attendance.' : 'No students found in the selected batch.'}
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 14px' }}>Student</th>
+                    <th style={{ padding: '12px 14px' }}>Employee Code</th>
+                    <th style={{ padding: '12px 14px' }}>Check In</th>
+                    <th style={{ padding: '12px 14px' }}>Check Out</th>
+                    <th style={{ padding: '12px 14px', textAlign: 'center' }}>Status</th>
+                    <th style={{ padding: '12px 14px', textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studentRoster.map((s) => {
+                    const times = tempTimes[s.id] || { checkIn: '10:30', checkOut: '18:30' };
+                    const isPresent = s.attendance_status === 'present';
+                    const isAbsent = s.attendance_status === 'absent';
+                    const statusText = s.attendance_status 
+                      ? s.attendance_status.toUpperCase() 
+                      : 'NOT MARKED';
+                    
+                    return (
+                      <tr key={s.id} style={{ borderBottom: '1px solid var(--border-color)', fontSize: '12.5px' }}>
+                        <td style={{ padding: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, var(--active-blue), #00d2ff)',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase'
+                          }}>
+                            {s.first_name ? s.first_name.charAt(0) : 'S'}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{s.first_name} {s.last_name}</div>
+                            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>{s.email}</div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px', color: 'var(--text-main)', fontWeight: 600 }}>{s.employee_code}</td>
+                        <td style={{ padding: '14px' }}>
+                          <input
+                            type="time"
+                            value={times.checkIn}
+                            onChange={(e) => setTempTimes({
+                              ...tempTimes,
+                              [s.id]: { ...times, checkIn: e.target.value }
+                            })}
+                            style={{
+                              padding: '5px 8px',
+                              fontSize: '12px',
+                              borderRadius: '4px',
+                              border: '1px solid var(--border-color)',
+                              outline: 'none',
+                              background: 'var(--card-bg)',
+                              color: 'var(--text-main)'
+                            }}
+                          />
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <input
+                            type="time"
+                            value={times.checkOut}
+                            onChange={(e) => setTempTimes({
+                              ...tempTimes,
+                              [s.id]: { ...times, checkOut: e.target.value }
+                            })}
+                            style={{
+                              padding: '5px 8px',
+                              fontSize: '12px',
+                              borderRadius: '4px',
+                              border: '1px solid var(--border-color)',
+                              outline: 'none',
+                              background: 'var(--card-bg)',
+                              color: 'var(--text-main)'
+                            }}
+                          />
+                        </td>
+                        <td style={{ padding: '14px', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            backgroundColor: isPresent 
+                              ? 'rgba(16, 185, 129, 0.08)' 
+                              : isAbsent 
+                                ? 'rgba(239, 68, 68, 0.08)' 
+                                : 'rgba(100, 116, 139, 0.08)',
+                            color: isPresent 
+                              ? '#10b981' 
+                              : isAbsent 
+                                ? '#ef4444' 
+                                : '#64748b'
+                          }}>
+                            {statusText}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                            <button
+                              onClick={() => handleMarkStudentAttendance(s.id, 'present')}
+                              style={{
+                                padding: '4px 8px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                backgroundColor: isPresent ? '#10b981' : 'transparent',
+                                color: isPresent ? 'white' : 'var(--text-muted)',
+                                border: `1px solid ${isPresent ? '#10b981' : 'var(--border-color)'}`,
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              Present
+                            </button>
+                            <button
+                              onClick={() => handleMarkStudentAttendance(s.id, 'absent')}
+                              style={{
+                                padding: '4px 8px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                backgroundColor: isAbsent ? '#ef4444' : 'transparent',
+                                color: isAbsent ? 'white' : 'var(--text-muted)',
+                                border: `1px solid ${isAbsent ? '#ef4444' : 'var(--border-color)'}`,
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              Absent
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const getFormattedDateRange = () => {
+    if (!attendance || attendance.length === 0) return 'Loading...';
+    const start = new Date(attendance[0].date);
+    const end = new Date(attendance[attendance.length - 1].date);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(start.getDate())}-${pad(start.getMonth() + 1)}-${start.getFullYear()} - ${pad(end.getDate())}-${pad(end.getMonth() + 1)}-${end.getFullYear()}`;
+  };
+
   // --- DEFAULT ATTENDANCE SUMMARY VIEW ---
   return (
     <div className="attendance-section-container">
@@ -655,7 +1096,7 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
           <button className="date-arrow-btn"><ChevronLeft size={16} /></button>
           <div className="date-range-display">
             <Calendar size={14} style={{ marginRight: '6px' }} />
-            <span>08-06-2026 - 14-06-2026</span>
+            <span>{getFormattedDateRange()}</span>
           </div>
           <button className="date-arrow-btn"><ChevronRight size={16} /></button>
         </div>
@@ -695,9 +1136,12 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
           <button 
             className={`btn-checkin-pill ${isCheckedIn ? 'checked-out-style' : ''}`}
             onClick={handleCheckInToggle}
+            disabled={isCheckedOut}
           >
             <div className="btn-checkin-text">
-              <span className="checkin-status-title">{isCheckedIn ? 'Check out' : 'Check in'}</span>
+              <span className="checkin-status-title">
+                {isCheckedOut ? 'Checked out' : (isCheckedIn ? 'Check out' : 'Check in')}
+              </span>
               <span className="checkin-timer">{timerText}</span>
             </div>
             <div className="btn-checkin-icon-circle">
@@ -738,10 +1182,16 @@ export default function AttendanceSection({ subNavItem = 'Attendance Summary', a
                       ) : day.check_in ? (
                         <div 
                           className="timeline-present-progress-bar"
-                          style={{ width: getProgressWidthPercent(day) }}
+                          style={getTimelineStyle(day)}
                         >
-                          <span className="progress-dot start"></span>
-                          <span className="progress-dot end"></span>
+                          <span className="progress-dot start">
+                            <span className="dot-time-label">{formatTime(day.check_in)}</span>
+                          </span>
+                          <span className="progress-dot end">
+                            <span className="dot-time-label">
+                              {day.check_out ? formatTime(day.check_out) : 'Active'}
+                            </span>
+                          </span>
                         </div>
                       ) : null}
                     </div>

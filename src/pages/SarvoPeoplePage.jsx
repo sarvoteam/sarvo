@@ -14,6 +14,8 @@ import Performance from '../sarvo people/src/components/Performance';
 import TasksSection from '../sarvo people/src/components/TasksSection';
 import CalendarView from '../sarvo people/src/components/CalendarView';
 import AdminPanel from '../sarvo people/src/components/AdminPanel';
+import StudentBatchDetails from '../sarvo people/src/components/StudentBatchDetails';
+import StudentAttendanceView from '../sarvo people/src/components/StudentAttendanceView';
 
 // Import New System Components
 import LMSSection from '../sarvo people/src/components/LMSSection';
@@ -27,7 +29,7 @@ import DailyReportsSection from '../sarvo people/src/components/DailyReportsSect
 import StudentTestsSection from '../sarvo people/src/components/StudentTestsSection';
 import AdminTestsSection from '../sarvo people/src/components/AdminTestsSection';
 import JobApplicationsPanel from '../sarvo people/src/components/JobApplicationsPanel';
-
+import CompetitionsAdminPanel from '../sarvo people/src/components/CompetitionsAdminPanel';
 
 // Import Sarvo People styles (scoped within .sarvo-people-wrapper)
 import '../sarvo people/src/styles/sidebar.css';
@@ -67,7 +69,7 @@ export default function SarvoPeoplePage({
   useEffect(() => {
     if (employee && (location.pathname === '/sarvo-people' || location.pathname === '/sarvo-people/')) {
       const isSystemAdmin = employee.role === 'Admin';
-      const isSystemMentor = employee.role === 'Reporting Manager';
+      const isSystemMentor = employee.role === 'Mentor';
       if (isSystemAdmin) {
         navigate('/sarvo-people/home', { replace: true });
         setActiveSubTab('Control Center');
@@ -106,7 +108,7 @@ export default function SarvoPeoplePage({
       setSubNavItem('Employee Records');
     } else if (activeTab === 'lms') {
       setActiveSubTab('LMS Hub');
-      setSubNavItem('My Courses');
+      setSubNavItem(employee?.role === 'Student' ? 'LMS Study' : 'Learning Paths');
     } else if (activeTab === 'projects') {
       setActiveSubTab('Project Spaces');
       setSubNavItem('My Projects');
@@ -136,7 +138,15 @@ export default function SarvoPeoplePage({
         setActiveSubTab('Assessments');
         setSubNavItem('All Tests');
       }
-
+    } else if (activeTab === 'competitions') {
+      setActiveSubTab('Competitions');
+      setSubNavItem('Manage Competitions');
+    } else if (activeTab === 'student_batch') {
+      setActiveSubTab('Cohorts');
+      setSubNavItem('Batch Details');
+    } else if (activeTab === 'student_attendance') {
+      setActiveSubTab('My Data');
+      setSubNavItem('My Attendance');
     } else if (activeTab === 'dailyreports') {
       setActiveSubTab('Work Logs');
       setSubNavItem('Daily Logs');
@@ -144,7 +154,7 @@ export default function SarvoPeoplePage({
       setActiveSubTab('My Space');
       setSubNavItem('Overview');
     }
-  }, [activeTab]);
+  }, [activeTab, employee]);
 
   const topNavLinks = activeTab === 'leave' || activeTab === 'attendance'
     ? ['My Data', 'Team']
@@ -168,17 +178,24 @@ export default function SarvoPeoplePage({
                       ? ['Analytics Hub']
                       : activeTab === 'jobapplications'
                         ? ['Recruitment']
-                      : activeTab === 'batches'
-                        ? ['Cohorts']
-                        : activeTab === 'tests'
-                          ? (employee?.role === 'Admin' ? ['Management'] : ['Assessments'])
-
-                          : activeTab === 'dailyreports'
-                            ? ['Work Logs']
-                            : ['My Space', 'Team', 'Organization'];
+                        : activeTab === 'batches'
+                          ? ['Cohorts']
+                          : activeTab === 'tests'
+                            ? (employee?.role === 'Admin' ? ['Management'] : ['Assessments'])
+                            : activeTab === 'competitions'
+                              ? ['Competitions']
+                              : activeTab === 'student_batch'
+                                ? ['Cohorts']
+                                : activeTab === 'student_attendance'
+                                  ? ['My Data']
+                                  : activeTab === 'dailyreports'
+                                    ? ['Work Logs']
+                                    : ['My Space', 'Team', 'Organization'];
 
   const subNavLinks = activeTab === 'leave'
-    ? ['Leave Summary', 'Leave Requests', 'Compensatory Request']
+    ? (employee?.role === 'Admin' || employee?.role === 'HR'
+        ? ['Leave Summary', 'Leave Requests', 'Compensatory Request']
+        : ['Leave Summary', 'My Requests', 'Compensatory Request'])
     : activeTab === 'attendance'
       ? ['Attendance Summary', 'Regularization', 'On Duty']
       : activeTab === 'timetracker'
@@ -190,7 +207,7 @@ export default function SarvoPeoplePage({
             : activeTab === 'admin'
               ? ['Employee Records']
               : activeTab === 'lms'
-                ? ['My Courses', 'Certificates']
+                ? (employee?.role === 'Student' ? ['LMS Study'] : ['Learning Paths'])
                 : activeTab === 'projects'
                   ? ['My Projects', 'Syllabus Review']
                   : activeTab === 'placements'
@@ -203,14 +220,19 @@ export default function SarvoPeoplePage({
                           ? ['SVG Graphs', 'Data Exporters']
                           : activeTab === 'jobapplications'
                             ? ['All Applications']
-                          : activeTab === 'batches'
-                            ? ['Active Batches', 'Roster Map', 'Students']
-                            : activeTab === 'tests'
-                              ? (employee?.role === 'Admin' ? ['Configure Questions', 'Student Scores'] : ['All Tests'])
-
-                              : activeTab === 'dailyreports'
-                                ? ['Daily Logs', 'Mentor Comments']
-                                : ['Overview', 'Dashboard', 'Calendar'];
+                            : activeTab === 'batches'
+                              ? ['Active Batches', 'Roster Map', 'Students']
+                              : activeTab === 'tests'
+                                ? (employee?.role === 'Admin' ? ['Configure Questions', 'Student Scores'] : ['All Tests'])
+                                : activeTab === 'competitions'
+                                  ? ['Manage Competitions']
+                                  : activeTab === 'student_batch'
+                                    ? ['Batch Details']
+                                    : activeTab === 'student_attendance'
+                                      ? ['My Attendance']
+                                      : activeTab === 'dailyreports'
+                                        ? ['Daily Logs', 'Mentor Comments']
+                                        : ['Overview', 'Dashboard', 'Calendar'];
 
   // ── Show Login if not authenticated ──
   if (!isAuthenticated) {
@@ -352,6 +374,7 @@ export default function SarvoPeoplePage({
               sessionStorage.removeItem('sarvo_people_auth');
               setEmployee(null);
               setIsAuthenticated(false);
+              navigate('/sarvo-people/home', { replace: true });
             }}
           />
 
@@ -379,7 +402,7 @@ export default function SarvoPeoplePage({
               <Route path="performance" element={<Performance />} />
               <Route path="tasks" element={<TasksSection />} />
               <Route path="admin" element={<AdminPanel />} />
-              <Route path="lms" element={<LMSSection />} />
+              <Route path="lms" element={<LMSSection currentUser={employee} />} />
               <Route path="projects" element={<ProjectSection currentUser={employee} />} />
               <Route path="placements" element={<PlacementSection currentUser={employee} />} />
               <Route path="aihub" element={<AIFeaturesSection currentUser={employee} />} />
@@ -387,9 +410,26 @@ export default function SarvoPeoplePage({
               <Route path="reports" element={<ReportsSection />} />
               <Route path="jobapplications" element={<JobApplicationsPanel />} />
               <Route path="batches" element={<BatchSection currentUser={employee} subNavItem={subNavItem} />} />
+              <Route
+                path="student_batch"
+                element={
+                  employee?.role === 'Student'
+                    ? <StudentBatchDetails currentUser={employee} />
+                    : <Navigate to="/sarvo-people/home" replace />
+                }
+              />
+              <Route
+                path="student_attendance"
+                element={
+                  employee?.role === 'Student'
+                    ? <StudentAttendanceView currentUser={employee} />
+                    : <Navigate to="/sarvo-people/home" replace />
+                }
+              />
               <Route path="dailyreports" element={<DailyReportsSection currentUser={employee} />} />
               <Route path="tests" element={employee?.role === 'Admin' ? <AdminTestsSection currentUser={employee} subNavItem={subNavItem} /> : <StudentTestsSection currentUser={employee} />} />
-
+              <Route path="competitions" element={<CompetitionsAdminPanel currentUser={employee} />} />
+              <Route path="competitions/:id" element={<CompetitionsAdminPanel currentUser={employee} />} />
               <Route path="*" element={<Navigate to="home" replace />} />
             </Routes>
           </div>

@@ -68,6 +68,15 @@ export default function StudentsSection({ currentUser }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
 
   const isAdmin = currentUser?.role === 'Admin';
+  const isMentor = currentUser?.role === 'Mentor';
+
+  const getFullName = (user) => {
+    if (!user) return '';
+    if (user.first_name) {
+      return `${user.first_name} ${user.last_name || ''}`.trim();
+    }
+    return user.name || '';
+  };
 
   const calculateCompletion = (student) => {
     const fields = [
@@ -115,7 +124,21 @@ export default function StudentsSection({ currentUser }) {
     setLoading(true);
     try {
       const data = await cohortApi.getAllStudents();
-      setStudents(data || []);
+      if (isMentor) {
+        const cohorts = await cohortApi.getCohorts();
+        const mentorName = getFullName(currentUser).toLowerCase();
+        const mentorEmail = (currentUser?.email || '').toLowerCase();
+        const myBatchIds = cohorts
+          .filter(b => 
+            (b.mentor_email && b.mentor_email.toLowerCase() === mentorEmail) ||
+            (b.mentor_name && b.mentor_name.toLowerCase() === mentorName)
+          )
+          .map(b => b.id);
+        
+        setStudents((data || []).filter(s => myBatchIds.includes(s.cohort_id)));
+      } else {
+        setStudents(data || []);
+      }
     } catch (err) {
       console.error('Failed to fetch students:', err);
     } finally {

@@ -47,7 +47,8 @@ export default function BatchDetailsDrawer({ selectedBatch, onClose, isAdmin, on
         phone
       });
 
-      setAlertMsg({ type: 'success', text: 'Student registered and added to roster!' });
+      alert('registered successfull and credentials sent successfully');
+      setAlertMsg({ type: 'success', text: 'registered successfull and credentials sent successfully' });
       
       // Reset form fields
       setFirstName('');
@@ -70,7 +71,9 @@ export default function BatchDetailsDrawer({ selectedBatch, onClose, isAdmin, on
 
     } catch (err) {
       console.error('Failed to add student:', err);
-      setAlertMsg({ type: 'error', text: err.response?.data?.error || err.message || 'Failed to add student.' });
+      const errMsg = err.response?.data?.error || err.message || 'Failed to add student.';
+      alert(errMsg);
+      setAlertMsg({ type: 'error', text: errMsg });
     }
   };
 

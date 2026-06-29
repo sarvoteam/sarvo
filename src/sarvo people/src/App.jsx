@@ -21,7 +21,7 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState(() => {
     if (employee) {
-      const isAdmin = employee.role === 'Reporting Manager' || employee.role === 'Admin' || employee.department === 'Administration';
+      const isAdmin = employee.role === 'Mentor' || employee.role === 'Admin' || employee.department === 'Administration';
       return isAdmin ? 'admin' : 'home';
     }
     return 'home';
@@ -55,19 +55,23 @@ export default function App() {
     }
   }, [activeTab]);
 
-  // Enforce role separation - redirect Admin to admin tab, and Employee from admin tab
+  // Enforce role separation on every employee/tab change
   useEffect(() => {
-    if (employee) {
-      const isAdmin = employee.role === 'Reporting Manager' || employee.role === 'Admin' || employee.department === 'Administration';
-      if (isAdmin) {
-        if (activeTab !== 'admin') {
-          setActiveTab('admin');
-        }
-      } else {
-        if (activeTab === 'admin') {
-          setActiveTab('home');
-        }
-      }
+    if (!employee) return;
+
+    const isAdmin = employee.role === 'Mentor' || employee.role === 'Admin' || employee.department === 'Administration';
+    const isStudentRole = employee.role === 'Student';
+
+    // Student-only tabs that non-students must never land on
+    const studentOnlyTabs = ['student_batch', 'student_attendance'];
+
+    if (isAdmin) {
+      if (activeTab !== 'admin') setActiveTab('admin');
+    } else if (!isStudentRole && studentOnlyTabs.includes(activeTab)) {
+      // Non-student landed on a student-only tab — send them home
+      setActiveTab('home');
+    } else if (!isStudentRole && activeTab === 'admin') {
+      setActiveTab('home');
     }
   }, [activeTab, employee]);
 
@@ -97,6 +101,8 @@ export default function App() {
     return () => clearInterval(interval);
   }, [employee?.employee_id]);
 
+  const isStudent = employee?.role === 'Student';
+
   const topNavLinks = activeTab === 'leave' || activeTab === 'attendance'
     ? ['My Data', 'Team']
     : activeTab === 'timetracker' || activeTab === 'performance'
@@ -105,10 +111,14 @@ export default function App() {
         ? ['Tasks', 'Checklists']
         : activeTab === 'admin'
           ? ['Control Center']
-          : ['My Space', 'Team', 'Organization'];
+          : isStudent
+            ? ['My Dashboard', 'Courses', 'Community']
+            : ['My Space', 'Team', 'Organization'];
 
   const subNavLinks = activeTab === 'leave'
-    ? ['Leave Summary', 'Leave Requests', 'Compensatory Request']
+    ? (employee?.role === 'Admin' || employee?.role === 'HR'
+        ? ['Leave Summary', 'Leave Requests', 'Compensatory Request']
+        : ['Leave Summary', 'My Requests', 'Compensatory Request'])
     : activeTab === 'attendance'
       ? ['Attendance Summary', 'Regularization', 'On Duty']
       : activeTab === 'timetracker'
@@ -119,10 +129,26 @@ export default function App() {
             ? ['My Tasks', 'Track Tasks', 'Form View']
             : activeTab === 'admin'
               ? ['Employee Records']
-              : ['Overview', 'Dashboard', 'Calendar'];
+              : isStudent
+                ? ['Overview', 'Schedule', 'Progress']
+                : ['Overview', 'Dashboard', 'Calendar'];
 
   if (!employee) {
-    return <Login onLoginSuccess={(emp) => setEmployee(emp)} />;
+    return (
+      <Login
+        onLoginSuccess={(emp) => {
+          // Reset tab to correct default for the incoming role
+          const incomingIsAdmin =
+            emp.role === 'Mentor' ||
+            emp.role === 'Admin' ||
+            emp.department === 'Administration';
+          setActiveTab(incomingIsAdmin ? 'admin' : 'home');
+          setActiveSubTab(incomingIsAdmin ? 'Control Center' : 'My Space');
+          setSubNavItem(incomingIsAdmin ? 'Employee Records' : 'Overview');
+          setEmployee(emp);
+        }}
+      />
+    );
   }
 
   return (

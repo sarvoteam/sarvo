@@ -10,6 +10,12 @@ export const employeeApi = {
   getProfile: async () => {
     return await api.get('/employees/profile');
   },
+  sendOTP: async () => {
+    return await api.post('/employees/send-otp');
+  },
+  updatePassword: async (otp, newPassword) => {
+    return await api.post('/employees/update-password', { otp, newPassword });
+  },
   getMeta: async () => {
     return await api.get('/employees/meta');
   },
