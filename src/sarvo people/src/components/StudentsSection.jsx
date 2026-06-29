@@ -105,6 +105,17 @@ export default function StudentsSection({ currentUser }) {
       );
     }
 
+    if (student.placement_status === 'In Process') {
+      fields.push(
+        student.apti_details,
+        student.apti_date,
+        student.jd_details,
+        student.jd_date,
+        student.round_details,
+        student.round_date
+      );
+    }
+
     const filledCount = fields.filter(val => val !== null && val !== undefined && String(val).trim() !== '').length;
     return Math.round((filledCount / fields.length) * 100);
   };
@@ -319,6 +330,48 @@ export default function StudentsSection({ currentUser }) {
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
                               at {student.placement_company_name} {student.placement_package && `(${student.placement_package})`}
                             </span>
+                          )}
+                          {student.placement_status === 'In Process' && (
+                            <div style={{ 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              gap: '4px', 
+                              marginTop: '6px',
+                              padding: '6px 8px',
+                              background: 'var(--primary-bg)',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-color)',
+                              fontSize: '10px',
+                              minWidth: '150px'
+                            }}>
+                              {student.apti_details && (
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '9px', textTransform: 'uppercase' }}>Apti</span>
+                                  <span style={{ color: 'var(--text-muted)' }}>
+                                    {student.apti_details} {student.apti_date && `(${new Date(student.apti_date).toLocaleDateString('en-GB')})`}
+                                  </span>
+                                </div>
+                              )}
+                              {student.jd_details && (
+                                <div style={{ display: 'flex', flexDirection: 'column', marginTop: '2px' }}>
+                                  <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '9px', textTransform: 'uppercase' }}>JD</span>
+                                  <span style={{ color: 'var(--text-muted)' }}>
+                                    {student.jd_details} {student.jd_date && `(${new Date(student.jd_date).toLocaleDateString('en-GB')})`}
+                                  </span>
+                                </div>
+                              )}
+                              {student.round_details && (
+                                <div style={{ display: 'flex', flexDirection: 'column', marginTop: '2px' }}>
+                                  <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '9px', textTransform: 'uppercase' }}>Round</span>
+                                  <span style={{ color: 'var(--text-muted)' }}>
+                                    {student.round_details} {student.round_date && `(${new Date(student.round_date).toLocaleDateString('en-GB')})`}
+                                  </span>
+                                </div>
+                              )}
+                              {!student.apti_details && !student.jd_details && !student.round_details && (
+                                <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No process details logged</span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>

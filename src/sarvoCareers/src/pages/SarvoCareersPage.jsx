@@ -10,6 +10,7 @@ import JobDetailView from '../components/JobDetailView';
 import ApplicationForm from '../components/ApplicationForm';
 import WhyJoinSarvo from '../components/WhyJoinSarvo';
 import { jobListings } from '../components/JobListings';
+import { jobApi } from '../../../sarvo people/src/apis/jobApi';
 
 const SarvoCareersPage = () => {
   const { theme, toggleTheme } = useTheme();
@@ -21,22 +22,50 @@ const SarvoCareersPage = () => {
     type: 'All',
     location: 'All',
   });
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Scroll to top when view changes
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [selectedJob, showApplyForm]);
 
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const backendJobs = await jobApi.getJobs();
+        // Merge backend jobs (with UUIDs) with frontend details (responsibilities, requirements, perks)
+        const mergedJobs = backendJobs.map(bJob => {
+          const matchedMock = jobListings.find(mock => 
+            mock.title.toLowerCase() === bJob.title.toLowerCase()
+          );
+          return {
+            ...matchedMock, // responsibilities, requirements, perks, etc.
+            ...bJob,        // id (UUID), title, location, type, experience, salary, description
+            department: bJob.department_name || bJob.department || matchedMock?.department
+          };
+        });
+        setJobs(mergedJobs.length > 0 ? mergedJobs : jobListings);
+      } catch (err) {
+        console.error('Failed to fetch jobs from backend, using mock data:', err);
+        setJobs(jobListings);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
+
   // Filter job listings based on department, type, location and search query
-  const filteredJobs = jobListings.filter((job) => {
+  const filteredJobs = jobs.filter((job) => {
     const matchesDept = filters.department === 'All' || job.department === filters.department;
     const matchesType = filters.type === 'All' || job.type === filters.type;
-    const matchesLoc = filters.location === 'All' || job.location.includes(filters.location);
+    const matchesLoc = filters.location === 'All' || (job.location && job.location.includes(filters.location));
     const matchesSearch = 
       job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.requirements.some(req => req.toLowerCase().includes(searchQuery.toLowerCase()));
+      (job.department && job.department.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (job.description && job.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (job.requirements && job.requirements.some(req => req.toLowerCase().includes(searchQuery.toLowerCase())));
 
     return matchesDept && matchesType && matchesLoc && matchesSearch;
   });

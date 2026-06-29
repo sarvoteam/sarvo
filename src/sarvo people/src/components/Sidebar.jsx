@@ -17,7 +17,8 @@ import {
   Trophy,
   CheckSquare,
   MessageSquare,
-  Users
+  Users,
+  ClipboardList
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, user }) {
@@ -27,11 +28,13 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
       { id: 'home', label: 'Dashboard', icon: Home },
       { id: 'batches', label: 'Batches', icon: Layers },
       { id: 'admin', label: 'Employees', icon: ShieldCheck },
+      { id: 'tests', label: 'Test Settings', icon: ClipboardList },
       { id: 'attendance', label: 'Attendance', icon: Fingerprint },
       { id: 'leave', label: 'Leaves', icon: Umbrella },
       { id: 'lms', label: 'LMS Hub', icon: BookOpen },
       { id: 'projects', label: 'Projects', icon: Folder },
       { id: 'placements', label: 'Placements', icon: Briefcase },
+      { id: 'jobapplications', label: 'Job Apply', icon: ClipboardList },
       { id: 'certificates', label: 'Certificates', icon: Award },
       { id: 'reports', label: 'Analytics', icon: BarChart2 },
       { id: 'competitions', label: 'Competitions', icon: Trophy }
@@ -45,6 +48,15 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
       { id: 'projects', label: 'Project reviews', icon: Folder },
       { id: 'attendance', label: 'Attendance', icon: Fingerprint },
       { id: 'leave', label: 'Leaves', icon: Umbrella }
+    ],
+    Student: [
+      { id: 'home', label: 'My Space', icon: Home },
+      { id: 'lms', label: 'LMS Study', icon: BookOpen },
+      { id: 'tests', label: 'Interview Tests', icon: ClipboardList },
+      { id: 'projects', label: 'My Projects', icon: Folder },
+      { id: 'placements', label: 'Job Placements', icon: Briefcase },
+      { id: 'aihub', label: 'AI Prep Hub', icon: Cpu },
+      { id: 'certificates', label: 'My Certificate', icon: Award }
     ],
     Intern: [
       { id: 'home', label: 'My Space', icon: Home },
@@ -68,15 +80,17 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
   };
  
   // Resolve role list
-  const userRole = user?.role === 'Admin' 
-    ? 'Admin' 
-    : user?.role === 'Mentor' 
-      ? 'Mentor' 
+  // Resolve role list
+const userRole =
+  user?.role === 'Admin'
+    ? 'Admin'
+    : user?.role === 'Reporting Manager' || user?.role === 'Mentor'
+      ? 'Mentor'
       : user?.role === 'Student'
         ? 'Student'
         : 'Intern';
- 
-  const visibleMenuItems = menuConfig[userRole] || menuConfig['Intern'];
+
+const visibleMenuItems = menuConfig[userRole] || menuConfig['Intern'];
 
   return (
     <aside className="sidebar">

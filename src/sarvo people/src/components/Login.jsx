@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Shield, User, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Shield, User, AlertCircle, School } from 'lucide-react';
 
 const DEFAULT_EMPLOYEES = [
   {
@@ -58,17 +58,22 @@ export default function Login({ onLoginSuccess }) {
   const [password, setPassword] = useState('sarvoadmin@2026');
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const handleRoleChange = (role) => {
-    setRoleMode(role);
-    if (role === 'admin') {
-      setEmail('admin@sarvo.com');
-      setPassword('sarvoadmin@2026');
-    } else {
-      setEmail('rohit@sarvo.com');
-      setPassword('sarvoadmin@2026');
-    }
-    setErrorMsg(null);
-  };
+ const handleRoleChange = (role) => {
+  setRoleMode(role);
+
+  if (role === 'admin') {
+    setEmail('admin@sarvo.com');
+    setPassword('sarvoadmin@2026');
+  } else if (role === 'student') {
+    setEmail('student@sarvo.com');
+    setPassword('student123');
+  } else {
+    setEmail('rohit@sarvo.com');
+    setPassword('sarvoadmin@2026');
+  }
+
+  setErrorMsg(null);
+};
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -81,7 +86,8 @@ export default function Login({ onLoginSuccess }) {
 
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const res = await fetch(`${apiBase}/employees/login`, {
+      const endpoint = roleMode === 'student' ? '/employees/students/login' : '/employees/login';
+      const res = await fetch(`${apiBase}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -89,9 +95,10 @@ export default function Login({ onLoginSuccess }) {
 
       if (res.ok) {
         const data = await res.json();
+        const userObj = data.employee || data.user;
         // Save current session
-        localStorage.setItem('sarvo_current_user', JSON.stringify(data.employee));
-        onLoginSuccess(data.employee);
+        localStorage.setItem('sarvo_current_user', JSON.stringify(userObj));
+        onLoginSuccess(userObj);
       } else {
         const errData = await res.json();
         setErrorMsg(errData.error || 'Authentication failed. Please verify credentials.');
@@ -100,6 +107,20 @@ export default function Login({ onLoginSuccess }) {
       // Offline fallback: Search local storage or DEFAULT_EMPLOYEES
       console.warn('Backend server not connected. Attempting offline fallback authentication.');
       
+      if (roleMode === 'student') {
+        const mockStudent = {
+          id: 'student-id-mock-123',
+          first_name: 'Om',
+          last_name: 'Kolekar',
+          email: 'student@sarvo.com',
+          role: 'Student',
+          status: 'active'
+        };
+        localStorage.setItem('sarvo_current_user', JSON.stringify(mockStudent));
+        onLoginSuccess(mockStudent);
+        return;
+      }
+
       const localEmps = localStorage.getItem('sarvo_admin_employees');
       const employeeList = localEmps ? JSON.parse(localEmps) : DEFAULT_EMPLOYEES;
 
@@ -149,6 +170,14 @@ export default function Login({ onLoginSuccess }) {
             >
               <User size={13} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
               Employee Login
+            </button>
+            <button
+              type="button"
+              className={`login-tab-btn ${roleMode === 'student' ? 'active' : ''}`}
+              onClick={() => handleRoleChange('student')}
+            >
+              <School size={13} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+              Student Login
             </button>
             <button
               type="button"

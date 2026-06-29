@@ -426,10 +426,16 @@ export default function EditEmployeeProfileModal({ employee, onClose, onUpdateSu
               <div className="admin-form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>LinkedIn Profile URL</label>
                 <input
-                  type="url"
+                  type="text"
                   placeholder="https://linkedin.com/in/username"
                   value={linkedinProfile}
                   onChange={(e) => setLinkedinProfile(e.target.value)}
+                  onBlur={(e) => {
+                    const val = e.target.value.trim();
+                    if (val && !/^https?:\/\//i.test(val)) {
+                      setLinkedinProfile(`https://${val}`);
+                    }
+                  }}
                   style={{ padding: '8px 10px', fontSize: '12px', width: '100%' }}
                 />
               </div>

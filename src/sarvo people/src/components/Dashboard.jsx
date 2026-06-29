@@ -64,6 +64,20 @@ export default function Dashboard() {
   const [isEditingAbout, setIsEditingAbout] = useState(false);
   const [aboutMeText, setAboutMeText] = useState('');
 
+  // Placement States
+  const [isEditingPlacement, setIsEditingPlacement] = useState(false);
+  const [placementStatus, setPlacementStatus] = useState('Unplaced');
+  const [placementCompanyName, setPlacementCompanyName] = useState('');
+  const [placementRole, setPlacementRole] = useState('');
+  const [placementPackage, setPlacementPackage] = useState('');
+  const [placementCompanyAddress, setPlacementCompanyAddress] = useState('');
+  const [aptiDetails, setAptiDetails] = useState('');
+  const [aptiDate, setAptiDate] = useState('');
+  const [jdDetails, setJdDetails] = useState('');
+  const [jdDate, setJdDate] = useState('');
+  const [roundDetails, setRoundDetails] = useState('');
+  const [roundDate, setRoundDate] = useState('');
+
   // Leave Tab States
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -289,6 +303,18 @@ export default function Dashboard() {
       setEmployee(parsed);
       setAboutMeText(parsed.about_me || '');
       
+      setPlacementStatus(parsed.placement_status || 'Unplaced');
+      setPlacementCompanyName(parsed.placement_company_name || '');
+      setPlacementRole(parsed.placement_role || '');
+      setPlacementPackage(parsed.placement_package || '');
+      setPlacementCompanyAddress(parsed.placement_company_address || '');
+      setAptiDetails(parsed.apti_details || '');
+      setAptiDate(parsed.apti_date ? new Date(parsed.apti_date).toISOString().split('T')[0] : '');
+      setJdDetails(parsed.jd_details || '');
+      setJdDate(parsed.jd_date ? new Date(parsed.jd_date).toISOString().split('T')[0] : '');
+      setRoundDetails(parsed.round_details || '');
+      setRoundDate(parsed.round_date ? new Date(parsed.round_date).toISOString().split('T')[0] : '');
+
       if (parsed.role === 'Admin') {
         dashboardApi.getAdminMetrics()
           .then(data => setMetrics(data))
@@ -398,6 +424,54 @@ export default function Dashboard() {
     localStorage.setItem('sarvo_current_user', JSON.stringify(updatedEmp));
     setIsEditingAbout(false);
   };
+
+  const handleSavePlacement = async () => {
+    try {
+      const payload = {
+        firstName: employee.first_name || employee.name?.split(' ')[0] || 'Student',
+        lastName: employee.last_name || employee.name?.split(' ').slice(1).join(' ') || 'User',
+        email: employee.email,
+        phone: employee.phone,
+        placementStatus,
+        placementCompanyName: placementStatus === 'Placed' ? placementCompanyName : null,
+        placementCompanyAddress: placementStatus === 'Placed' ? placementCompanyAddress : null,
+        placementRole: placementStatus === 'Placed' ? placementRole : null,
+        placementPackage: placementStatus === 'Placed' ? placementPackage : null,
+        aptiDetails: aptiDetails || null,
+        aptiDate: aptiDate || null,
+        jdDetails: jdDetails || null,
+        jdDate: jdDate || null,
+        roundDetails: roundDetails || null,
+        roundDate: roundDate || null
+      };
+
+      const updatedStudent = await cohortApi.updateStudentProfile(employee.id, payload);
+      
+      const updatedUser = {
+        ...employee,
+        placement_status: updatedStudent.placement_status,
+        placement_company_name: updatedStudent.placement_company_name,
+        placement_company_address: updatedStudent.placement_company_address,
+        placement_role: updatedStudent.placement_role,
+        placement_package: updatedStudent.placement_package,
+        apti_details: updatedStudent.apti_details,
+        apti_date: updatedStudent.apti_date,
+        jd_details: updatedStudent.jd_details,
+        jd_date: updatedStudent.jd_date,
+        round_details: updatedStudent.round_details,
+        round_date: updatedStudent.round_date
+      };
+
+      setEmployee(updatedUser);
+      localStorage.setItem('sarvo_current_user', JSON.stringify(updatedUser));
+      setIsEditingPlacement(false);
+      alert('Placement details updated successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update placement details: ' + (err.message || err));
+    }
+  };
+
 
   const handleSubmitLeave = async (e) => {
     e.preventDefault();
@@ -1166,6 +1240,203 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* Placement Details Section */}
+              {employee?.role === 'Student' && (
+                <div className="profile-about-section" style={{ marginTop: '20px' }}>
+                  <div className="about-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="about-title">Placement & Interview Process Tracking</span>
+                    {!isEditingPlacement && (
+                      <button className="btn-edit-about" onClick={() => setIsEditingPlacement(true)}>
+                        <Pencil size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {isEditingPlacement ? (
+                    <div className="about-edit-form" style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Placement Status</label>
+                        <select 
+                          value={placementStatus} 
+                          onChange={(e) => setPlacementStatus(e.target.value)}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px' }}
+                        >
+                          <option value="Unplaced">Unplaced</option>
+                          <option value="Placed">Placed</option>
+                          <option value="In Process">In Process</option>
+                        </select>
+                      </div>
+
+                      {placementStatus === 'Placed' && (
+                        <>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Company Name</label>
+                              <input 
+                                type="text" 
+                                value={placementCompanyName} 
+                                onChange={(e) => setPlacementCompanyName(e.target.value)} 
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Role</label>
+                              <input 
+                                type="text" 
+                                value={placementRole} 
+                                onChange={(e) => setPlacementRole(e.target.value)} 
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px' }}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '11px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Annual Package</label>
+                            <input 
+                              type="text" 
+                              value={placementPackage} 
+                              onChange={(e) => setPlacementPackage(e.target.value)} 
+                              style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px' }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '11px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Company Address</label>
+                            <input 
+                              type="text" 
+                              value={placementCompanyAddress} 
+                              onChange={(e) => setPlacementCompanyAddress(e.target.value)} 
+                              style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px' }}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {placementStatus === 'In Process' && (
+                        <>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <label style={{ fontSize: '11.5px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Aptitude (Apti) Details</label>
+                              <input 
+                                type="text" 
+                                value={aptiDetails} 
+                                onChange={(e) => setAptiDetails(e.target.value)} 
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '11.5px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Apti Date</label>
+                              <input 
+                                type="date" 
+                                value={aptiDate} 
+                                onChange={(e) => setAptiDate(e.target.value)} 
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px', height: '35px' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <label style={{ fontSize: '11.5px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Job Description (JD) Details</label>
+                              <input 
+                                type="text" 
+                                value={jdDetails} 
+                                onChange={(e) => setJdDetails(e.target.value)} 
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '11.5px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>JD Date</label>
+                              <input 
+                                type="date" 
+                                value={jdDate} 
+                                onChange={(e) => setJdDate(e.target.value)} 
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px', height: '35px' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <label style={{ fontSize: '11.5px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Interview Round Details</label>
+                              <input 
+                                type="text" 
+                                value={roundDetails} 
+                                onChange={(e) => setRoundDetails(e.target.value)} 
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '11.5px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Round Date</label>
+                              <input 
+                                type="date" 
+                                value={roundDate} 
+                                onChange={(e) => setRoundDate(e.target.value)} 
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '12px', height: '35px' }}
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      <div className="about-edit-actions" style={{ marginTop: '8px' }}>
+                        <button className="btn-cancel-about" onClick={() => setIsEditingPlacement(false)}>
+                          <X size={14} style={{ marginRight: '4px' }} /> Cancel
+                        </button>
+                        <button className="btn-save-about" onClick={handleSavePlacement}>
+                          <Check size={14} style={{ marginRight: '4px' }} /> Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ fontSize: '13px' }}>
+                        Status: <strong style={{
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          fontSize: '11px',
+                          background: employee?.placement_status === 'Placed' ? 'rgba(16, 185, 129, 0.1)' : employee?.placement_status === 'In Process' ? 'rgba(245, 158, 11, 0.1)' : 'var(--primary-bg)',
+                          color: employee?.placement_status === 'Placed' ? '#10b981' : employee?.placement_status === 'In Process' ? '#f59e0b' : 'var(--text-muted)',
+                          textTransform: 'uppercase',
+                          fontWeight: 700
+                        }}>
+                          {employee?.placement_status || 'Unplaced'}
+                        </strong>
+                      </div>
+
+                      {employee?.placement_status === 'Placed' && (
+                        <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)', fontSize: '12.5px' }}>
+                          <div style={{ marginBottom: '4px' }}>Company: <strong>{employee?.placement_company_name}</strong></div>
+                          <div style={{ marginBottom: '4px' }}>Role: <strong>{employee?.placement_role}</strong></div>
+                          {employee?.placement_package && <div style={{ marginBottom: '4px' }}>Package: <strong>{employee?.placement_package}</strong></div>}
+                          {employee?.placement_company_address && <div>Location: <span style={{ color: 'var(--text-muted)' }}>{employee?.placement_company_address}</span></div>}
+                        </div>
+                      )}
+
+                      {employee?.placement_status === 'In Process' && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                          <div style={{ background: 'var(--primary-bg)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>Aptitude Test</div>
+                            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-main)' }}>{employee?.apti_details || 'Pending'}</div>
+                            {employee?.apti_date && <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Date: {new Date(employee.apti_date).toLocaleDateString('en-GB')}</div>}
+                          </div>
+
+                          <div style={{ background: 'var(--primary-bg)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>Job Description (JD)</div>
+                            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-main)' }}>{employee?.jd_details || 'Pending'}</div>
+                            {employee?.jd_date && <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Date: {new Date(employee.jd_date).toLocaleDateString('en-GB')}</div>}
+                          </div>
+
+                          <div style={{ background: 'var(--primary-bg)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>Interview Round</div>
+                            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-main)' }}>{employee?.round_details || 'Pending'}</div>
+                            {employee?.round_date && <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Date: {new Date(employee.round_date).toLocaleDateString('en-GB')}</div>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : activeInnerTab === 'Leave' ? (
             <div className="dashboard-leave-body">

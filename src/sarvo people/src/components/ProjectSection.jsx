@@ -317,9 +317,15 @@ export default function ProjectSection({ currentUser }) {
                   <div className="form-group">
                     <label>GitHub Repository URL *</label>
                     <input
-                      type="url"
+                      type="text"
                       value={githubUrl}
                       onChange={(e) => setGithubUrl(e.target.value)}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim();
+                        if (val && !/^https?:\/\//i.test(val)) {
+                          setGithubUrl(`https://${val}`);
+                        }
+                      }}
                       placeholder="https://github.com/..."
                       style={{
                         width: '100%',
@@ -337,9 +343,15 @@ export default function ProjectSection({ currentUser }) {
                   <div className="form-group">
                     <label>Live Deployment URL</label>
                     <input
-                      type="url"
+                      type="text"
                       value={liveUrl}
                       onChange={(e) => setLiveUrl(e.target.value)}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim();
+                        if (val && !/^https?:\/\//i.test(val)) {
+                          setLiveUrl(`https://${val}`);
+                        }
+                      }}
                       placeholder="https://..."
                       style={{
                         width: '100%',

@@ -26,6 +26,9 @@ import CertificateSection from '../sarvo people/src/components/CertificateSectio
 import ReportsSection from '../sarvo people/src/components/ReportsSection';
 import BatchSection from '../sarvo people/src/components/BatchSection';
 import DailyReportsSection from '../sarvo people/src/components/DailyReportsSection';
+import StudentTestsSection from '../sarvo people/src/components/StudentTestsSection';
+import AdminTestsSection from '../sarvo people/src/components/AdminTestsSection';
+import JobApplicationsPanel from '../sarvo people/src/components/JobApplicationsPanel';
 import CompetitionsAdminPanel from '../sarvo people/src/components/CompetitionsAdminPanel';
 
 // Import Sarvo People styles (scoped within .sarvo-people-wrapper)
@@ -121,9 +124,20 @@ export default function SarvoPeoplePage({
     } else if (activeTab === 'reports') {
       setActiveSubTab('Analytics Hub');
       setSubNavItem('SVG Graphs');
+    } else if (activeTab === 'jobapplications') {
+      setActiveSubTab('Recruitment');
+      setSubNavItem('All Applications');
     } else if (activeTab === 'batches') {
       setActiveSubTab('Cohorts');
       setSubNavItem('Active Batches');
+    } else if (activeTab === 'tests') {
+      if (employee?.role === 'Admin') {
+        setActiveSubTab('Management');
+        setSubNavItem('Configure Questions');
+      } else {
+        setActiveSubTab('Assessments');
+        setSubNavItem('All Tests');
+      }
     } else if (activeTab === 'competitions') {
       setActiveSubTab('Competitions');
       setSubNavItem('Manage Competitions');
@@ -140,7 +154,7 @@ export default function SarvoPeoplePage({
       setActiveSubTab('My Space');
       setSubNavItem('Overview');
     }
-  }, [activeTab]);
+  }, [activeTab, employee]);
 
   const topNavLinks = activeTab === 'leave' || activeTab === 'attendance'
     ? ['My Data', 'Team']
@@ -162,17 +176,21 @@ export default function SarvoPeoplePage({
                     ? ['Credentials']
                     : activeTab === 'reports'
                       ? ['Analytics Hub']
-                      : activeTab === 'batches'
-                        ? ['Cohorts']
-                      : activeTab === 'competitions'
-                        ? ['Competitions']
-                      : activeTab === 'student_batch'
-                        ? ['Cohorts']
-                          : activeTab === 'student_attendance'
-                            ? ['My Data']
-                            : activeTab === 'dailyreports'
-                              ? ['Work Logs']
-                              : ['My Space', 'Team', 'Organization'];
+                      : activeTab === 'jobapplications'
+                        ? ['Recruitment']
+                        : activeTab === 'batches'
+                          ? ['Cohorts']
+                          : activeTab === 'tests'
+                            ? (employee?.role === 'Admin' ? ['Management'] : ['Assessments'])
+                            : activeTab === 'competitions'
+                              ? ['Competitions']
+                              : activeTab === 'student_batch'
+                                ? ['Cohorts']
+                                : activeTab === 'student_attendance'
+                                  ? ['My Data']
+                                  : activeTab === 'dailyreports'
+                                    ? ['Work Logs']
+                                    : ['My Space', 'Team', 'Organization'];
 
   const subNavLinks = activeTab === 'leave'
     ? (employee?.role === 'Admin' || employee?.role === 'HR'
@@ -200,17 +218,21 @@ export default function SarvoPeoplePage({
                         ? ['My Certificates', 'Public Verification']
                         : activeTab === 'reports'
                           ? ['SVG Graphs', 'Data Exporters']
-                          : activeTab === 'batches'
-                            ? ['Active Batches', 'Roster Map', 'Students']
-                          : activeTab === 'competitions'
-                            ? ['Manage Competitions']
-                          : activeTab === 'student_batch'
-                            ? ['Batch Details']
-                              : activeTab === 'student_attendance'
-                                ? ['My Attendance']
-                                : activeTab === 'dailyreports'
-                                  ? ['Daily Logs', 'Mentor Comments']
-                                  : ['Overview', 'Dashboard', 'Calendar'];
+                          : activeTab === 'jobapplications'
+                            ? ['All Applications']
+                            : activeTab === 'batches'
+                              ? ['Active Batches', 'Roster Map', 'Students']
+                              : activeTab === 'tests'
+                                ? (employee?.role === 'Admin' ? ['Configure Questions', 'Student Scores'] : ['All Tests'])
+                                : activeTab === 'competitions'
+                                  ? ['Manage Competitions']
+                                  : activeTab === 'student_batch'
+                                    ? ['Batch Details']
+                                    : activeTab === 'student_attendance'
+                                      ? ['My Attendance']
+                                      : activeTab === 'dailyreports'
+                                        ? ['Daily Logs', 'Mentor Comments']
+                                        : ['Overview', 'Dashboard', 'Calendar'];
 
   // ── Show Login if not authenticated ──
   if (!isAuthenticated) {
@@ -386,6 +408,7 @@ export default function SarvoPeoplePage({
               <Route path="aihub" element={<AIFeaturesSection currentUser={employee} />} />
               <Route path="certificates" element={<CertificateSection currentUser={employee} />} />
               <Route path="reports" element={<ReportsSection />} />
+              <Route path="jobapplications" element={<JobApplicationsPanel />} />
               <Route path="batches" element={<BatchSection currentUser={employee} subNavItem={subNavItem} />} />
               <Route
                 path="student_batch"
@@ -404,6 +427,7 @@ export default function SarvoPeoplePage({
                 }
               />
               <Route path="dailyreports" element={<DailyReportsSection currentUser={employee} />} />
+              <Route path="tests" element={employee?.role === 'Admin' ? <AdminTestsSection currentUser={employee} subNavItem={subNavItem} /> : <StudentTestsSection currentUser={employee} />} />
               <Route path="competitions" element={<CompetitionsAdminPanel currentUser={employee} />} />
               <Route path="competitions/:id" element={<CompetitionsAdminPanel currentUser={employee} />} />
               <Route path="*" element={<Navigate to="home" replace />} />

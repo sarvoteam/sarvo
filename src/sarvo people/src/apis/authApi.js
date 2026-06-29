@@ -18,5 +18,11 @@ export const authApi = {
   },
   register: async (internData) => {
     return await api.post('/employees/register', internData);
+  },
+  studentLogin: async (email, password) => {
+    return await api.post('/employees/students/login', { email, password });
+  },
+  studentRegister: async (studentData) => {
+    return await api.post('/employees/students/register', studentData);
   }
 };

@@ -70,6 +70,7 @@ export default function AdminPanel() {
   const [formEmail, setFormEmail] = useState('');
   const [formMobile, setFormMobile] = useState('');
   const [formPhone, setFormPhone] = useState('');
+  const [formPortalRole, setFormPortalRole] = useState('Employee');
   const [formTimezone, setFormTimezone] = useState('India Standard Time (GMT+05:30)');
   const [formShift, setFormShift] = useState('General (10:30 AM - 06:30 PM)');
   const [formAbout, setFormAbout] = useState('');
@@ -295,9 +296,9 @@ export default function AdminPanel() {
       lastName,
       email: formEmail || `${firstName.toLowerCase()}@sarvo.com`,
       phone: formMobile || formPhone || '9999999999',
-      role: formUserRole,
-      departmentId: formDept,
-      designationId: formRole
+      role: formPortalRole || formUserRole,
+      departmentId: Number(formDept),
+      designationId: Number(formRole)
     };
 
     try {
@@ -320,6 +321,7 @@ export default function AdminPanel() {
     setFormUserRole('Admin');
     if (orgMeta.departments.length > 0) setFormDept(orgMeta.departments[0].id);
     if (orgMeta.designations.length > 0) setFormRole(orgMeta.designations[0].id);
+    setFormPortalRole('Employee');
     setFormEmail('');
     setFormMobile('');
     setFormPhone('');
@@ -796,7 +798,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="admin-profile-row">
                     <span className="admin-profile-label">Aadhaar Card Number</span>
-                    <span className="admin-profile-value">{selectedEmployeeProfile?.aadhar_card_number || '-'}</span>
+                    <span className="admin-profile-value">[Aadhaar Redacted]</span>
                   </div>
                   <div className="admin-profile-row">
                     <span className="admin-profile-label">LinkedIn Profile</span>
@@ -1127,6 +1129,16 @@ export default function AdminPanel() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="admin-form-group">
+                <label>System Portal Access Role *</label>
+                <select value={formPortalRole} onChange={(e) => setFormPortalRole(e.target.value)}>
+                  <option value="Employee">Employee (Standard)</option>
+                  <option value="Reporting Manager">Reporting Manager (Mentor)</option>
+                  <option value="Admin">System Admin</option>
+                  <option value="Intern">Intern</option>
+                </select>
               </div>
 
               <div className="admin-form-group">

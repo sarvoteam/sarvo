@@ -50,7 +50,7 @@ const DEFAULT_INTERN = {
 
 export default function AuthSection({ onLoginSuccess, onBackToSite }) {
   const [view, setView] = useState('login'); // login, register, verify, forgot, reset
-  const [activeRole, setActiveRole] = useState('intern'); // admin, mentor, intern
+  const [activeRole, setActiveRole] = useState('intern'); // admin, mentor, intern, student
   
   // Login States
   const [email, setEmail] = useState('');
@@ -110,7 +110,9 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
     setLoading(true);
 
     try {
-      const data = await authApi.login(email.trim(), password.trim());
+      const data = activeRole === 'student'
+        ? await authApi.studentLogin(email.trim(), password.trim())
+        : await authApi.login(email.trim(), password.trim());
       setSuccess('Authentication successful! Loading dashboard...');
       
       // Save details
@@ -147,7 +149,8 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
       skills: regSkills,
       github: regGithub || '',
       linkedin: regLinkedin || '',
-      phone: ''
+      phone: '',
+      role: activeRole === 'admin' ? 'Admin' : activeRole === 'mentor' ? 'Reporting Manager' : activeRole === 'student' ? 'Student' : 'Intern'
     };
 
     setTempInternData(internPayload);
@@ -168,11 +171,24 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
 
     setLoading(true);
     try {
-      const createdIntern = await authApi.register(tempInternData);
+      let createdUser;
+      if (tempInternData.role === 'Student') {
+        createdUser = await authApi.studentRegister({
+          firstName: tempInternData.name.split(' ')[0],
+          lastName: tempInternData.name.split(' ').slice(1).join(' ') || 'Student',
+          email: tempInternData.email,
+          password: tempInternData.password,
+          collegeName: tempInternData.college,
+          skills: tempInternData.skills,
+          linkedinProfile: tempInternData.linkedin
+        });
+      } else {
+        createdUser = await authApi.register(tempInternData);
+      }
       setSuccess('Email verified and registered successfully! You can now log in.');
-      setEmail(createdIntern.email);
+      setEmail(createdUser.email);
       setPassword(tempInternData.password);
-      setActiveRole('intern');
+      setActiveRole(tempInternData.role === 'Reporting Manager' ? 'mentor' : tempInternData.role === 'Student' ? 'student' : 'intern');
       
       setTimeout(() => {
         setView('login');
@@ -338,23 +354,44 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
                 </button>
               </form>
 
-               {/* Demo accounts hint */}
+              {/* Demo accounts hint */}
               <div className="auth-demo-hint">
                 <strong>Demo Credentials ({activeRole.toUpperCase()}):</strong>
-                <div>Email: <span className="fill-cred" onClick={() => setEmail(
-                  activeRole === 'admin' ? 'admin@sarvo.com' : 
-                  activeRole === 'mentor' ? 'om@sarvo.com' : 
-                  activeRole === 'intern' ? 'akanksha@sarvo.com' : 'vaishnav@sarvo.com'
-                )}>{
-                  activeRole === 'admin' ? 'admin@sarvo.com' : 
-                  activeRole === 'mentor' ? 'om@sarvo.com' : 
-                  activeRole === 'intern' ? 'akanksha@sarvo.com' : 'vaishnav@sarvo.com'
-                }</span></div>
-                <div>Password: <span className="fill-cred" onClick={() => setPassword('sarvoadmin@2026')}>sarvoadmin@2026</span></div>
+                <div>
+                  Email:{' '}
+                  <span
+                    className="fill-cred"
+                    onClick={() =>
+                      setEmail(
+                        activeRole === 'admin'
+                          ? 'admin@sarvo.com'
+                          : activeRole === 'mentor'
+                          ? 'om@sarvo.com'
+                          : activeRole === 'intern'
+                          ? 'akanksha@sarvo.com'
+                          : 'vaishnav@sarvo.com'
+                      )
+                    }
+                  >
+                    {activeRole === 'admin'
+                      ? 'admin@sarvo.com'
+                      : activeRole === 'mentor'
+                      ? 'om@sarvo.com'
+                      : activeRole === 'intern'
+                      ? 'akanksha@sarvo.com'
+                      : 'vaishnav@sarvo.com'}
+                  </span>
+                </div>
+                <div>
+                  Password:{' '}
+                  <span className="fill-cred" onClick={() => setPassword('sarvoadmin@2026')}>
+                    sarvoadmin@2026
+                  </span>
+                </div>
               </div>
 
               <div className="auth-footer-link">
-                New Intern? <span onClick={() => setView('register')}>Create profile</span>
+                {activeRole === 'admin' ? 'New Admin? ' : activeRole === 'mentor' ? 'New Mentor? ' : activeRole === 'student' ? 'New Student? ' : 'New Intern? '} <span onClick={() => setView('register')}>Create profile</span>
               </div>
             </>
           )}
@@ -363,8 +400,8 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
           {view === 'register' && (
             <>
               <div className="auth-subheader">
-                <h3>Intern Registration</h3>
-                <p>Register to access training courses, projects, and placements.</p>
+                <h3>{activeRole === 'admin' ? 'Admin Registration' : activeRole === 'mentor' ? 'Mentor Registration' : activeRole === 'student' ? 'Student Registration' : 'Intern Registration'}</h3>
+                <p>{activeRole === 'admin' ? 'Register as a system administrator.' : activeRole === 'mentor' ? 'Register as a mentor / reporting manager.' : activeRole === 'student' ? 'Register as a student to access training courses, cohorts, and placement opportunities.' : 'Register to access training courses, projects, and placements.'}</p>
               </div>
 
               {error && (
@@ -418,7 +455,7 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
                 </div>
 
                 <div className="auth-form-group">
-                  <label>College / University *</label>
+                  <label>{activeRole === 'intern' ? 'College / University *' : 'Company / College / University *'}</label>
                   <div className="auth-input-wrapper">
                     <School size={16} className="auth-input-icon" />
                     <input
@@ -455,9 +492,15 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
                   <div className="auth-form-group">
                     <label>GitHub Profile URL</label>
                     <input
-                      type="url"
+                      type="text"
                       value={regGithub}
                       onChange={(e) => setRegGithub(e.target.value)}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim();
+                        if (val && !/^https?:\/\//i.test(val)) {
+                          setRegGithub(`https://${val}`);
+                        }
+                      }}
                       placeholder="https://github.com/..."
                       style={{
                         width: '100%',
@@ -474,9 +517,15 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
                   <div className="auth-form-group">
                     <label>LinkedIn Profile URL</label>
                     <input
-                      type="url"
+                      type="text"
                       value={regLinkedin}
                       onChange={(e) => setRegLinkedin(e.target.value)}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim();
+                        if (val && !/^https?:\/\//i.test(val)) {
+                          setRegLinkedin(`https://${val}`);
+                        }
+                      }}
                       placeholder="https://linkedin.com/in/..."
                       style={{
                         width: '100%',
@@ -600,7 +649,7 @@ export default function AuthSection({ onLoginSuccess, onBackToSite }) {
               </form>
 
               <div className="auth-footer-link">
-                Remembered? <span onClick={() => setView('login')}>Sign In</span>
+                <span onClick={() => setView('login')}>Sign In</span>
               </div>
             </>
           )}

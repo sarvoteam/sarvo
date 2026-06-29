@@ -22,12 +22,12 @@ export default function PlacementSection({ currentUser }) {
       const mappedJobs = jobsData.map(j => {
         // Find if current user applied (matches by email)
         const userApp = appsData.find(a => 
-          Number(a.job_id) === Number(j.id) && 
+          a.job_id === j.id && 
           a.email.toLowerCase() === currentUser?.email?.toLowerCase()
         );
 
         // For Admin, show the first application details so they can perform updates
-        const anyApp = appsData.find(a => Number(a.job_id) === Number(j.id));
+        const anyApp = appsData.find(a => a.job_id === j.id);
         const activeApp = isAdminOrMentor ? anyApp : userApp;
 
         return {
@@ -138,6 +138,44 @@ export default function PlacementSection({ currentUser }) {
           <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Secured by Web Dev Intern</p>
         </div>
       </div>
+
+      {/* Test eligibility notice for students */}
+      {!isAdminOrMentor && (
+        <div style={{
+          background: 'rgba(0, 123, 245, 0.05)',
+          border: '1px solid rgba(0, 123, 245, 0.2)',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--active-blue)' }}>📋 Placement Aptitude & Course Assessments</h4>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Please complete all mandatory tests and quizzes to remain eligible for active recruitment.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              alert('Please select "LMS Study" from the left sidebar to access your courses and start your assessments/quizzes!');
+            }}
+            style={{
+              padding: '8px 16px',
+              border: 'none',
+              background: 'var(--active-blue)',
+              color: 'white',
+              borderRadius: '8px',
+              fontWeight: 700,
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            Go to LMS Study
+          </button>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
         
