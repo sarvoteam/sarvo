@@ -20,6 +20,17 @@
 
   --shadow-premium: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
   --transition-smooth: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  --banner-height: 0px;
+}
+
+body.has-competition-banner {
+  --banner-height: 110px;
+}
+
+@media (max-width: 768px) {
+  body.has-competition-banner {
+    --banner-height: 120px;
+  }
 }
 
 [data-theme='light'] {
