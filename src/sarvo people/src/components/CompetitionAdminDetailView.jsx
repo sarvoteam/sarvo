@@ -96,7 +96,8 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
         const order = await paymentApi.createOrder(
           competition.id,
           studentName,
-          studentEmail
+          studentEmail,
+          formData.studentPhone
         );
 
         if (order.free) {

@@ -67,7 +67,8 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
         const order = await paymentApi.createOrder(
           competitionId,
           studentName,
-          studentEmail
+          studentEmail,
+          formData.studentPhone
         );
 
         if (order.free) {
@@ -160,7 +161,7 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
   };
 
   return (
-    <div style={{
+    <div className="modal-overlay" style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -181,7 +182,7 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
         }
       `}</style>
       
-      <div style={{
+      <div className="modal-card" style={{
         background: 'var(--modal-bg)',
         border: '1px solid var(--modal-border)',
         borderRadius: '24px',
@@ -334,7 +335,7 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
           </div>
         ) : (
           <form onSubmit={handleEnroll}>
-            <div style={{
+            <div className="form-grid" style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
               gap: '16px',

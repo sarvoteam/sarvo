@@ -5,8 +5,8 @@ export const paymentApi = {
    * Creates a Razorpay order on the backend.
    * Returns { free: true } for free competitions, or { orderId, amount, currency, keyId } for paid.
    */
-  createOrder: (competitionId, studentName, studentEmail) =>
-    api.post('/payments/create-order', { competitionId, studentName, studentEmail }),
+  createOrder: (competitionId, studentName, studentEmail, studentPhone) =>
+    api.post('/payments/create-order', { competitionId, studentName, studentEmail, studentPhone }),
 
   /**
    * Verifies Razorpay payment signature on the backend and registers the student.

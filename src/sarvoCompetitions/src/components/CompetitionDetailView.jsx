@@ -79,7 +79,8 @@ const CompetitionDetailView = ({ competition, onBack }) => {
         const order = await paymentApi.createOrder(
           competitionId,
           studentName,
-          studentEmail
+          studentEmail,
+          formData.studentPhone
         );
 
         if (order.free) {
@@ -427,7 +428,7 @@ const CompetitionDetailView = ({ competition, onBack }) => {
               </div>
             ) : (
               <form onSubmit={handleEnroll}>
-                <div style={{
+                <div className="form-grid" style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
                   gap: '20px',
