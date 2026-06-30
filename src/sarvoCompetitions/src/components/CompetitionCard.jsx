@@ -42,15 +42,13 @@ const CompetitionCard = ({ competition, onView, onRegister }) => {
       onMouseLeave={() => setIsHovered(false)}
       style={{
         cursor: 'pointer',
-        background: 'linear-gradient(135deg, #2d124d 0%, #19092e 100%)',
+        background: 'var(--card-bg-grad)',
         backdropFilter: 'blur(30px) saturate(180%)',
         WebkitBackdropFilter: 'blur(30px) saturate(180%)',
-        border: isHovered ? '1px solid rgba(168, 85, 247, 0.55)' : '1px solid rgba(139, 92, 246, 0.2)',
+        border: isHovered ? '1px solid var(--card-border-hover)' : '1px solid var(--card-border-glow)',
         borderRadius: '24px',
         padding: '28px',
-        boxShadow: isHovered 
-          ? '0 20px 48px rgba(109, 40, 217, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.08)' 
-          : '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.04)',
+        boxShadow: isHovered ? 'var(--card-shadow-hover)' : 'var(--card-shadow-luxury)',
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',
@@ -71,7 +69,7 @@ const CompetitionCard = ({ competition, onView, onRegister }) => {
           <h3 style={{
             fontSize: '1.45rem',
             fontWeight: 800,
-            color: '#ffffff',
+            color: 'var(--text-primary-luxury)',
             margin: 0,
             letterSpacing: '-0.025em',
             lineHeight: 1.2,
@@ -86,7 +84,7 @@ const CompetitionCard = ({ competition, onView, onRegister }) => {
             gap: '12px',
             flexWrap: 'wrap',
             fontSize: '0.82rem',
-            color: 'rgba(255, 255, 255, 0.5)',
+            color: 'var(--text-mute)',
             fontWeight: 600
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -140,7 +138,7 @@ const CompetitionCard = ({ competition, onView, onRegister }) => {
       {/* Description */}
       <p style={{
         fontSize: '0.9rem',
-        color: 'rgba(255, 255, 255, 0.75)',
+        color: 'var(--text-secondary-luxury)',
         lineHeight: 1.6,
         zIndex: 2,
         margin: 0,
@@ -184,17 +182,17 @@ const CompetitionCard = ({ competition, onView, onRegister }) => {
               flexDirection: 'column',
               gap: '8px',
               padding: '12px 16px',
-              background: 'rgba(255, 255, 255, 0.03)',
+              background: 'var(--card-inner-bg)',
               borderRadius: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.05)'
+              border: '1px solid var(--glass-border-luxury)'
             }}>
-              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#c084fc', marginBottom: '2px' }}>Prizes & Ranks</span>
+              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--comps-accent)', marginBottom: '2px' }}>Prizes & Ranks</span>
               {ranks.map((r, idx) => (
                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', gap: '12px' }}>
-                  <span style={{ fontWeight: 700, color: '#fbbf24', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontWeight: 700, color: 'var(--comps-accent)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                     🏆 {r.rank}
                   </span>
-                  <span style={{ fontWeight: 600, color: '#e2e8f0', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary-luxury)', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
                     {r.reward}
                   </span>
                 </div>
@@ -223,7 +221,7 @@ const CompetitionCard = ({ competition, onView, onRegister }) => {
             gap: '8px',
             fontSize: '0.8rem',
             fontWeight: 800,
-            color: isHovered ? '#ffffff' : '#c084fc',
+            color: isHovered ? 'var(--text-primary-luxury)' : 'var(--comps-accent)',
             letterSpacing: '0.05em',
             transition: 'color 0.3s ease',
             cursor: 'pointer'
@@ -235,7 +233,7 @@ const CompetitionCard = ({ competition, onView, onRegister }) => {
             style={{ 
               transform: isHovered ? 'translateX(4px)' : 'translateX(0)',
               transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-              color: isHovered ? '#ffffff' : '#c084fc'
+              color: isHovered ? 'var(--text-primary-luxury)' : 'var(--comps-accent)'
             }} 
           />
         </div>

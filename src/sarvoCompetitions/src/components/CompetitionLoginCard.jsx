@@ -57,15 +57,13 @@ const CompetitionLoginCard = ({ navigate }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        background: 'linear-gradient(135deg, #1e1b4b 0%, #0f0c29 100%)',
+        background: 'var(--card-bg-grad)',
         backdropFilter: 'blur(30px) saturate(180%)',
         WebkitBackdropFilter: 'blur(30px) saturate(180%)',
-        border: isHovered ? '1px solid rgba(168, 85, 247, 0.55)' : '1px solid rgba(139, 92, 246, 0.2)',
+        border: isHovered ? '1px solid var(--card-border-hover)' : '1px solid var(--card-border-glow)',
         borderRadius: '24px',
         padding: '28px',
-        boxShadow: isHovered 
-          ? '0 20px 48px rgba(109, 40, 217, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.08)' 
-          : '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.04)',
+        boxShadow: isHovered ? 'var(--card-shadow-hover)' : 'var(--card-shadow-luxury)',
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',
@@ -85,14 +83,14 @@ const CompetitionLoginCard = ({ navigate }) => {
           <h3 style={{
             fontSize: '1.45rem',
             fontWeight: 800,
-            color: '#ffffff',
+            color: 'var(--text-primary-luxury)',
             margin: 0,
             letterSpacing: '-0.025em',
             fontFamily: "'Outfit', sans-serif"
           }}>
             Student Portal
           </h3>
-          <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-mute)', fontWeight: 500 }}>
             Sign in to track your challenge entries
           </span>
         </div>
@@ -140,11 +138,11 @@ const CompetitionLoginCard = ({ navigate }) => {
       <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px', zIndex: 2, flex: 1 }}>
         {/* Email Field */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary-luxury)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Student Email
           </label>
           <div style={{ position: 'relative' }}>
-            <Mail size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
+            <Mail size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-mute)' }} />
             <input
               type="email"
               value={email}
@@ -156,9 +154,9 @@ const CompetitionLoginCard = ({ navigate }) => {
                 width: '100%',
                 padding: '10px 12px 10px 36px',
                 borderRadius: '10px',
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(255, 255, 255, 0.02)',
-                color: '#ffffff',
+                border: '1px solid var(--glass-border-luxury)',
+                background: 'var(--card-inner-bg)',
+                color: 'var(--text-primary-luxury)',
                 outline: 'none',
                 fontSize: '0.88rem',
                 fontFamily: 'inherit',
@@ -170,11 +168,11 @@ const CompetitionLoginCard = ({ navigate }) => {
 
         {/* Password Field */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary-luxury)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Password
           </label>
           <div style={{ position: 'relative' }}>
-            <Lock size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
+            <Lock size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-mute)' }} />
             <input
               type="password"
               value={password}
@@ -186,9 +184,9 @@ const CompetitionLoginCard = ({ navigate }) => {
                 width: '100%',
                 padding: '10px 12px 10px 36px',
                 borderRadius: '10px',
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(255, 255, 255, 0.02)',
-                color: '#ffffff',
+                border: '1px solid var(--glass-border-luxury)',
+                background: 'var(--card-inner-bg)',
+                color: 'var(--text-primary-luxury)',
                 outline: 'none',
                 fontSize: '0.88rem',
                 fontFamily: 'inherit',

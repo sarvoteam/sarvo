@@ -20,6 +20,9 @@ export const lmsApi = {
   },
   deleteInterviewQuestion: async (questionId) => {
     return await api.delete(`/lms/interview-questions/${questionId}`);
+  },
+  copyQuestions: async (fromTestId, toTestId) => {
+    return await api.post('/lms/copy-questions', { fromTestId, toTestId });
   }
 };
 
