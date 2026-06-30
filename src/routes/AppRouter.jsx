@@ -9,6 +9,8 @@ import ServiceDetailPage from '../pages/ServiceDetailPage';
 import TeamPage from '../pages/TeamPage';
 import ContactPage from '../pages/ContactPage';
 import ProductPage from '../pages/ProductPage';
+import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
+import TermsOfServicePage from '../pages/TermsOfServicePage';
 
 // Portal / App Platforms
 import SarvoPeoplePage from '../pages/SarvoPeoplePage';
@@ -31,6 +33,8 @@ export default function AppRouter({
       <Route path="/team" element={<TeamPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/product" element={<ProductPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
       <Route path="/sarvo-careers" element={<SarvoCareersPage />} />
       <Route path="/sarvo-competitions" element={<SarvoCompetitionsPage />} />
 

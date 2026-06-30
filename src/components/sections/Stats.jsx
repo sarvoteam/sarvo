@@ -44,7 +44,7 @@ const Stats = () => {
               style={{
                 padding: '2.5rem 2rem',
                 borderRadius: '28px',
-                background: 'rgba(255,255,255,0.02)',
+                background: 'var(--stats-card-bg)',
                 border: '1px solid var(--glass-border)',
                 backdropFilter: 'blur(10px)',
                 textAlign: 'center',
@@ -69,7 +69,7 @@ const Stats = () => {
                 {stat.icon}
               </div>
 
-              <h3 style={{ fontSize: 'clamp(2.5rem, 6vw, 3rem)', fontWeight: 900, marginBottom: '0.3rem', background: `linear-gradient(135deg, white, ${stat.color})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <h3 style={{ fontSize: 'clamp(2.5rem, 6vw, 3rem)', fontWeight: 900, marginBottom: '0.3rem', background: `linear-gradient(135deg, var(--text-primary), ${stat.color})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 {stat.value}
               </h3>
               <p style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.85rem', marginBottom: '0.5rem' }}>

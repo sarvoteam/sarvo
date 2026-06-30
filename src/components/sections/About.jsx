@@ -65,16 +65,16 @@ const About = () => {
             {/* Micro Stats */}
             <div style={{ display: 'flex', gap: 'clamp(2rem, 5vw, 4rem)', borderTop: '1px solid var(--glass-border)', paddingTop: '2.5rem', marginTop: '1rem' }} className="about-stats">
               <div>
-                <h4 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: 900, marginBottom: '0.5rem', background: 'linear-gradient(135deg, #fff, #4f46e5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>99%</h4>
+                <h4 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: 900, marginBottom: '0.5rem', background: 'linear-gradient(135deg, var(--text-primary), #4f46e5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>99%</h4>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Client Success</p>
               </div>
               <div>
-                <h4 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: 900, marginBottom: '0.5rem', background: 'linear-gradient(135deg, #fff, #0ea5e9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>24/7</h4>
+                <h4 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: 900, marginBottom: '0.5rem', background: 'linear-gradient(135deg, var(--text-primary), #0ea5e9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>24/7</h4>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Expert Support</p>
               </div>
             </div>
           </motion.div>
-
+ 
           {/* Right Column: Values Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>
             {values.map((value, idx) => (
@@ -88,7 +88,7 @@ const About = () => {
                 style={{
                   padding: '2rem',
                   borderRadius: '24px',
-                  background: 'rgba(255, 255, 255, 0.02)',
+                  background: 'var(--stats-card-bg)',
                   border: '1px solid var(--glass-border)',
                   backdropFilter: 'blur(10px)',
                   transition: 'var(--transition-smooth)',

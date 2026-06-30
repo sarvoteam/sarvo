@@ -11,7 +11,7 @@ const Hero = () => {
   const closeModal = () => setModalState({ isOpen: false, type: '' });
 
   return (
-    <section className="hero" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', padding: 'clamp(100px, 15vh, 160px) 0 60px' }}>
+    <section className="hero" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', padding: '30px 0 60px' }}>
       <ActionModal
         isOpen={modalState.isOpen}
         onClose={closeModal}
@@ -31,16 +31,6 @@ const Hero = () => {
             transition={{ duration: 1, ease: "easeOut" }}
             className="hero-content"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.7rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', padding: '0.6rem 1.2rem', borderRadius: '100px', marginBottom: '2rem' }}
-            >
-              <Zap size={16} className="gradient-text" />
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>PREMIUM DIGITAL SOLUTIONS</span>
-            </motion.div>
-
             <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', lineHeight: 1.05, marginBottom: '1.5rem', fontWeight: 800 }}>
               Engineering <span className="gradient-text">Excellence</span> in <br />
               Web & Mobile Apps
@@ -131,7 +121,7 @@ const Hero = () => {
 
         @media (max-width: 768px) {
           .hero {
-            padding-top: 120px;
+            padding-top: 30px;
             text-align: center;
           }
           .hero-content {

@@ -60,7 +60,7 @@ const Testimonials = () => {
               style={{
                 padding: 'clamp(1.5rem, 4vw, 2.8rem)',
                 borderRadius: '28px',
-                background: 'rgba(255,255,255,0.02)',
+                background: 'var(--stats-card-bg)',
                 border: '1px solid var(--glass-border)',
                 backdropFilter: 'blur(10px)',
                 display: 'flex',

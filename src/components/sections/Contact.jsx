@@ -16,7 +16,13 @@ const ContactInfoCard = ({ icon: Icon, title, detail, delay }) => (
     </div>
     <div className="info-content">
       <h4>{title}</h4>
-      <p>{detail}</p>
+      {Array.isArray(detail) ? (
+        detail.map((item, idx) => (
+          <p key={idx} style={{ margin: 0, lineHeight: 1.5 }}>{item}</p>
+        ))
+      ) : (
+        <p style={{ whiteSpace: 'pre-line' }}>{detail}</p>
+      )}
     </div>
   </motion.div>
 );
@@ -105,14 +111,14 @@ const Contact = () => {
                 <ContactInfoCard 
                   icon={Mail} 
                   title="Official Email" 
-                  detail="sarvoteam@gmail.com" 
+                  detail={["sarvoprime@gmail.com", "sarvoteam@gmail.com"]} 
                   delay={0.3}
                 />
                
                 <ContactInfoCard 
                   icon={MapPin} 
                   title="Location" 
-                  detail="Pune, Maharashtra" 
+                  detail="Pune, Maharashtra, India" 
                   delay={0.4}
                 />
               </div>
@@ -327,13 +333,13 @@ const Contact = () => {
           padding: 1.5rem;
           border-radius: 20px;
           transition: var(--transition-smooth);
-          background: rgba(255, 255, 255, 0.02);
+          background: var(--stats-card-bg);
           cursor: pointer;
         }
 
         .contact-info-card:hover {
           transform: translateX(10px);
-          background: rgba(255, 255, 255, 0.04);
+          background: var(--stats-card-hover-bg);
           border-color: rgba(79, 70, 229, 0.3);
           box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.2);
         }
