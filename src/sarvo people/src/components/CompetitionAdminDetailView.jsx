@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, Award, Users, UserMinus, Plus, Search, Mail, Phone, BookOpen, GraduationCap, MapPin, X } from 'lucide-react';
+import { ArrowLeft, Calendar, Award, Users, UserMinus, Plus, Search, Mail, Phone, BookOpen, GraduationCap, MapPin, X, CreditCard, CheckCircle } from 'lucide-react';
 import { competitionApi } from '../apis/competitionApi';
+import { paymentApi } from '../apis/paymentApi';
+import { loadRazorpayScript } from '../utils/razorpayLoader';
 
 const CompetitionAdminDetailView = ({ competition, onBack }) => {
   const [registrations, setRegistrations] = useState([]);
@@ -26,6 +28,8 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
   });
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // 'idle' | 'creating-order' | 'awaiting-payment' | 'verifying'
+  const [paymentStep, setPaymentStep] = useState('idle');
 
   // Fetch registrations
   const loadData = async () => {
@@ -53,48 +57,116 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
     }));
   };
 
-  // Handle Enrollment submit
+  // Handle Enrollment submit — payment-gated flow
   const handleEnroll = async (e) => {
     e.preventDefault();
     setFormError('');
-    setIsSubmitting(true);
 
     const { studentName, studentEmail } = formData;
     if (!studentName.trim() || !studentEmail.trim()) {
       setFormError('Name and Email are required.');
-      setIsSubmitting(false);
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
+      const feeInPaise = parseInt(competition.registration_fee || 0, 10);
       const submissionData = {
         ...formData,
+        competitionId: competition.id,
         graduationYear: formData.graduationYear ? parseInt(formData.graduationYear, 10) : null
       };
-      
-      await competitionApi.registerStudent(competition.id, submissionData);
-      
-      // Reset & Reload
-      setIsModalOpen(false);
-      setFormData({
-        studentName: '',
-        studentEmail: '',
-        studentPhone: '',
-        dob: '',
-        gender: '',
-        collegeName: '',
-        course: '',
-        branch: '',
-        graduationYear: '',
-        city: '',
-        state: ''
-      });
-      loadData();
+
+      if (feeInPaise === 0) {
+        // ── Free Competition: direct registration ─────────────────────────────
+        setPaymentStep('verifying');
+        await paymentApi.registerFree(submissionData);
+        resetAndClose();
+        loadData();
+      } else {
+        // ── Paid Competition: Razorpay flow ───────────────────────────────────
+        setPaymentStep('creating-order');
+        await loadRazorpayScript();
+
+        const order = await paymentApi.createOrder(
+          competition.id,
+          studentName,
+          studentEmail
+        );
+
+        if (order.free) {
+          // Fallback: backend says free despite local fee value
+          setPaymentStep('verifying');
+          await paymentApi.registerFree(submissionData);
+          resetAndClose();
+          loadData();
+          return;
+        }
+
+        setPaymentStep('awaiting-payment');
+        setIsSubmitting(false); // Let user interact with Razorpay modal
+
+        const options = {
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency,
+          name: 'Sarvo Campus',
+          description: `Registration: ${competition.title}`,
+          order_id: order.orderId,
+          prefill: {
+            name: studentName,
+            email: studentEmail,
+            contact: formData.studentPhone || '',
+          },
+          theme: { color: '#3b82f6' },
+          modal: {
+            ondismiss: () => {
+              setPaymentStep('idle');
+              setFormError('Payment was cancelled. Please try again to complete registration.');
+            },
+          },
+          handler: async (razorpayResponse) => {
+            // Payment success callback — verify on backend
+            setIsSubmitting(true);
+            setPaymentStep('verifying');
+            try {
+              await paymentApi.verifyAndRegister({
+                ...submissionData,
+                razorpay_order_id: razorpayResponse.razorpay_order_id,
+                razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                razorpay_signature: razorpayResponse.razorpay_signature,
+              });
+              resetAndClose();
+              loadData();
+            } catch (verifyErr) {
+              setFormError(verifyErr.message || 'Payment verification failed. Contact support with your payment ID.');
+              setPaymentStep('idle');
+              setIsSubmitting(false);
+            }
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      }
     } catch (err) {
-      setFormError(err.message || 'An error occurred during registration.');
-    } finally {
+      setFormError(err.message || 'An error occurred. Please try again.');
+      setPaymentStep('idle');
       setIsSubmitting(false);
     }
+  };
+
+  const resetAndClose = () => {
+    setIsModalOpen(false);
+    setPaymentStep('idle');
+    setIsSubmitting(false);
+    setFormData({
+      studentName: '', studentEmail: '', studentPhone: '',
+      dob: '', gender: '', collegeName: '',
+      course: '', branch: '', graduationYear: '', city: '', state: ''
+    });
+    setFormError('');
   };
 
   // Handle Remove Student
@@ -346,7 +418,8 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
                   <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-muted)' }}>Demographics</th>
                   <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-muted)' }}>Education</th>
                   <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-muted)' }}>Location</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-muted)' }}>Registration Date</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-muted)' }}>Payment</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-muted)' }}>Registered</th>
                   <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -398,6 +471,30 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
                           </div>
                         ) : '—'}
                       </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '3px 8px',
+                          borderRadius: '10px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          background: reg.payment_status === 'paid'
+                            ? 'rgba(16, 185, 129, 0.1)'
+                            : 'rgba(100, 116, 139, 0.1)',
+                          color: reg.payment_status === 'paid' ? '#10b981' : '#64748b',
+                          border: reg.payment_status === 'paid'
+                            ? '1px solid rgba(16, 185, 129, 0.3)'
+                            : '1px solid rgba(100, 116, 139, 0.2)'
+                        }}>
+                          {reg.payment_status === 'paid'
+                            ? <><CheckCircle size={11} /> Paid</>
+                            : <><CreditCard size={11} /> Free</>
+                          }
+                        </span>
+                      </td>
                       <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{formatDate(reg.registered_at)}</td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <button
@@ -425,7 +522,7 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" style={{ padding: '30px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <td colSpan="8" style={{ padding: '30px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
                       No students registered for this competition yet. Click "Register Student" to enroll one.
                     </td>
                   </tr>
@@ -467,6 +564,7 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
               onClick={() => {
                 setIsModalOpen(false);
                 setFormError('');
+                setPaymentStep('idle');
               }}
               style={{
                 position: 'absolute',
@@ -483,10 +581,46 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
               <X size={18} />
             </button>
 
-            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 18px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Plus size={20} style={{ color: 'var(--active-blue)' }} />
               Register Student for Competition
             </h3>
+            {/* Fee badge */}
+            {parseInt(competition.registration_fee || 0, 10) > 0 ? (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                background: 'rgba(59, 130, 246, 0.08)',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                borderRadius: '8px',
+                padding: '4px 10px',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: 'var(--active-blue)',
+                marginBottom: '16px'
+              }}>
+                <CreditCard size={13} />
+                Registration Fee: ₹{Math.round(competition.registration_fee / 100)}
+              </div>
+            ) : (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                borderRadius: '8px',
+                padding: '4px 10px',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: '#10b981',
+                marginBottom: '16px'
+              }}>
+                <CheckCircle size={13} />
+                Free Registration
+              </div>
+            )}
 
             {formError && (
               <div style={{
@@ -802,7 +936,7 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || paymentStep === 'awaiting-payment'}
                   style={{
                     flex: 1,
                     backgroundColor: 'var(--active-blue)',
@@ -811,13 +945,24 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
                     borderRadius: '10px',
                     padding: '12px 16px',
                     fontWeight: 600,
-                    cursor: 'pointer',
+                    cursor: (isSubmitting || paymentStep === 'awaiting-payment') ? 'not-allowed' : 'pointer',
                     backgroundImage: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
                     fontSize: '14px',
-                    opacity: isSubmitting ? 0.7 : 1
+                    opacity: (isSubmitting || paymentStep === 'awaiting-payment') ? 0.7 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
                   }}
                 >
-                  {isSubmitting ? 'Enrolling...' : 'Enroll Student'}
+                  {paymentStep === 'creating-order' && 'Preparing Payment...'}
+                  {paymentStep === 'awaiting-payment' && 'Complete Payment in Popup...'}
+                  {paymentStep === 'verifying' && 'Verifying Payment...'}
+                  {paymentStep === 'idle' && (
+                    parseInt(competition.registration_fee || 0, 10) > 0
+                      ? <><CreditCard size={15} /> Pay ₹{Math.round(competition.registration_fee / 100)} & Enroll</>
+                      : 'Enroll Student'
+                  )}
                 </button>
               </div>
             </form>

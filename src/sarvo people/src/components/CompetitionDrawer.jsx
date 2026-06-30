@@ -10,7 +10,8 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
     endDate: '',
     status: 'active',
     rules: '',
-    eligibility: ''
+    eligibility: '',
+    registrationFee: 0
   });
 
   const [prizes, setPrizes] = useState([{ rank: '1st Rank', reward: '' }]);
@@ -26,7 +27,10 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
         endDate: competition.end_date ? competition.end_date.split('T')[0] : '',
         status: competition.status || 'active',
         rules: competition.rules || '',
-        eligibility: competition.eligibility || ''
+        eligibility: competition.eligibility || '',
+        registrationFee: competition.registration_fee
+          ? Math.round(competition.registration_fee / 100)
+          : 0
       });
 
       // Parse prizes list
@@ -53,7 +57,8 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
         endDate: '',
         status: 'active',
         rules: '',
-        eligibility: ''
+        eligibility: '',
+        registrationFee: 0
       });
       setPrizes([{ rank: '1st Rank', reward: '' }]);
     }
@@ -92,9 +97,15 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
     // Filter out any completely empty prize rows
     const activePrizes = prizes.filter(p => p.rank.trim() || p.reward.trim());
 
+    // Convert fee from INR (display) → paise (storage)
+    const feeInPaise = formData.registrationFee
+      ? Math.round(parseFloat(formData.registrationFee) * 100)
+      : 0;
+
     onSave({
       ...formData,
-      prizePool: activePrizes.length > 0 ? JSON.stringify(activePrizes) : ''
+      prizePool: activePrizes.length > 0 ? JSON.stringify(activePrizes) : '',
+      registrationFee: feeInPaise
     });
   };
 
@@ -292,7 +303,7 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
                 Status
@@ -315,6 +326,34 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
                 <option value="active">Active</option>
                 <option value="completed">Completed</option>
               </select>
+            </div>
+
+            {/* Registration Fee */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                Registration Fee (₹)
+              </label>
+              <input
+                type="number"
+                name="registrationFee"
+                value={formData.registrationFee}
+                onChange={handleChange}
+                min="0"
+                step="1"
+                placeholder="0 = Free"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  outline: 'none',
+                  background: 'rgba(0,0,0,0.01)',
+                  color: 'inherit'
+                }}
+              />
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                Set to 0 for free registration
+              </div>
             </div>
           </div>
 
