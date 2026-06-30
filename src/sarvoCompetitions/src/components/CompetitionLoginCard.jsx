@@ -22,7 +22,7 @@ const CompetitionLoginCard = ({ navigate }) => {
 
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const res = await fetch(`${apiBase}/employees/students/login`, {
+      const res = await fetch(`${apiBase}/payments/competition/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password: password.trim() })
