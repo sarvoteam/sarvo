@@ -135,7 +135,7 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
     display: 'block',
     fontSize: '0.75rem',
     fontWeight: 700,
-    color: '#475569',
+    color: 'var(--modal-text-secondary)',
     marginBottom: '6px',
     textTransform: 'uppercase',
     letterSpacing: '0.05em'
@@ -145,9 +145,9 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
     width: '100%',
     padding: '10px 12px 10px 36px',
     borderRadius: '10px',
-    border: '1px solid #cbd5e1',
-    background: '#f8fafc',
-    color: '#0f172a',
+    border: '1px solid var(--modal-input-border)',
+    background: 'var(--modal-input-bg)',
+    color: 'var(--modal-text-primary)',
     outline: 'none',
     fontSize: '0.9rem',
     fontFamily: 'inherit',
@@ -166,7 +166,7 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.45)',
+      backgroundColor: 'var(--modal-overlay-bg)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -182,8 +182,8 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
       `}</style>
       
       <div style={{
-        background: '#ffffff',
-        border: '1px solid rgba(0, 0, 0, 0.08)',
+        background: 'var(--modal-bg)',
+        border: '1px solid var(--modal-border)',
         borderRadius: '24px',
         width: '100%',
         maxWidth: '680px',
@@ -200,9 +200,9 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
             position: 'absolute',
             top: '20px',
             right: '20px',
-            background: 'rgba(0, 0, 0, 0.05)',
-            border: 'none',
-            color: '#475569',
+            background: 'var(--modal-input-bg)',
+            border: '1px solid var(--modal-border)',
+            color: 'var(--modal-text-secondary)',
             cursor: 'pointer',
             padding: '8px',
             borderRadius: '50%',
@@ -211,8 +211,8 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
             justifyContent: 'center',
             transition: 'background-color 0.2s'
           }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.1)'}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--modal-input-border)'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--modal-input-bg)'}
         >
           <X size={18} />
         </button>
@@ -223,14 +223,14 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
           gap: '10px',
           fontSize: '1.5rem',
           fontWeight: 800,
-          color: '#0f172a',
+          color: 'var(--modal-text-primary)',
           margin: '0 0 6px 0',
           paddingRight: '40px'
         }}>
           <Sparkles size={22} style={{ color: 'var(--comps-accent, #fbbf24)' }} />
           Register: {title}
         </h2>
-        <p style={{ color: '#475569', fontSize: '0.9rem', margin: '0 0 1.5rem 0' }}>
+        <p style={{ color: 'var(--modal-text-secondary)', fontSize: '0.9rem', margin: '0 0 1.5rem 0' }}>
           Enter your information below to register. A student login account will be automatically created and emailed to you.
         </p>
 
@@ -304,21 +304,21 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
             }}>
               <CheckCircle size={36} />
             </div>
-            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 8px 0', color: '#0f172a' }}>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--modal-text-primary)' }}>
               Registration Successful!
             </h3>
-            <p style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.5, maxWidth: '480px', margin: '0 auto 1.25rem' }}>
+            <p style={{ color: 'var(--modal-text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, maxWidth: '480px', margin: '0 auto 1.25rem' }}>
               Your seat for <strong>{title}</strong> has been secured. We have sent a confirmation email to <strong>{formData.studentEmail}</strong>.
             </p>
-            <p style={{ color: '#d97706', fontSize: '0.88rem', fontWeight: 600, maxWidth: '480px', margin: '0 auto 1.5rem' }}>
+            <p style={{ color: 'var(--comps-accent)', fontSize: '0.88rem', fontWeight: 600, maxWidth: '480px', margin: '0 auto 1.5rem' }}>
               Please check your inbox (and spam folder) for your welcome credentials and temporary password to log in to the SARVO Student Portal!
             </p>
             <button
               onClick={onClose}
               style={{
-                background: 'rgba(15, 23, 42, 0.05)',
-                color: '#0f172a',
-                border: '1px solid rgba(15, 23, 42, 0.1)',
+                background: 'var(--modal-input-bg)',
+                color: 'var(--modal-text-primary)',
+                border: '1px solid var(--modal-border)',
                 borderRadius: '12px',
                 padding: '10px 24px',
                 fontSize: '0.9rem',
@@ -326,8 +326,8 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
                 cursor: 'pointer',
                 transition: 'all 0.2s'
               }}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(15,23,42,0.1)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(15,23,42,0.05)'}
+              onMouseOver={(e) => e.currentTarget.style.background = 'var(--modal-input-border)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'var(--modal-input-bg)'}
             >
               Close Window
             </button>
@@ -426,11 +426,11 @@ const CompetitionRegisterModal = ({ competition, onClose }) => {
                   disabled={isSubmitting}
                   style={inputNoIconStyle}
                 >
-                  <option value="" style={{ background: '#ffffff', color: '#0f172a' }}>Select Gender</option>
-                  <option value="Male" style={{ background: '#ffffff', color: '#0f172a' }}>Male</option>
-                  <option value="Female" style={{ background: '#ffffff', color: '#0f172a' }}>Female</option>
-                  <option value="Other" style={{ background: '#ffffff', color: '#0f172a' }}>Other</option>
-                  <option value="Prefer not to say" style={{ background: '#ffffff', color: '#0f172a' }}>Prefer not to say</option>
+                  <option value="" style={{ background: 'var(--modal-bg)', color: 'var(--modal-text-primary)' }}>Select Gender</option>
+                  <option value="Male" style={{ background: 'var(--modal-bg)', color: 'var(--modal-text-primary)' }}>Male</option>
+                  <option value="Female" style={{ background: 'var(--modal-bg)', color: 'var(--modal-text-primary)' }}>Female</option>
+                  <option value="Other" style={{ background: 'var(--modal-bg)', color: 'var(--modal-text-primary)' }}>Other</option>
+                  <option value="Prefer not to say" style={{ background: 'var(--modal-bg)', color: 'var(--modal-text-primary)' }}>Prefer not to say</option>
                 </select>
               </div>
 

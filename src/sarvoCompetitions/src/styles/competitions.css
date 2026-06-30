@@ -10,6 +10,24 @@
   --comps-accent-glow: rgba(251, 191, 36, 0.12);
   --comps-success: #34d399;
   --comps-danger: #f43f5e;
+
+  /* Card variables for theme responsive style */
+  --card-bg-grad: linear-gradient(135deg, rgba(45, 18, 77, 0.9) 0%, rgba(25, 9, 46, 0.9) 100%);
+  --card-border-glow: rgba(139, 92, 246, 0.2);
+  --card-border-hover: rgba(168, 85, 247, 0.55);
+  --card-shadow-luxury: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.04);
+  --card-shadow-hover: 0 20px 48px rgba(109, 40, 217, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  --text-mute: rgba(255, 255, 255, 0.5);
+  --card-inner-bg: rgba(255, 255, 255, 0.03);
+
+  /* Modal variables for theme responsive style */
+  --modal-bg: #111827;
+  --modal-border: rgba(255, 255, 255, 0.08);
+  --modal-text-primary: #f8fafc;
+  --modal-text-secondary: #94a3b8;
+  --modal-input-bg: rgba(255, 255, 255, 0.02);
+  --modal-input-border: rgba(255, 255, 255, 0.08);
+  --modal-overlay-bg: rgba(3, 7, 18, 0.7);
   
   min-height: 100vh;
   display: flex;
@@ -38,6 +56,24 @@
   --comps-accent: #d97706;
   --comps-accent-secondary: #b45309;
   --comps-accent-glow: rgba(217, 119, 6, 0.08);
+
+  /* Card variables for theme responsive style */
+  --card-bg-grad: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(243, 244, 246, 0.75) 100%);
+  --card-border-glow: rgba(168, 85, 247, 0.12);
+  --card-border-hover: rgba(168, 85, 247, 0.45);
+  --card-shadow-luxury: 0 8px 24px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+  --card-shadow-hover: 0 16px 36px rgba(109, 40, 217, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  --text-mute: rgba(15, 23, 42, 0.55);
+  --card-inner-bg: rgba(109, 40, 217, 0.03);
+
+  /* Modal variables for theme responsive style */
+  --modal-bg: #ffffff;
+  --modal-border: rgba(0, 0, 0, 0.08);
+  --modal-text-primary: #0f172a;
+  --modal-text-secondary: #475569;
+  --modal-input-bg: #f8fafc;
+  --modal-input-border: #cbd5e1;
+  --modal-overlay-bg: rgba(15, 23, 42, 0.45);
 }
 
 /* Ambient Radial Glow Backdrops */
@@ -382,7 +418,7 @@
 .comps-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem 200px;
+  gap: 1.5rem 2rem;
   margin-bottom: 6rem;
 }
 
@@ -926,41 +962,41 @@
 }
 
 /* Premium Light Theme for the registration section inputs and container */
-.registration-section {
+[data-theme='light'] .registration-section {
   background: #ffffff !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05) !important;
 }
 
-.registration-section h2 {
+[data-theme='light'] .registration-section h2 {
   color: #0f172a !important;
 }
 
-.registration-section p {
+[data-theme='light'] .registration-section p {
   color: #475569 !important;
 }
 
-.registration-section label {
+[data-theme='light'] .registration-section label {
   color: #475569 !important;
 }
 
-.registration-section input,
-.registration-section select {
+[data-theme='light'] .registration-section input,
+[data-theme='light'] .registration-section select {
   border: 1px solid #cbd5e1 !important;
   background: #f8fafc !important;
   color: #0f172a !important;
 }
 
-.registration-section input::placeholder {
+[data-theme='light'] .registration-section input::placeholder {
   color: rgba(15, 23, 42, 0.35) !important;
 }
 
-.registration-section input:focus,
-.registration-section select:focus {
+[data-theme='light'] .registration-section input:focus,
+[data-theme='light'] .registration-section select:focus {
   border-color: var(--comps-accent) !important;
 }
 
-.registration-section select option {
+[data-theme='light'] .registration-section select option {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }

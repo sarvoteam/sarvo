@@ -260,7 +260,7 @@ const CompetitionDetailView = ({ competition, onBack }) => {
                         <div style={{
                           fontSize: '14px',
                           fontWeight: 700,
-                          color: 'var(--text-main)',
+                          color: 'var(--text-primary-luxury)',
                           lineHeight: 1.45
                         }}>
                           {p.reward}
@@ -574,11 +574,11 @@ const CompetitionDetailView = ({ competition, onBack }) => {
                         transition: 'border-color 0.2s'
                       }}
                     >
-                      <option value="" style={{ background: '#1e293b' }}>Select Gender</option>
-                      <option value="Male" style={{ background: '#1e293b' }}>Male</option>
-                      <option value="Female" style={{ background: '#1e293b' }}>Female</option>
-                      <option value="Other" style={{ background: '#1e293b' }}>Other</option>
-                      <option value="Prefer not to say" style={{ background: '#1e293b' }}>Prefer not to say</option>
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
                     </select>
                   </div>
 

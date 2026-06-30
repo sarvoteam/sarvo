@@ -11,6 +11,7 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
 
   // Configure Questions State
   const [activeTestFilter, setActiveTestFilter] = useState('apti_test'); // apti_test or tech_test
+  const [activeContext, setActiveContext] = useState('training'); // training or competition
   const [questions, setQuestions] = useState([]);
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
@@ -28,11 +29,14 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
   const [students, setStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Load questions based on activeTestFilter
+  // Load questions based on activeTestFilter and activeContext
   const loadQuestions = async () => {
     setLoading(true);
     try {
-      const data = await lmsApi.getInterviewQuestions(activeTestFilter);
+      const apiTestId = activeContext === 'competition'
+        ? (activeTestFilter === 'apti_test' ? 'competition_apti_test' : 'competition_tech_test')
+        : activeTestFilter;
+      const data = await lmsApi.getInterviewQuestions(apiTestId);
       // Parse options if stored as string
       const parsed = data.map(q => ({
         ...q,
@@ -67,7 +71,7 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
     } else if (subNavItem === 'Student Scores') {
       loadStudents();
     }
-  }, [subNavItem, activeTestFilter]);
+  }, [subNavItem, activeTestFilter, activeContext]);
 
   // Open modal for new question
   const handleOpenAddModal = () => {
@@ -103,8 +107,12 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
       return;
     }
 
+    const apiTestId = activeContext === 'competition'
+      ? (activeTestFilter === 'apti_test' ? 'competition_apti_test' : 'competition_tech_test')
+      : activeTestFilter;
+
     const payload = {
-      testId: activeTestFilter,
+      testId: apiTestId,
       questionText: formText,
       options: [formOptA, formOptB, formOptC, formOptD],
       correctOption: Number(formCorrectIdx),
@@ -126,6 +134,31 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
       console.error('Failed to save question:', err);
       setErrorMsg(err.message || 'Error saving question details.');
       setTimeout(() => setErrorMsg(null), 4000);
+    }
+  };
+
+  // Copy questions from Competition to Training
+  const handleCopyFromCompetition = async () => {
+    const fromTestId = activeTestFilter === 'apti_test' ? 'competition_apti_test' : 'competition_tech_test';
+    const toTestId = activeTestFilter;
+    
+    const categoryName = activeTestFilter === 'apti_test' ? 'Aptitude' : 'Technical';
+    if (!window.confirm(`Are you sure you want to replace all Training ${categoryName} questions with the Competition ${categoryName} questions?`)) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const res = await lmsApi.copyQuestions(fromTestId, toTestId);
+      setSuccessMsg(`Successfully copied ${res.copiedCount || 0} questions from Competition to Training.`);
+      loadQuestions();
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err) {
+      console.error('Failed to copy questions:', err);
+      setErrorMsg('Failed to copy questions from Competition.');
+      setTimeout(() => setErrorMsg(null), 4000);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -196,78 +229,258 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
       {/* ────────────────── CONFIGURE QUESTIONS VIEW ────────────────── */}
       {subNavItem === 'Configure Questions' && (
         <div>
+          {/* Section Cards Panel */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '20px',
+            marginBottom: '30px'
+          }}>
+            {/* Training Card */}
+            <div 
+              onClick={() => setActiveContext('training')}
+              style={{
+                padding: '20px',
+                borderRadius: '12px',
+                border: activeContext === 'training' ? '2px solid var(--active-blue)' : '1px solid var(--border-color)',
+                background: 'var(--card-bg)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: activeContext === 'training' ? '0 8px 24px rgba(0, 123, 245, 0.08)' : 'none',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                minHeight: '140px'
+              }}
+            >
+              {activeContext === 'training' && (
+                <span style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  background: 'rgba(0, 123, 245, 0.1)',
+                  color: 'var(--active-blue)',
+                  fontSize: '9.5px',
+                  fontWeight: 800,
+                  padding: '2px 8px',
+                  borderRadius: '100px',
+                  textTransform: 'uppercase'
+                }}>
+                  Selected
+                </span>
+              )}
+              <div>
+                <h3 style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 6px 0' }}>
+                  Training Mock Exams
+                </h3>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '0 0 16px 0', lineHeight: '1.4' }}>
+                  Configure logic reasoning and coding practice tests used by students for workspace placement training.
+                </p>
+              </div>
+              
+              {/* Internal Sub-toggles */}
+              <div 
+                onClick={(e) => e.stopPropagation()} 
+                style={{ display: 'flex', gap: '8px' }}
+              >
+                <button
+                  onClick={() => {
+                    setActiveContext('training');
+                    setActiveTestFilter('apti_test');
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: (activeContext === 'training' && activeTestFilter === 'apti_test') ? 'var(--active-blue)' : 'var(--primary-bg)',
+                    color: (activeContext === 'training' && activeTestFilter === 'apti_test') ? 'white' : 'var(--text-main)',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Aptitude Test
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveContext('training');
+                    setActiveTestFilter('tech_test');
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: (activeContext === 'training' && activeTestFilter === 'tech_test') ? 'var(--active-blue)' : 'var(--primary-bg)',
+                    color: (activeContext === 'training' && activeTestFilter === 'tech_test') ? 'white' : 'var(--text-main)',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Technical Assessment
+                </button>
+              </div>
+            </div>
+
+            {/* Competition Card */}
+            <div 
+              onClick={() => setActiveContext('competition')}
+              style={{
+                padding: '20px',
+                borderRadius: '12px',
+                border: activeContext === 'competition' ? '2px solid var(--active-blue)' : '1px solid var(--border-color)',
+                background: 'var(--card-bg)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: activeContext === 'competition' ? '0 8px 24px rgba(0, 123, 245, 0.08)' : 'none',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                minHeight: '140px'
+              }}
+            >
+              {activeContext === 'competition' && (
+                <span style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  background: 'rgba(0, 123, 245, 0.1)',
+                  color: 'var(--active-blue)',
+                  fontSize: '9.5px',
+                  fontWeight: 800,
+                  padding: '2px 8px',
+                  borderRadius: '100px',
+                  textTransform: 'uppercase'
+                }}>
+                  Selected
+                </span>
+              )}
+              <div>
+                <h3 style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 6px 0' }}>
+                  Competition Challenges
+                </h3>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '0 0 16px 0', lineHeight: '1.4' }}>
+                  Configure live placement hackathons and active assessments synced with official portal events.
+                </p>
+              </div>
+              
+              {/* Internal Sub-toggles */}
+              <div 
+                onClick={(e) => e.stopPropagation()} 
+                style={{ display: 'flex', gap: '8px' }}
+              >
+                <button
+                  onClick={() => {
+                    setActiveContext('competition');
+                    setActiveTestFilter('apti_test');
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: (activeContext === 'competition' && activeTestFilter === 'apti_test') ? 'var(--active-blue)' : 'var(--primary-bg)',
+                    color: (activeContext === 'competition' && activeTestFilter === 'apti_test') ? 'white' : 'var(--text-main)',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Aptitude Test
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveContext('competition');
+                    setActiveTestFilter('tech_test');
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: (activeContext === 'competition' && activeTestFilter === 'tech_test') ? 'var(--active-blue)' : 'var(--primary-bg)',
+                    color: (activeContext === 'competition' && activeTestFilter === 'tech_test') ? 'white' : 'var(--text-main)',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Technical Assessment
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Section Action Bar & Title */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '24px',
             flexWrap: 'wrap',
-            gap: '16px'
+            gap: '16px',
+            borderTop: '1px solid var(--border-color)',
+            paddingTop: '20px'
           }}>
-            {/* Filter Buttons */}
-            <div style={{
-              display: 'flex',
-              background: 'var(--primary-bg)',
-              padding: '4px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)'
-            }}>
-              <button
-                onClick={() => setActiveTestFilter('apti_test')}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: activeTestFilter === 'apti_test' ? 'var(--card-bg)' : 'transparent',
-                  color: 'var(--text-main)',
-                  fontWeight: activeTestFilter === 'apti_test' ? 700 : 500,
-                  fontSize: '12.5px',
-                  cursor: 'pointer',
-                  boxShadow: activeTestFilter === 'apti_test' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Aptitude Test Questions
-              </button>
-              <button
-                onClick={() => setActiveTestFilter('tech_test')}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: activeTestFilter === 'tech_test' ? 'var(--card-bg)' : 'transparent',
-                  color: 'var(--text-main)',
-                  fontWeight: activeTestFilter === 'tech_test' ? 700 : 500,
-                  fontSize: '12.5px',
-                  cursor: 'pointer',
-                  boxShadow: activeTestFilter === 'tech_test' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Technical Assessment Questions
-              </button>
+            <div>
+              <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-main)', textTransform: 'capitalize' }}>
+                {activeContext === 'training' ? 'Training Mode' : 'Competition Mode'} / {activeTestFilter === 'apti_test' ? 'Aptitude Questions' : 'Technical Questions'}
+              </h4>
+              <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                Currently showing configured question bank lists.
+              </p>
             </div>
 
-            {/* Add Button */}
-            <button
-              onClick={handleOpenAddModal}
-              style={{
-                padding: '8px 16px',
-                background: 'var(--active-blue)',
-                border: 'none',
-                color: 'white',
-                borderRadius: '8px',
-                fontWeight: 700,
-                fontSize: '13px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 12px rgba(0, 123, 245, 0.15)'
-              }}
-            >
-              <Plus size={15} /> Add Question
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {activeContext === 'training' && (
+                <button
+                  onClick={handleCopyFromCompetition}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-main)',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--active-blue)'}
+                  onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                >
+                  Copy from Competition
+                </button>
+              )}
+
+              <button
+                onClick={handleOpenAddModal}
+                style={{
+                  padding: '8px 16px',
+                  background: 'var(--active-blue)',
+                  border: 'none',
+                  color: 'white',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 4px 12px rgba(0, 123, 245, 0.15)'
+                }}
+              >
+                <Plus size={15} /> Add Question
+              </button>
+            </div>
           </div>
 
           {/* List of Questions */}
