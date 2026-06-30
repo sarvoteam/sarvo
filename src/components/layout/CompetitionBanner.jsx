@@ -7,19 +7,8 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const CompetitionBanner = () => {
   const [competitions, setCompetitions] = useState([]);
   const [offset, setOffset] = useState(0);
-  const [isScrolled, setIsScrolled] = useState(false);
   const trackRef = useRef(null);
   const animRef = useRef(null);
-
-  // Scroll listener for sticky dynamic top
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     fetch(`${API_BASE}/competitions/list`, {
@@ -33,15 +22,15 @@ const CompetitionBanner = () => {
       .catch(() => {});
   }, []);
 
-  // Update CSS variable --banner-height on root element
+  // Update CSS variable --banner-height on body instead of hardcoded fixed style
   useEffect(() => {
     if (competitions.length > 0) {
-      document.documentElement.style.setProperty('--banner-height', '128px');
+      document.body.classList.add('has-competition-banner');
     } else {
-      document.documentElement.style.setProperty('--banner-height', '0px');
+      document.body.classList.remove('has-competition-banner');
     }
     return () => {
-      document.documentElement.style.setProperty('--banner-height', '0px');
+      document.body.classList.remove('has-competition-banner');
     };
   }, [competitions]);
 
@@ -83,23 +72,9 @@ const CompetitionBanner = () => {
   const items = [...competitions, ...competitions];
 
   return (
-    <div style={{
-      width: '100%',
-      background: 'linear-gradient(135deg, #0f0a1e 0%, #1a0b3b 40%, #2d1b69 70%, #1e0a4a 100%)',
-      borderBottom: '2px solid rgba(139, 92, 246, 0.4)',
-      overflow: 'hidden',
-      position: 'fixed',
-      top: isScrolled ? '68px' : '88px',
-      left: 0,
-      right: 0,
-      zIndex: 90,
-      height: '128px',
-      transition: 'top 0.6s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s',
-    }}>
+    <div className="competition-banner-container">
       {/* Animated glow orbs */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden',
-      }}>
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         <div style={{
           position: 'absolute', top: '-40px', left: '15%',
           width: '450px', height: '180px',
@@ -115,12 +90,7 @@ const CompetitionBanner = () => {
       </div>
 
       {/* Label pill */}
-      <div style={{
-        position: 'absolute', left: 0, top: 0, bottom: 0, zIndex: 2,
-        display: 'flex', alignItems: 'center',
-        background: 'linear-gradient(90deg, #1a0b3b 0%, #1a0b3b 85%, transparent 100%)',
-        paddingRight: '30px',
-      }}>
+      <div className="banner-label-wrapper">
         <div style={{
           display: 'flex', alignItems: 'center', gap: '8px',
           background: 'rgba(16, 185, 129, 0.12)',
@@ -145,19 +115,11 @@ const CompetitionBanner = () => {
       </div>
 
       {/* Fade edges */}
-      <div style={{
-        position: 'absolute', left: '220px', top: 0, bottom: 0, width: '80px', zIndex: 1,
-        background: 'linear-gradient(90deg, #1a0b3b, transparent)',
-        pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'absolute', right: 0, top: 0, bottom: 0, width: '100px', zIndex: 1,
-        background: 'linear-gradient(270deg, #0f0a1e, transparent)',
-        pointerEvents: 'none',
-      }} />
+      <div className="banner-fade-left" />
+      <div className="banner-fade-right" />
 
       {/* Scrolling Track */}
-      <div style={{ overflow: 'hidden', paddingLeft: '270px', paddingRight: '100px', height: '128px', display: 'flex', alignItems: 'center' }}>
+      <div className="banner-track-container">
         <div
           ref={trackRef}
           style={{
@@ -178,72 +140,31 @@ const CompetitionBanner = () => {
                 style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
               >
                 {/* Card pill */}
-                <div
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '16px',
-                    background: 'rgba(139,92,246,0.08)',
-                    border: '1.5px solid rgba(139,92,246,0.25)',
-                    borderRadius: '100px',
-                    padding: '14px 32px 14px 18px',
-                    margin: '0 24px',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = 'rgba(139,92,246,0.18)';
-                    e.currentTarget.style.transform = 'scale(1.03)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'rgba(139,92,246,0.08)';
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                >
+                <div className="banner-card-pill">
                   {/* Icon */}
-                  <div style={{
-                    width: '48px', height: '48px', borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                    boxShadow: '0 4px 12px rgba(124,58,237,0.3)',
-                  }}>
+                  <div className="banner-card-icon">
                     <Trophy size={22} color="#fff" />
                   </div>
 
                   {/* Title */}
-                  <span style={{
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: '20px', fontWeight: 800,
-                    color: '#e9d5ff', maxWidth: '320px',
-                    overflow: 'hidden', textOverflow: 'ellipsis',
-                    textShadow: '0 2px 10px rgba(233, 213, 255, 0.2)'
-                  }}>
+                  <span className="banner-card-title">
                     {comp.title}
                   </span>
 
                   {/* Divider */}
-                  <span style={{ color: 'rgba(196,181,253,0.3)', fontSize: '18px', fontFamily: 'var(--font-body)' }}>|</span>
+                  <span className="banner-card-divider">|</span>
 
                   {/* Registered students */}
-                  <span style={{
-                    fontFamily: 'var(--font-body)',
-                    display: 'inline-flex', alignItems: 'center', gap: '8px',
-                    fontSize: '16px', color: '#c4b5fd', fontWeight: 600
-                  }}>
+                  <span className="banner-card-meta">
                     <Users size={18} /> {regCount} registered
                   </span>
 
                   {/* Divider */}
-                  {prize && <span style={{ color: 'rgba(196,181,253,0.3)', fontSize: '18px', fontFamily: 'var(--font-body)' }}>|</span>}
+                  {prize && <span className="banner-card-divider">|</span>}
 
                   {/* Top prize */}
                   {prize && (
-                    <span style={{
-                      fontFamily: 'var(--font-body)',
-                      display: 'inline-flex', alignItems: 'center', gap: '8px',
-                      fontSize: '16px', color: '#fde68a', fontWeight: 700,
-                      textShadow: '0 2px 8px rgba(253, 230, 138, 0.3)'
-                    }}>
+                    <span className="banner-card-prize">
                       <Star size={16} fill="#fde68a" color="#fde68a" /> {prize}
                     </span>
                   )}
@@ -251,11 +172,8 @@ const CompetitionBanner = () => {
                   {/* Date */}
                   {comp.end_date && (
                     <>
-                      <span style={{ color: 'rgba(196,181,253,0.3)', fontSize: '18px', fontFamily: 'var(--font-body)' }}>|</span>
-                      <span style={{
-                        fontFamily: 'var(--font-body)',
-                        fontSize: '15px', color: 'rgba(196,181,253,0.6)'
-                      }}>
+                      <span className="banner-card-divider">|</span>
+                      <span className="banner-card-end-date">
                         Ends {formatDate(comp.end_date)}
                       </span>
                     </>
@@ -273,9 +191,220 @@ const CompetitionBanner = () => {
       </div>
 
       <style>{`
+        .competition-banner-container {
+          position: absolute;
+          top: 88px;
+          left: 0;
+          right: 0;
+          z-index: 90;
+          height: 110px;
+          width: 100%;
+          background: linear-gradient(135deg, #0f0a1e 0%, #1a0b3b 40%, #2d1b69 70%, #1e0a4a 100%);
+          border-bottom: 2px solid rgba(139, 92, 246, 0.4);
+          overflow: hidden;
+        }
+
+        .banner-label-wrapper {
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          background: linear-gradient(90deg, #1a0b3b 0%, #1a0b3b 85%, transparent 100%);
+          padding-right: 30px;
+        }
+
+        .banner-fade-left {
+          position: absolute;
+          left: 220px;
+          top: 0;
+          bottom: 0;
+          width: 80px;
+          z-index: 1;
+          background: linear-gradient(90deg, #1a0b3b, transparent);
+          pointer-events: none;
+        }
+
+        .banner-fade-right {
+          position: absolute;
+          right: 0;
+          top: 0;
+          bottom: 0;
+          width: 100px;
+          z-index: 1;
+          background: linear-gradient(270deg, #0f0a1e, transparent);
+          pointer-events: none;
+        }
+
+        .banner-track-container {
+          overflow: hidden;
+          padding-left: 270px;
+          padding-right: 100px;
+          height: 110px;
+          display: flex;
+          align-items: center;
+        }
+
+        .banner-card-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 16px;
+          background: rgba(139,92,246,0.08);
+          border: 1.5px solid rgba(139,92,246,0.25);
+          border-radius: 100px;
+          padding: 14px 32px 14px 18px;
+          margin: 0 24px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .banner-card-pill:hover {
+          background: rgba(139,92,246,0.18) !important;
+          transform: scale(1.03);
+        }
+
+        .banner-card-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #7c3aed, #a78bfa);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+        }
+        
+        .banner-card-title {
+          font-family: var(--font-heading);
+          font-size: 20px;
+          font-weight: 800;
+          color: #e9d5ff;
+          max-width: 320px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          text-shadow: 0 2px 10px rgba(233, 213, 255, 0.2);
+        }
+
+        .banner-card-divider {
+          color: rgba(196,181,253,0.3);
+          font-size: 18px;
+          font-family: var(--font-body);
+        }
+
+        .banner-card-meta {
+          font-family: var(--font-body);
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 16px;
+          color: #c4b5fd;
+          font-weight: 600;
+        }
+
+        .banner-card-prize {
+          font-family: var(--font-body);
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 16px;
+          color: #fde68a;
+          font-weight: 700;
+          text-shadow: 0 2px 8px rgba(253, 230, 138, 0.3);
+        }
+
+        .banner-card-end-date {
+          font-family: var(--font-body);
+          font-size: 15px;
+          color: rgba(196,181,253,0.6);
+        }
+
         @keyframes shimmer {
           0% { background-position: -200% center; }
           100% { background-position: 200% center; }
+        }
+
+        @media (max-width: 768px) {
+          .competition-banner-container {
+            top: 68px;
+            height: 120px;
+          }
+          
+          .banner-label-wrapper {
+            position: absolute;
+            left: 50%;
+            top: 12px;
+            bottom: auto;
+            transform: translateX(-50%);
+            background: transparent;
+            padding-right: 0;
+            width: 100%;
+            justify-content: center;
+          }
+
+          .banner-label-wrapper > div {
+            margin-left: 0 !important;
+          }
+
+          .banner-fade-left {
+            display: none;
+          }
+
+          .banner-fade-right {
+            width: 30px;
+          }
+
+          .banner-track-container {
+            padding-left: 0;
+            padding-right: 0;
+            margin-top: 45px;
+            height: 65px;
+            width: 100%;
+          }
+
+          .banner-card-pill {
+            padding: 6px 16px 6px 10px;
+            margin: 0 8px;
+            gap: 10px;
+          }
+
+          .banner-card-icon {
+            width: 32px !important;
+            height: 32px !important;
+          }
+          .banner-card-icon svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+          .banner-card-title {
+            font-size: 14px !important;
+            max-width: 140px !important;
+          }
+          .banner-card-divider {
+            font-size: 14px !important;
+          }
+          .banner-card-meta {
+            font-size: 13px !important;
+            gap: 4px !important;
+          }
+          .banner-card-meta svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+          .banner-card-prize {
+            font-size: 13px !important;
+            gap: 4px !important;
+          }
+          .banner-card-prize svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+          .banner-card-end-date {
+            font-size: 12px !important;
+          }
         }
       `}</style>
     </div>
