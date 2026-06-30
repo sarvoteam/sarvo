@@ -12,6 +12,16 @@ import { MessageSquare } from 'lucide-react';
 import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 
+// Student Section Components
+import StudentBatchDetails from './components/StudentBatchDetails';
+import StudentAttendanceView from './components/StudentAttendanceView';
+import StudentTestsSection from './components/StudentTestsSection';
+import ProjectSection from './components/ProjectSection';
+import LMSSection from './components/LMSSection';
+import PlacementSection from './components/PlacementSection';
+import AIFeaturesSection from './components/AIFeaturesSection';
+import CertificateSection from './components/CertificateSection';
+
 
 export default function App() {
   const [employee, setEmployee] = useState(() => {
@@ -203,6 +213,22 @@ export default function App() {
           <TasksSection />
         ) : activeTab === 'admin' ? (
           <AdminPanel />
+        ) : activeTab === 'student_batch' ? (
+          <StudentBatchDetails currentUser={employee} />
+        ) : activeTab === 'student_attendance' ? (
+          <StudentAttendanceView currentUser={employee} />
+        ) : activeTab === 'tests' ? (
+          <StudentTestsSection currentUser={employee} />
+        ) : activeTab === 'projects' ? (
+          <ProjectSection currentUser={employee} />
+        ) : activeTab === 'lms' ? (
+          <LMSSection currentUser={employee} />
+        ) : activeTab === 'placements' ? (
+          <PlacementSection currentUser={employee} />
+        ) : activeTab === 'aihub' ? (
+          <AIFeaturesSection currentUser={employee} />
+        ) : activeTab === 'certificates' ? (
+          <CertificateSection currentUser={employee} />
         ) : (
           <div style={{ padding: '40px', color: '#6b7280', textAlign: 'center' }}>
             <h2>{activeTab.toUpperCase()} Section</h2>

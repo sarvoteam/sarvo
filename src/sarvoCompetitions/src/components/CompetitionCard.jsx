@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Calendar, ArrowRight, Award, Compass } from 'lucide-react';
+import { Calendar, ArrowRight, Award, Compass, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const CompetitionCard = ({ competition, onView }) => {
+const CompetitionCard = ({ competition, onView, onRegister }) => {
   const { title, description, start_date, end_date, status, eligibility, prize_pool } = competition;
   const [isHovered, setIsHovered] = useState(false);
 
@@ -83,15 +83,25 @@ const CompetitionCard = ({ competition, onView }) => {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '12px',
+            flexWrap: 'wrap',
             fontSize: '0.82rem',
             color: 'rgba(255, 255, 255, 0.5)',
             fontWeight: 600
           }}>
-            <Calendar size={13} style={{ color: '#a855f7' }} />
-            <span>
-              {formatDate(start_date)} - {formatDate(end_date)}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Calendar size={13} style={{ color: '#a855f7' }} />
+              <span>
+                {formatDate(start_date)} - {formatDate(end_date)}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Users size={13} style={{ color: '#38bdf8' }} />
+              <span>
+                {competition.registration_count || 0} Registered
+              </span>
+            </div>
           </div>
         </div>
 
@@ -201,22 +211,67 @@ const CompetitionCard = ({ competition, onView }) => {
         justifyContent: 'space-between',
         paddingTop: '16px',
         borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-        fontSize: '0.85rem',
-        fontWeight: 800,
-        color: isHovered ? '#ffffff' : '#c084fc',
         zIndex: 2,
-        letterSpacing: '0.05em',
-        transition: 'color 0.3s ease'
+        gap: '12px'
       }}>
-        <span>VIEW CHALLENGE DETAILS</span>
-        <ArrowRight 
-          size={16} 
-          style={{ 
-            transform: isHovered ? 'translateX(6px)' : 'translateX(0)',
-            transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease',
-            color: isHovered ? '#ffffff' : '#c084fc'
-          }} 
-        />
+        {/* Left: View Details */}
+        <div 
+          onClick={onView}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '0.8rem',
+            fontWeight: 800,
+            color: isHovered ? '#ffffff' : '#c084fc',
+            letterSpacing: '0.05em',
+            transition: 'color 0.3s ease',
+            cursor: 'pointer'
+          }}
+        >
+          <span>VIEW DETAILS</span>
+          <ArrowRight 
+            size={14} 
+            style={{ 
+              transform: isHovered ? 'translateX(4px)' : 'translateX(0)',
+              transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+              color: isHovered ? '#ffffff' : '#c084fc'
+            }} 
+          />
+        </div>
+
+        {/* Right: Register Now button */}
+        {status === 'active' && onRegister && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRegister(competition);
+            }}
+            style={{
+              background: 'linear-gradient(135deg, #a855f7, #6d28d9)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '8px 18px',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(109, 40, 217, 0.2)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              fontFamily: 'inherit'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(109, 40, 217, 0.35)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(109, 40, 217, 0.2)';
+            }}
+          >
+            Register Now
+          </button>
+        )}
       </div>
     </motion.div>
   );

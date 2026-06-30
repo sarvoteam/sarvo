@@ -14,6 +14,7 @@ import ProductPage from '../pages/ProductPage';
 import SarvoPeoplePage from '../pages/SarvoPeoplePage';
 import SarvoCareersPage from '../sarvoCareers/src/pages/SarvoCareersPage';
 import SarvoCompetitionsPage from '../sarvoCompetitions/src/pages/SarvoCompetitionsPage';
+import CompetitionTestPage from '../sarvoCompetitions/src/pages/CompetitionTestPage';
 
 export default function AppRouter({ 
   employee, 
@@ -33,6 +34,7 @@ export default function AppRouter({
       <Route path="/product" element={<ProductPage />} />
       <Route path="/sarvo-careers" element={<SarvoCareersPage />} />
       <Route path="/sarvo-competitions" element={<SarvoCompetitionsPage />} />
+      <Route path="/competition-test" element={<CompetitionTestPage />} />
 
       {/* Sarvo People Portal - Nested Route Wildcard */}
       <Route 
