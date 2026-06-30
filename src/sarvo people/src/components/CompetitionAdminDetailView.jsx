@@ -3,6 +3,7 @@ import { ArrowLeft, Calendar, Award, Users, UserMinus, Plus, Search, Mail, Phone
 import { competitionApi } from '../apis/competitionApi';
 import { paymentApi } from '../apis/paymentApi';
 import { loadRazorpayScript } from '../utils/razorpayLoader';
+import PaymentDetailModal from './PaymentDetailModal';
 
 const CompetitionAdminDetailView = ({ competition, onBack }) => {
   const [registrations, setRegistrations] = useState([]);
@@ -11,6 +12,9 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
   
   // Enrollment modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Payment detail modal state
+  const [selectedPayment, setSelectedPayment] = useState(null);
   
   // Registration form state
   const [formData, setFormData] = useState({
@@ -472,23 +476,31 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
                         ) : '—'}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '3px 8px',
-                          borderRadius: '10px',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          background: reg.payment_status === 'paid'
-                            ? 'rgba(16, 185, 129, 0.1)'
-                            : 'rgba(100, 116, 139, 0.1)',
-                          color: reg.payment_status === 'paid' ? '#10b981' : '#64748b',
-                          border: reg.payment_status === 'paid'
-                            ? '1px solid rgba(16, 185, 129, 0.3)'
-                            : '1px solid rgba(100, 116, 139, 0.2)'
-                        }}>
+                        <span
+                          onClick={() => reg.payment_status === 'paid' && setSelectedPayment(reg)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '3px 8px',
+                            borderRadius: '10px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            background: reg.payment_status === 'paid'
+                              ? 'rgba(16, 185, 129, 0.1)'
+                              : 'rgba(100, 116, 139, 0.1)',
+                            color: reg.payment_status === 'paid' ? '#10b981' : '#64748b',
+                            border: reg.payment_status === 'paid'
+                              ? '1px solid rgba(16, 185, 129, 0.3)'
+                              : '1px solid rgba(100, 116, 139, 0.2)',
+                            cursor: reg.payment_status === 'paid' ? 'pointer' : 'default',
+                            transition: 'transform 0.15s, box-shadow 0.15s',
+                          }}
+                          onMouseOver={(e) => { if (reg.payment_status === 'paid') { e.currentTarget.style.transform = 'scale(1.07)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(16,185,129,0.25)'; } }}
+                          onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                          title={reg.payment_status === 'paid' ? 'Click to view payment details' : ''}
+                        >
                           {reg.payment_status === 'paid'
                             ? <><CheckCircle size={11} /> Paid</>
                             : <><CreditCard size={11} /> Free</>
@@ -968,6 +980,14 @@ const CompetitionAdminDetailView = ({ competition, onBack }) => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Payment Detail Modal — rendered outside enrollment modal to avoid z-index issues */}
+      {selectedPayment && (
+        <PaymentDetailModal
+          registration={selectedPayment}
+          onClose={() => setSelectedPayment(null)}
+        />
       )}
     </div>
   );
