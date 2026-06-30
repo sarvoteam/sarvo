@@ -17,8 +17,8 @@ const Footer = () => {
 
   const supportLinks = [
     { name: 'Product', to: '/product' },
-    { name: 'Privacy Policy', to: '#' },
-    { name: 'Terms of Service', to: '#' },
+    { name: 'Privacy Policy', to: '/privacy' },
+    { name: 'Terms of Service', to: '/terms' },
   ];
 
   const linkStyle = {
@@ -29,7 +29,7 @@ const Footer = () => {
   };
 
   return (
-    <footer style={{ padding: 'clamp(3rem, 8vh, 5rem) 0 2rem', borderTop: '1px solid var(--glass-border)' }}>
+    <footer style={{ background: 'var(--footer-bg)', position: 'relative', padding: 'clamp(3rem, 8vh, 5rem) 0 2rem', borderTop: '1px solid var(--glass-border)' }}>
       <div className="container">
         <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '3rem', marginBottom: '4rem' }}>
 
@@ -61,7 +61,7 @@ const Footer = () => {
             <div style={{ display: 'flex', gap: '1.2rem' }}>
               {[
                 { icon: <FaTwitter size={18} />, href: '#' },
-                { icon: <FaLinkedin size={18} />, href: 'https://www.linkedin.com/in/sarvo-team-490718405?utm_source=share_via&utm_content=profile&utm_medium=member_android' },
+                { icon: <FaLinkedin size={18} />, href: 'https://www.linkedin.com/company/sarvoprime/' },
                 { icon: <FaGithub size={18} />, href: 'https://github.com/sarvoteam' },
                 { icon: <FaInstagram size={18} />, href: 'https://www.instagram.com/sarvo.in' },
               ].map((s, i) => (
@@ -83,7 +83,7 @@ const Footer = () => {
               {companyLinks.map(l => (
                 <li key={l.name}>
                   <Link to={l.to} style={linkStyle}
-                    onMouseOver={e => e.currentTarget.style.color = 'white'}
+                    onMouseOver={e => e.currentTarget.style.color = 'var(--accent-primary)'}
                     onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
                   >
                     {l.name}
@@ -100,7 +100,7 @@ const Footer = () => {
               {supportLinks.map(l => (
                 <li key={l.name}>
                   <Link to={l.to} style={linkStyle}
-                    onMouseOver={e => e.currentTarget.style.color = 'white'}
+                    onMouseOver={e => e.currentTarget.style.color = 'var(--accent-primary)'}
                     onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
                   >
                     {l.name}

@@ -70,7 +70,7 @@ const FeaturedWork = () => (
               borderRadius: '24px',
               overflow: 'hidden',
               border: '1px solid var(--glass-border)',
-              background: 'rgba(255,255,255,0.02)',
+              background: 'var(--stats-card-bg)',
               transition: 'var(--transition-smooth)'
             }}
           >
@@ -139,7 +139,7 @@ const ServiceTeaser = () => {
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1, duration: 0.6 }}
               whileHover={{ y: -10 }}
-              style={{ padding: '2.5rem', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)', transition: 'var(--transition-smooth)' }}
+              style={{ padding: '2.5rem', borderRadius: '24px', background: 'var(--stats-card-bg)', border: '1px solid var(--glass-border)', transition: 'var(--transition-smooth)' }}
             >
               <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: `rgba(${s.color === '#4f46e5' ? '79,70,229' : s.color === '#0ea5e9' ? '14,165,233' : '139,92,246'}, 0.1)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, marginBottom: '1.5rem' }}>
                 {s.icon}

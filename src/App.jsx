@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import Navbar from './components/layout/Navbar';
+import CompetitionBanner from './components/layout/CompetitionBanner';
 import Footer from './components/layout/Footer';
 import CursorTrail from './components/layout/CursorTrail';
 import IntroAnimation from './components/layout/IntroAnimation';
@@ -116,6 +117,7 @@ function AppContent() {
         <CursorTrail />
         <ScrollProgress />
         <Navbar />
+        {location.pathname === '/' && <CompetitionBanner />}
 
         <ErrorBoundary>
           <AppRouter 

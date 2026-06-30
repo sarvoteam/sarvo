@@ -5,7 +5,7 @@ import { useTheme } from "../../context/ThemeContext";
 
 import AankshaImg from "../../../Photo/Aanksha.jpeg";
 import OmImg from "../../../Photo/Om.jpeg";
-import RohitImg from "../../../Photo/Rohit.jpeg";
+import RohitImg from "../../../Photo/RohitImg.jpeg";
 import SanikaImg from "../../../Photo/sanika.png";
 import VaishnavImg from "../../../Photo/Vaishnav.jpeg";
 
@@ -115,41 +115,64 @@ const Team = () => {
         {/* Full-bleed heading strip */}
         <div style={{
           margin: "0 calc(-50vw + 50%)",
-          padding: "1.2rem calc(50vw - 50%)",
-          background: isDark
-            ? "rgba(255,255,255,0.04)"
-            : "rgba(255,255,255,0.92)",
-          borderTop: "1px solid rgba(99,102,241,0.12)",
-          borderBottom: "1px solid rgba(99,102,241,0.12)",
-          backdropFilter: "blur(12px)",
-          marginBottom: "2rem",
+          padding: "2rem calc(50vw - 50% + 2rem)",
+          background: "linear-gradient(135deg, #26174d 0%, #3a2467 50%, #4f2f8b 100%)",
+          borderTop: "1px solid rgba(255, 255, 255, 0.15)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
+          backdropFilter: "blur(16px)",
+          marginBottom: "3rem",
           textAlign: "center",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 10px 40px -10px rgba(79, 70, 229, 0.35), inset 0 0 20px rgba(255, 255, 255, 0.05)"
         }}>
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{
-              color: "var(--accent-primary)",
-              fontWeight: 700,
-              letterSpacing: "0.05em",
-              fontSize: "2rem",
-              fontFamily: "'Caveat', cursive",
-              display: "block",
-              marginBottom: "0.4rem",
-            }}
-          >
-            Visionaries
-          </motion.span>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="section-title"
-            style={{ margin: 0 }}
-          >
-            Meet Our <span className="gradient-text">Leadership</span>
-          </motion.h2>
+          {/* Blurred circles for subtle glow */}
+          <div style={{ position: 'absolute', top: '-30px', left: '25%', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(168, 85, 247, 0.35)', filter: 'blur(35px)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: '-30px', right: '25%', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.25)', filter: 'blur(35px)', pointerEvents: 'none' }} />
+
+          {/* Top Decorative Line */}
+          <div style={{ 
+            height: '1px', 
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2) 20%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.2) 80%, transparent)', 
+            width: '60%', 
+            margin: '0 auto 1.2rem' 
+          }} />
+
+          {/* Tagline */}
+          <span style={{ 
+            fontSize: '0.75rem', 
+            fontWeight: 800, 
+            textTransform: 'uppercase', 
+            letterSpacing: '0.35em', 
+            color: 'rgba(255,255,255,0.85)', 
+            display: 'block', 
+            marginBottom: '0.5rem',
+            fontFamily: "'Outfit', 'Inter', sans-serif"
+          }}>
+            ✦ OUR LEADERSHIP ✦
+          </span>
+
+          {/* Cursive Subtitle */}
+          <p style={{
+            fontFamily: "'Caveat', cursive",
+            fontSize: '2.5rem',
+            color: 'rgba(255, 255, 255, 0.95)',
+            letterSpacing: '0.02em',
+            margin: '0.5rem 0 1.2rem',
+            fontWeight: 700,
+            lineHeight: 1.4,
+            textShadow: "0 0 15px rgba(255,255,255,0.4), 0 0 30px rgba(168,85,247,0.3)"
+          }}>
+            Meet the Visionaries Behind SARVO PRIME
+          </p>
+
+          {/* Bottom Decorative Line */}
+          <div style={{ 
+            height: '1px', 
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2) 20%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.2) 80%, transparent)', 
+            width: '60%', 
+            margin: '0 auto' 
+          }} />
         </div>
 
         <motion.div
@@ -240,14 +263,14 @@ const Team = () => {
                     />
                   </div>
 
-                  {/* Name with full-bleed bg strip */}
+                  {/* Name with full-bleed bg strip (Blue/Indigo Shade) */}
                   <div style={{
                     margin: "0.5rem -1.8rem",
                     padding: "0.6rem 1.8rem",
                     background: isDark
-                      ? "linear-gradient(90deg, rgba(99,102,241,0.12) 0%, rgba(99,102,241,0.06) 100%)"
-                      : "linear-gradient(90deg, rgba(30,58,138,0.07) 0%, rgba(30,58,138,0.03) 100%)",
-                    borderLeft: isDark ? "3px solid rgba(129,140,248,0.5)" : "3px solid rgba(30,58,138,0.4)",
+                      ? "linear-gradient(90deg, rgba(30, 58, 138, 0.35) 0%, rgba(30, 58, 138, 0.1) 100%)"
+                      : "linear-gradient(90deg, rgba(30, 58, 138, 0.08) 0%, rgba(30, 58, 138, 0.02) 100%)",
+                    borderLeft: isDark ? "3px solid #6366f1" : "3px solid #1e3a8a",
                     marginBottom: "0.75rem",
                   }}>
                     <h3
@@ -266,8 +289,14 @@ const Team = () => {
                     </h3>
                   </div>
 
-                  {/* Role labels */}
+                  {/* Role labels container (Purple/Violet Shade) */}
                   <div style={{
+                    margin: "0.5rem -1.8rem",
+                    padding: "0.6rem 1.8rem",
+                    background: isDark
+                      ? "linear-gradient(90deg, rgba(88, 28, 135, 0.35) 0%, rgba(88, 28, 135, 0.1) 100%)"
+                      : "linear-gradient(90deg, rgba(120, 53, 191, 0.08) 0%, rgba(120, 53, 191, 0.02) 100%)",
+                    borderLeft: isDark ? "3px solid #a855f7" : "3px solid #6b21a8",
                     textAlign: "center",
                     marginBottom: "0.75rem",
                     minHeight: "3rem",
@@ -281,7 +310,7 @@ const Team = () => {
                     <div style={{ display: "flex", alignItems: "center", gap: "0", flexWrap: "nowrap" }}>
                       {member.roles.slice(0, -1).map((r, i) => (
                         <span key={i} style={{
-                          color: "var(--text-primary)",
+                          color: isDark ? "#e9d5ff" : "#581c87",
                           fontWeight: 800,
                           fontSize: "0.78rem",
                           textTransform: "uppercase",
@@ -295,7 +324,7 @@ const Team = () => {
                     </div>
                     {/* Co-Founder — strong, theme-aware */}
                     <span style={{
-                      color: isDark ? "#818cf8" : "#1e3a8a",
+                      color: isDark ? "#c084fc" : "#7e22ce",
                       fontWeight: 700,
                       fontSize: "0.64rem",
                       textTransform: "uppercase",
