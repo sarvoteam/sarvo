@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 
+const formatDateTimeLocal = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const pad = (num) => String(num).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -11,7 +18,8 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
     status: 'active',
     rules: '',
     eligibility: '',
-    registrationFee: 0
+    registrationFee: 0,
+    examStartTime: ''
   });
 
   const [prizes, setPrizes] = useState([{ rank: '1st Rank', reward: '' }]);
@@ -30,7 +38,8 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
         eligibility: competition.eligibility || '',
         registrationFee: competition.registration_fee
           ? Math.round(competition.registration_fee / 100)
-          : 0
+          : 0,
+        examStartTime: competition.exam_start_time ? formatDateTimeLocal(competition.exam_start_time) : ''
       });
 
       // Parse prizes list
@@ -58,7 +67,8 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
         status: 'active',
         rules: '',
         eligibility: '',
-        registrationFee: 0
+        registrationFee: 0,
+        examStartTime: ''
       });
       setPrizes([{ rank: '1st Rank', reward: '' }]);
     }
@@ -102,8 +112,18 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
       ? Math.round(parseFloat(formData.registrationFee) * 100)
       : 0;
 
+    let examStartTimeISO = null;
+    if (formData.examStartTime) {
+      try {
+        examStartTimeISO = new Date(formData.examStartTime).toISOString();
+      } catch (err) {
+        console.error('Error formatting examStartTime to ISO:', err);
+      }
+    }
+
     onSave({
       ...formData,
+      examStartTime: examStartTimeISO,
       prizePool: activePrizes.length > 0 ? JSON.stringify(activePrizes) : '',
       registrationFee: feeInPaise
     });
@@ -354,6 +374,31 @@ const CompetitionDrawer = ({ isOpen, onClose, competition, onSave }) => {
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 Set to 0 for free registration
               </div>
+            </div>
+          </div>
+
+          {/* Exam Start Time */}
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
+              Exam Start Time (Scheduled start for student exam portal)
+            </label>
+            <input
+              type="datetime-local"
+              name="examStartTime"
+              value={formData.examStartTime}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                outline: 'none',
+                background: 'rgba(0,0,0,0.01)',
+                color: 'inherit'
+              }}
+            />
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              If scheduled, students will not be able to start the quiz inside their portal until this exact date-time is reached.
             </div>
           </div>
 

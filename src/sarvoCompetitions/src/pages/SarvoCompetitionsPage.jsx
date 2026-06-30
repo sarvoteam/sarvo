@@ -2,18 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
 import sarvoLogo from '../../../assets/sarvo.jpg';
 import { Sun, Moon, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import '../styles/competitions.css';
 
 import CompetitionsHero from '../components/CompetitionsHero';
 import CompetitionCard from '../components/CompetitionCard';
 import CompetitionDetailView from '../components/CompetitionDetailView';
+import CompetitionRegisterModal from '../components/CompetitionRegisterModal';
+import CompetitionLoginCard from '../components/CompetitionLoginCard';
 import { competitionApi } from '../../../sarvo people/src/apis/competitionApi';
 import Footer from '../../../components/layout/Footer';
 
 const SarvoCompetitionsPage = () => {
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [competitions, setCompetitions] = useState([]);
   const [selectedComp, setSelectedComp] = useState(null);
+  const [registeringComp, setRegisteringComp] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -131,6 +136,7 @@ const SarvoCompetitionsPage = () => {
                       key={comp.id}
                       competition={comp}
                       onView={() => setSelectedComp(comp)}
+                      onRegister={(c) => setRegisteringComp(c)}
                     />
                   ))
                 ) : (
@@ -139,6 +145,7 @@ const SarvoCompetitionsPage = () => {
                     <p>We couldn't find any competitions matching your search criteria. Try adjusting your filters.</p>
                   </div>
                 )}
+                <CompetitionLoginCard navigate={navigate} />
               </div>
             )}
           </main>
@@ -147,6 +154,13 @@ const SarvoCompetitionsPage = () => {
         <CompetitionDetailView
           competition={selectedComp}
           onBack={() => setSelectedComp(null)}
+        />
+      )}
+
+      {registeringComp && (
+        <CompetitionRegisterModal
+          competition={registeringComp}
+          onClose={() => setRegisteringComp(null)}
         />
       )}
 

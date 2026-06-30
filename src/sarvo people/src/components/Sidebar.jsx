@@ -51,9 +51,11 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
     ],
     Student: [
       { id: 'home', label: 'My Space', icon: Home },
-      { id: 'lms', label: 'LMS Study', icon: BookOpen },
+      { id: 'student_batch', label: 'Batch Details', icon: Layers },
+      { id: 'student_attendance', label: 'My Attendance', icon: Fingerprint },
       { id: 'tests', label: 'Interview Tests', icon: ClipboardList },
       { id: 'projects', label: 'My Projects', icon: Folder },
+      { id: 'lms', label: 'LMS Study', icon: BookOpen },
       { id: 'placements', label: 'Job Placements', icon: Briefcase },
       { id: 'aihub', label: 'AI Prep Hub', icon: Cpu },
       { id: 'certificates', label: 'My Certificate', icon: Award }
@@ -69,13 +71,6 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
       { id: 'certificates', label: 'My Certificate', icon: Award },
       { id: 'leave', label: 'Leaves', icon: Umbrella },
       { id: 'attendance', label: 'Attendance', icon: Fingerprint }
-    ],
-    Student: [
-      { id: 'home', label: 'My Space', icon: Home },
-      { id: 'student_batch', label: 'Batch Details', icon: Layers },
-      { id: 'student_attendance', label: 'My Attendance', icon: Fingerprint },
-      { id: 'projects', label: 'My Projects', icon: Folder },
-      { id: 'lms', label: 'LMS Study', icon: BookOpen }
     ]
   };
  

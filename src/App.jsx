@@ -65,6 +65,7 @@ function AppContent() {
   const isSarvoPeople = location.pathname.startsWith('/sarvo-people');
   const isSarvoCareers = location.pathname.startsWith('/sarvo-careers');
   const isSarvoCompetitions = location.pathname.startsWith('/sarvo-competitions');
+  const isCompetitionTest = location.pathname.startsWith('/competition-test');
 
   const [showIntro, setShowIntro] = useState(false);
 
@@ -87,7 +88,7 @@ function AppContent() {
   };
 
   // Standalone pages (no main site header/footer)
-  if (isSarvoPeople || isSarvoCareers || isSarvoCompetitions) {
+  if (isSarvoPeople || isSarvoCareers || isSarvoCompetitions || isCompetitionTest) {
     return (
       <ErrorBoundary>
         <AppRouter 
