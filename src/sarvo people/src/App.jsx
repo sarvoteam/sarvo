@@ -11,6 +11,7 @@ import CalendarView from './components/CalendarView';
 import { MessageSquare } from 'lucide-react';
 import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
+import { employeeApi } from './apis/employeeApi';
 
 // Student Section Components
 import StudentBatchDetails from './components/StudentBatchDetails';
@@ -90,12 +91,21 @@ export default function App() {
     if (!employee) return;
     const fetchEmployee = async () => {
       try {
-        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-        const res = await fetch(`${apiBase}/employees/${employee.employee_id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setEmployee(data);
-          localStorage.setItem('sarvo_current_user', JSON.stringify(data));
+        const data = await employeeApi.getProfile();
+        if (data) {
+          const mappedUser = {
+            id: data.id,
+            employee_id: data.employee_code,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            email: data.email,
+            role: data.role,
+            department: data.department_name,
+            designation: data.designation_name,
+            allowed_modules: data.allowed_modules
+          };
+          setEmployee(mappedUser);
+          localStorage.setItem('sarvo_current_user', JSON.stringify(mappedUser));
         }
       } catch (err) {
         // Fallback for mock mode
@@ -109,7 +119,7 @@ export default function App() {
     // Poll occasionally to keep avatar and checkin state synced
     const interval = setInterval(fetchEmployee, 3000);
     return () => clearInterval(interval);
-  }, [employee?.employee_id]);
+  }, [employee?.id || employee?.employee_id]);
 
   const isStudent = employee?.role === 'Student';
 

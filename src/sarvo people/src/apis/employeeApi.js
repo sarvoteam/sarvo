@@ -24,5 +24,8 @@ export const employeeApi = {
   },
   updateEmployeeProfile: async (employeeId, profileData) => {
     return await api.put(`/employees/${employeeId}/profile`, profileData);
+  },
+  updateAllowedModules: async (employeeId, allowedModules) => {
+    return await api.put(`/employees/${employeeId}/allowed-modules`, { allowedModules });
   }
 };
