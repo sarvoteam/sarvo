@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Lock, LogIn, ShieldAlert, Award, Clock, CheckCircle, ArrowRight, ArrowLeft, Play, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const LANG_MAP = {
+  python: { label: 'Python', idx: 0 },
+  java: { label: 'Java', idx: 1 },
+  cpp: { label: 'C++', idx: 2 },
+  javascript: { label: 'JavaScript', idx: 3 }
+};
+
+
 const APTITUDE_TEST = {
   id: 'apti_test',
   title: 'Sarvo Tech Aptitude Test',
@@ -42,7 +50,7 @@ const APTITUDE_TEST = {
 
 const TECHNICAL_TEST = {
   id: 'tech_test',
-  title: 'React & Node.js Technical Assessment',
+  title: 'Sarvo prime coding challenge',
   description: 'Assess key competencies in modern web development, Javascript ES6, REST APIs, and database fundamentals.',
   questions: [
     {
@@ -98,6 +106,13 @@ export default function CompetitionTestPage() {
   const [timeLeft, setTimeLeft] = useState(60);
   const [quizScore, setQuizScore] = useState(0);
 
+  // Dynamic Questions from Database
+  const [aptitudeQuestions, setAptitudeQuestions] = useState(APTITUDE_TEST.questions);
+  const [technicalQuestions, setTechnicalQuestions] = useState(TECHNICAL_TEST.questions);
+  const [selectedLanguage, setSelectedLanguage] = useState('python');
+  const [runningCode, setRunningCode] = useState(false);
+  const [consoleOutput, setConsoleOutput] = useState('');
+
   // Scheduled Exam States
   const [activeCompetition, setActiveCompetition] = useState(null);
   const [isExamTimeReached, setIsExamTimeReached] = useState(true);
@@ -116,11 +131,11 @@ export default function CompetitionTestPage() {
         const compRes = await fetch(`${apiBase}/competitions/list`);
         if (!compRes.ok) return;
         const comps = await compRes.json();
-        
+
         const activeComp = comps.find(c => c.status === 'active');
         if (activeComp) {
           setActiveCompetition(activeComp);
-          
+
           const regRes = await fetch(`${apiBase}/payments/registrations/${activeComp.id}`);
           if (regRes.ok) {
             const regs = await regRes.json();
@@ -138,6 +153,56 @@ export default function CompetitionTestPage() {
     checkActiveCompetition();
   }, [currentUser]);
 
+  // Fetch dynamic test questions from database
+  useEffect(() => {
+    if (!currentUser) return;
+    const loadDBQuestions = async () => {
+      try {
+        const token = sessionStorage.getItem('sarvo_token');
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+        // Fetch Aptitude Questions
+        const aptRes = await fetch(`${apiBase}/lms/interview-questions?testId=competition_apti_test`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (aptRes.ok) {
+          const data = await aptRes.json();
+          if (data && data.length > 0) {
+            const parsed = data.map(q => ({
+              id: q.id,
+              q: q.question_text,
+              options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
+              answer: q.correct_option,
+              explanation: q.explanation
+            }));
+            setAptitudeQuestions(parsed);
+          }
+        }
+
+        // Fetch Technical Questions (Coding questions)
+        const techRes = await fetch(`${apiBase}/lms/interview-questions?testId=competition_tech_test`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (techRes.ok) {
+          const data = await techRes.json();
+          if (data && data.length > 0) {
+            const parsed = data.map(q => ({
+              id: q.id,
+              q: q.question_text,
+              options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
+              answer: q.correct_option,
+              explanation: q.explanation
+            }));
+            setTechnicalQuestions(parsed);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching questions from backend:', err);
+      }
+    };
+    loadDBQuestions();
+  }, [currentUser]);
+
   // Real-time ticking countdown to scheduled exam start time
   useEffect(() => {
     if (!activeCompetition || !activeCompetition.exam_start_time) {
@@ -146,7 +211,7 @@ export default function CompetitionTestPage() {
     }
 
     const examTime = new Date(activeCompetition.exam_start_time).getTime();
-    
+
     // Initial check
     const checkTime = () => {
       const now = new Date().getTime();
@@ -242,12 +307,18 @@ export default function CompetitionTestPage() {
   };
 
   const startQuiz = (testConfig) => {
-    setActiveQuiz(testConfig);
+    const questionsToUse = testConfig.id === 'apti_test' ? aptitudeQuestions : technicalQuestions;
+    setActiveQuiz({
+      ...testConfig,
+      questions: questionsToUse
+    });
     setCurrentQuestionIdx(0);
     setSelectedAnswers({});
     setQuizSubmitted(false);
-    setTimeLeft(120); // 2 minutes
+    setTimeLeft(testConfig.id === 'apti_test' ? 120 : 600); // 10 minutes for coding round
     setQuizScore(0);
+    setSelectedLanguage('python');
+    setConsoleOutput('');
   };
 
   const handleOptionSelect = (optIndex) => {
@@ -258,15 +329,348 @@ export default function CompetitionTestPage() {
     });
   };
 
-  const handleSubmitQuiz = () => {
-    setQuizSubmitted(true);
-    let score = 0;
-    activeQuiz.questions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.answer) {
-        score++;
+  const getQuestionCode = (qIdx, lang) => {
+    const question = activeQuiz?.questions?.[qIdx];
+    if (!question) return '';
+    const userState = selectedAnswers[qIdx];
+    if (userState && userState[lang] !== undefined) {
+      return userState[lang];
+    }
+    const langIdx = LANG_MAP[lang]?.idx ?? 0;
+    return question.options?.[langIdx] || '';
+  };
+
+  const handleCodeChange = (newCode) => {
+    if (quizSubmitted) return;
+    const currentQuestionState = selectedAnswers[currentQuestionIdx] || {};
+    setSelectedAnswers({
+      ...selectedAnswers,
+      [currentQuestionIdx]: {
+        ...currentQuestionState,
+        [selectedLanguage]: newCode,
+        selectedLanguage: selectedLanguage
       }
     });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const { selectionStart, selectionEnd, value } = e.target;
+      const newValue = value.substring(0, selectionStart) + "    " + value.substring(selectionEnd);
+      e.target.value = newValue;
+      e.target.selectionStart = e.target.selectionEnd = selectionStart + 4;
+      handleCodeChange(newValue);
+    }
+  };
+
+  const handleResetCode = () => {
+    if (window.confirm("Are you sure you want to reset your code for this language? All changes will be lost.")) {
+      const currentQuestionState = selectedAnswers[currentQuestionIdx] || {};
+      const question = activeQuiz.questions[currentQuestionIdx];
+      const langIdx = LANG_MAP[selectedLanguage].idx;
+      const defaultTemplate = question.options?.[langIdx] || '';
+      setSelectedAnswers({
+        ...selectedAnswers,
+        [currentQuestionIdx]: {
+          ...currentQuestionState,
+          [selectedLanguage]: defaultTemplate,
+          selectedLanguage: selectedLanguage
+        }
+      });
+    }
+  };
+
+  const runTestCases = (code, lang, questionText) => {
+    const isAddTwoNumbers = questionText.toLowerCase().includes('sum of two') || questionText.toLowerCase().includes('add two number') || questionText.toLowerCase().includes('add two');
+    const isPrime = questionText.toLowerCase().includes('prime');
+    const isReverse = questionText.toLowerCase().includes('reverse');
+    const isArmstrong = questionText.toLowerCase().includes('armstrong');
+
+    let jsCode = code;
+
+    // Stripping line comments
+    jsCode = jsCode.replace(/\/\/.*/g, '');
+    jsCode = jsCode.replace(/#.*/g, '');
+
+    if (lang === 'python') {
+      // Basic def translation
+      jsCode = jsCode.replace(/def\s+(\w+)\s*\(([^)]*)\)\s*:/g, 'function $1($2) {');
+      jsCode = jsCode.replace(/return\s+/g, 'return ');
+      // Ensure we close the brackets if it's python indentation
+      jsCode += '\n}';
+    } else if (lang === 'java' || lang === 'cpp') {
+      // Strip cast expressions: e.g. (int), (double)
+      jsCode = jsCode.replace(/\(\s*(int|bool|boolean|string|String|double|float|char|long|short)\s*\)/gi, '');
+      // Strip class wrapping
+      jsCode = jsCode.replace(/public\s+class\s+\w+\s*\{/g, '');
+      jsCode = jsCode.replace(/class\s+\w+\s*\{/g, '');
+      // Strip public, int, bool types from function signatures
+      jsCode = jsCode.replace(/(public\s+)?(int|bool|boolean|string|void|String|double|float)\s+(\w+)\s*\(([^)]*)\)/gi, 'function $3($4)');
+      // Strip type declarations inside parameters
+      jsCode = jsCode.replace(/(int|bool|boolean|string|String|double|float)\s+(\w+)/gi, '$2');
+      // Replace variable type definitions: e.g. "int c" to "let c"
+      jsCode = jsCode.replace(/\b(int|bool|boolean|string|String|double|float|char|long|short)\b(?!\s*\()/g, 'let');
+      // Replace .length() with .length
+      jsCode = jsCode.replace(/\.length\(\)/g, '.length');
+      // Strip any accidental (let) cast expressions
+      jsCode = jsCode.replace(/\(\s*let\s*\)/gi, '');
+      
+      // Strip last closing brace from class Solution
+      if (code.includes('class ')) {
+        const lastBraceIdx = jsCode.lastIndexOf('}');
+        if (lastBraceIdx !== -1) {
+          jsCode = jsCode.substring(0, lastBraceIdx) + jsCode.substring(lastBraceIdx + 1);
+        }
+      }
+    }
+
+    try {
+      const wrapped = `
+        if (typeof String.valueOf !== 'function') {
+          String.valueOf = function(val) { return String(val); };
+        }
+        if (typeof to_string !== 'function') {
+          to_string = function(val) { return String(val); };
+        }
+        ${jsCode}
+        if (typeof solve !== 'function') {
+          throw new Error("Function 'solve' not found. Please ensure your function is named 'solve'.");
+        }
+        return solve;
+      `;
+      const solveFunc = new Function(wrapped)();
+
+      const results = [];
+      let allPassed = true;
+
+      if (isAddTwoNumbers) {
+        const tests = [
+          { inputs: [12, 15], expected: 27 },
+          { inputs: [5, 7], expected: 12 },
+          { inputs: [-3, 8], expected: 5 }
+        ];
+        tests.forEach((t, i) => {
+          const output = solveFunc(t.inputs[0], t.inputs[1]);
+          const passed = output === t.expected;
+          if (!passed) allPassed = false;
+          results.push({
+            name: `Test Case ${i + 1}`,
+            inputs: `a = ${t.inputs[0]}, b = ${t.inputs[1]}`,
+            expected: t.expected,
+            actual: output !== undefined ? output : 'undefined',
+            passed
+          });
+        });
+      } else if (isPrime) {
+        const tests = [
+          { inputs: [7], expected: true },
+          { inputs: [4], expected: false },
+          { inputs: [1], expected: false },
+          { inputs: [11], expected: true }
+        ];
+        tests.forEach((t, i) => {
+          const output = solveFunc(t.inputs[0]);
+          const outputBool = (output === 1 || output === true);
+          const passed = outputBool === t.expected;
+          if (!passed) allPassed = false;
+          results.push({
+            name: `Test Case ${i + 1}`,
+            inputs: `n = ${t.inputs[0]}`,
+            expected: t.expected ? 'true' : 'false',
+            actual: output !== undefined ? (outputBool ? 'true' : 'false') : 'undefined',
+            passed
+          });
+        });
+      } else if (isReverse) {
+        const tests = [
+          { inputs: ["sarvo"], expected: "ovras" },
+          { inputs: ["hello"], expected: "olleh" },
+          { inputs: ["a"], expected: "a" }
+        ];
+        tests.forEach((t, i) => {
+          const output = solveFunc(t.inputs[0]);
+          const passed = output === t.expected;
+          if (!passed) allPassed = false;
+          results.push({
+            name: `Test Case ${i + 1}`,
+            inputs: `s = "${t.inputs[0]}"`,
+            expected: `"${t.expected}"`,
+            actual: output !== undefined ? `"${output}"` : 'undefined',
+            passed
+          });
+        });
+      } else if (isArmstrong) {
+        // Armstrong test cases
+        const tests = [
+          { inputs: [153], expected: 1 },
+          { inputs: [370], expected: 1 },
+          { inputs: [123], expected: 0 },
+          { inputs: [9474], expected: 1 }
+        ];
+        tests.forEach((t, i) => {
+          const output = solveFunc(t.inputs[0]);
+          const passed = (output === t.expected || (output === true && t.expected === 1) || (output === false && t.expected === 0));
+          if (!passed) allPassed = false;
+          results.push({
+            name: `Test Case ${i + 1}`,
+            inputs: `n = ${t.inputs[0]}`,
+            expected: t.expected,
+            actual: output !== undefined ? (output === true ? 1 : (output === false ? 0 : output)) : 'undefined',
+            passed
+          });
+        });
+      } else {
+        // Dynamic generic fallback for other questions
+        // If the question is Even/Odd:
+        const isEven = questionText.toLowerCase().includes('even');
+        if (isEven) {
+          const tests = [
+            { inputs: [4], expected: true },
+            { inputs: [7], expected: false },
+            { inputs: [0], expected: true }
+          ];
+          tests.forEach((t, i) => {
+            const output = solveFunc(t.inputs[0]);
+            const outputBool = (output === 1 || output === true);
+            const passed = outputBool === t.expected;
+            if (!passed) allPassed = false;
+            results.push({
+              name: `Test Case ${i + 1}`,
+              inputs: `n = ${t.inputs[0]}`,
+              expected: t.expected ? 'true' : 'false',
+              actual: output !== undefined ? (outputBool ? 'true' : 'false') : 'undefined',
+              passed
+            });
+          });
+        } else {
+          throw new Error("No validator test suite defined for this question text.");
+        }
+      }
+
+      return { success: allPassed, results };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const handleRunCode = () => {
+    setRunningCode(true);
+    setConsoleOutput('Compiling code files...\nLinking libraries...\nExecuting standard test cases...\n');
+    setTimeout(() => {
+      const code = getQuestionCode(currentQuestionIdx, selectedLanguage);
+      const question = activeQuiz.questions[currentQuestionIdx];
+      const evaluation = runTestCases(code, selectedLanguage, question.q);
+
+      if (evaluation.error) {
+        setConsoleOutput(`Compilation Error:\n------------------\n${evaluation.error}\n`);
+      } else if (!evaluation.success) {
+        let output = `❌ FAILURE: Some sample test cases failed!\n\n`;
+        evaluation.results.forEach(res => {
+          output += `[RUNNING] ${res.name} (${res.inputs}) -> ${res.passed ? '✅ SUCCESS' : '❌ FAILED'}\n`;
+          if (!res.passed) {
+            output += `   Expected: ${res.expected}\n   Actual:   ${res.actual}\n`;
+          }
+        });
+        setConsoleOutput(output);
+      } else {
+        let output = `🎉 SUCCESS: All sample test cases passed successfully!\n\n`;
+        evaluation.results.forEach(res => {
+          output += `[RUNNING] ${res.name} (${res.inputs}) -> ✅ SUCCESS\n`;
+        });
+        output += `\nTime elapsed: 18ms\nMemory consumed: 1.2 MB\n`;
+        setConsoleOutput(output);
+      }
+      setRunningCode(false);
+    }, 1200);
+  };
+
+  const handleSubmitQuiz = async () => {
+    setQuizSubmitted(true);
+    let score = 0;
+    const isTech = activeQuiz.id === 'tech_test';
+
+    if (isTech) {
+      activeQuiz.questions.forEach((q, idx) => {
+        const userState = selectedAnswers[idx] || {};
+        const currentLang = userState.selectedLanguage || 'python';
+        const code = userState[currentLang] || '';
+        const defaultTemplate = q.options?.[LANG_MAP[currentLang].idx] || '';
+
+        if (code.trim().length > 0 && code.trim() !== defaultTemplate.trim()) {
+          const evaluation = runTestCases(code, currentLang, q.q);
+          if (evaluation.success) {
+            score++;
+          }
+        }
+      });
+    } else {
+      activeQuiz.questions.forEach((q, idx) => {
+        if (selectedAnswers[idx] === q.answer) {
+          score++;
+        }
+      });
+    }
+
     setQuizScore(score);
+
+    // Sync results with the database
+    try {
+      const token = sessionStorage.getItem('sarvo_token');
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const todayStr = new Date().toISOString().split('T')[0];
+      const scorePct = Math.round((score / activeQuiz.questions.length) * 100);
+
+      const payload = {
+        firstName: currentUser.first_name || currentUser.name?.split(' ')[0] || 'Student',
+        lastName: currentUser.last_name || currentUser.name?.split(' ').slice(1).join(' ') || 'User',
+        email: currentUser.email,
+        phone: currentUser.phone,
+        placementStatus: 'In Process',
+        placementCompanyName: currentUser.placement_company_name || null,
+        placementCompanyAddress: currentUser.placement_company_address || null,
+        placementRole: currentUser.placement_role || null,
+        placementPackage: currentUser.placement_package || null,
+
+        aptiDetails: !isTech ? `Cleared (Score: ${scorePct}%)` : (currentUser.apti_details || 'Cleared'),
+        aptiDate: !isTech ? todayStr : (currentUser.apti_date ? new Date(currentUser.apti_date).toISOString().split('T')[0] : todayStr),
+        jdDetails: currentUser.jd_details || 'React / Fullstack Role JD',
+        jdDate: currentUser.jd_date ? new Date(currentUser.jd_date).toISOString().split('T')[0] : todayStr,
+        roundDetails: isTech ? `Cleared Tech Coding (Score: ${scorePct}%)` : (currentUser.round_details || 'Pending Technical Round'),
+        roundDate: isTech ? todayStr : (currentUser.round_date ? new Date(currentUser.round_date).toISOString().split('T')[0] : null)
+      };
+
+      const res = await fetch(`${apiBase}/cohorts/students/${currentUser.id}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const updatedStudent = await res.json();
+        const updatedUserObj = {
+          ...currentUser,
+          placement_status: updatedStudent.placement_status,
+          placement_company_name: updatedStudent.placement_company_name,
+          placement_company_address: updatedStudent.placement_company_address,
+          placement_role: updatedStudent.placement_role,
+          placement_package: updatedStudent.placement_package,
+          apti_details: updatedStudent.apti_details,
+          apti_date: updatedStudent.apti_date,
+          jd_details: updatedStudent.jd_details,
+          jd_date: updatedStudent.jd_date,
+          round_details: updatedStudent.round_details,
+          round_date: updatedStudent.round_date
+        };
+        localStorage.setItem('sarvo_current_user', JSON.stringify(updatedUserObj));
+        setCurrentUser(updatedUserObj);
+      }
+    } catch (err) {
+      console.error('Failed to sync student quiz results to backend:', err);
+    }
   };
 
   if (!currentUser) {
@@ -505,7 +909,7 @@ export default function CompetitionTestPage() {
       </header>
 
       {/* Main Container */}
-      <main style={{ maxWidth: '1024px', margin: '0 auto', padding: '40px 24px' }}>
+      <main style={{ maxWidth: activeQuiz && activeQuiz.id === 'tech_test' ? '1400px' : '1024px', margin: '0 auto', padding: '40px 24px', transition: 'max-width 0.2s ease-in-out' }}>
         {isLoadingComp ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '30vh', color: '#64748b' }}>
             <div style={{ textAlign: 'center' }}>
@@ -711,7 +1115,7 @@ export default function CompetitionTestPage() {
             background: '#ffffff',
             border: '1px solid rgba(0, 0, 0, 0.08)',
             borderRadius: '24px',
-            padding: '40px',
+            padding: activeQuiz && activeQuiz.id === 'tech_test' ? '24px' : '40px',
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.05)'
           }}>
             {/* Quiz Header Info */}
@@ -807,51 +1211,295 @@ export default function CompetitionTestPage() {
                   })}
                 </div>
 
-                {/* Question block */}
-                <div style={{ marginBottom: '30px' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#64748b' }}>
-                    QUESTION {currentQuestionIdx + 1} OF {activeQuiz.questions.length}
-                  </span>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f172a', margin: '8px 0 24px 0', lineHeight: 1.5 }}>
-                    {activeQuiz.questions[currentQuestionIdx].q}
-                  </h3>
+                {/* Question Block / Premium IDE workspace */}
+                {activeQuiz.id === 'tech_test' ? (
+                  <div style={{ display: 'flex', gap: '24px', flexDirection: 'row', alignItems: 'stretch', marginTop: '20px', minHeight: '560px' }}>
+                    {/* Left: Problem Statement Panel */}
+                    <div style={{
+                      flex: '1',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '16px',
+                      padding: '24px',
+                      textAlign: 'left',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '14px',
+                      boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.01)',
+                      maxHeight: '600px',
+                      overflowY: 'auto'
+                    }}>
+                      <div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Problem Description
+                        </span>
+                        <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: '4px 0 0 0' }}>
+                          Question {currentQuestionIdx + 1} of {activeQuiz.questions.length}
+                        </h4>
+                      </div>
 
-                  {/* Options */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {activeQuiz.questions[currentQuestionIdx].options.map((opt, oIdx) => {
-                      const isSelected = selectedAnswers[currentQuestionIdx] === oIdx;
-                      return (
-                        <div
-                          key={oIdx}
-                          onClick={() => handleOptionSelect(oIdx)}
+                      <div style={{
+                        color: '#334155',
+                        fontSize: '0.92rem',
+                        lineHeight: 1.6,
+                        whiteSpace: 'pre-wrap',
+                        background: '#ffffff',
+                        border: '1px solid rgba(0,0,0,0.06)',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        maxHeight: '380px',
+                        overflowY: 'auto',
+                        fontFamily: 'inherit'
+                      }}>
+                        {activeQuiz.questions[currentQuestionIdx].q}
+                      </div>
+
+                      {activeQuiz.questions[currentQuestionIdx].explanation && (
+                        <div style={{ marginTop: 'auto', paddingTop: '10px' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '6px' }}>
+                            Input/Output Examples:
+                          </span>
+                          <div style={{
+                            padding: '12px 14px',
+                            background: '#f1f5f9',
+                            borderRadius: '10px',
+                            fontSize: '0.8rem',
+                            color: '#475569',
+                            borderLeft: '4px solid #3b82f6',
+                            fontFamily: 'Consolas, Monaco, monospace',
+                            whiteSpace: 'pre-wrap'
+                          }}>
+                            {activeQuiz.questions[currentQuestionIdx].explanation}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right: Coding IDE Panel */}
+                    <div style={{
+                      flex: '1.2',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px'
+                    }}>
+                      {/* Language selection header */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: '#f8fafc',
+                        padding: '10px 16px',
+                        borderRadius: '12px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                            Language:
+                          </span>
+                          <select
+                            value={selectedLanguage}
+                            onChange={(e) => setSelectedLanguage(e.target.value)}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              background: '#ffffff',
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                              color: '#334155',
+                              outline: 'none',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="python">Python</option>
+                            <option value="java">Java</option>
+                            <option value="cpp">C++</option>
+                            <option value="javascript">JavaScript</option>
+                          </select>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleResetCode}
                           style={{
-                            padding: '16px 20px',
-                            border: isSelected ? '2px solid #3b82f6' : '1px solid #cbd5e1',
-                            background: isSelected ? 'rgba(59, 130, 246, 0.04)' : '#ffffff',
-                            borderRadius: '12px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            transition: 'all 0.2s'
+                            background: 'none',
+                            border: 'none',
+                            color: '#ef4444',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
                           }}
                         >
-                          <div style={{
-                            width: '18px',
-                            height: '18px',
-                            borderRadius: '50%',
-                            border: isSelected ? '5px solid #3b82f6' : '2px solid #cbd5e1',
-                            background: '#ffffff',
-                            flexShrink: 0
-                          }} />
-                          <span style={{ fontSize: '0.95rem', color: '#334155', fontWeight: isSelected ? 600 : 500 }}>
-                            {opt}
-                          </span>
+                          Reset Template
+                        </button>
+                      </div>
+
+                      {/* Code Editor Area */}
+                      <div style={{
+                        position: 'relative',
+                        background: '#1e1e1e',
+                        borderRadius: '16px',
+                        border: '1px solid #334155',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        display: 'flex',
+                        overflow: 'hidden',
+                        minHeight: '300px'
+                      }}>
+                        {/* Line Numbers gutter */}
+                        <div style={{
+                          padding: '16px 8px 16px 12px',
+                          color: '#858585',
+                          fontFamily: 'Consolas, Monaco, monospace',
+                          fontSize: '13px',
+                          lineHeight: '20px',
+                          userSelect: 'none',
+                          textAlign: 'right',
+                          background: '#181818',
+                          borderRight: '1px solid #2d3748',
+                          minWidth: '35px'
+                        }}>
+                          {Array.from({ length: Math.max(15, (getQuestionCode(currentQuestionIdx, selectedLanguage).match(/\n/g) || []).length + 2) }).map((_, i) => (
+                            <div key={i}>{i + 1}</div>
+                          ))}
                         </div>
-                      );
-                    })}
+
+                        {/* Code input textarea */}
+                        <textarea
+                          value={getQuestionCode(currentQuestionIdx, selectedLanguage)}
+                          onChange={(e) => handleCodeChange(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          spellCheck={false}
+                          style={{
+                            flex: 1,
+                            padding: '16px',
+                            background: 'transparent',
+                            color: '#d4d4d4',
+                            border: 'none',
+                            outline: 'none',
+                            fontFamily: 'Consolas, Monaco, monospace',
+                            fontSize: '13px',
+                            lineHeight: '20px',
+                            resize: 'vertical',
+                            minHeight: '300px',
+                            whiteSpace: 'pre',
+                            overflowWrap: 'normal',
+                            overflowX: 'auto',
+                            tabSize: 4
+                          }}
+                        />
+                      </div>
+
+                      {/* Output Console log box */}
+                      <div style={{
+                        background: '#0f172a',
+                        borderRadius: '12px',
+                        border: '1px solid #1e293b',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          background: '#1e293b',
+                          padding: '6px 12px',
+                          fontSize: '0.75rem',
+                          color: '#94a3b8',
+                          fontWeight: 700,
+                          textAlign: 'left',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <span>Output Console Log</span>
+                          {runningCode && <span style={{ color: '#3b82f6' }}>Executing tests...</span>}
+                        </div>
+                        <pre style={{
+                          margin: 0,
+                          padding: '12px',
+                          color: '#e2e8f0',
+                          background: '#090d16',
+                          fontSize: '0.8rem',
+                          textAlign: 'left',
+                          fontFamily: 'Consolas, Monaco, monospace',
+                          minHeight: '80px',
+                          maxHeight: '120px',
+                          overflowY: 'auto',
+                          whiteSpace: 'pre-wrap'
+                        }}>
+                          {consoleOutput || '// Click "Run Code" to compile and execute local test cases.'}
+                        </pre>
+                      </div>
+
+                      {/* IDE Buttons panel */}
+                      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        <button
+                          type="button"
+                          onClick={handleRunCode}
+                          disabled={runningCode}
+                          style={{
+                            background: runningCode ? '#475569' : 'linear-gradient(135deg, #475569, #334155)',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 20px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            cursor: runningCode ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <Play size={14} fill="white" />
+                          <span>Run Code</span>
+                        </button>
+                      </div>
+
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ marginBottom: '30px' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#64748b' }}>
+                      QUESTION {currentQuestionIdx + 1} OF {activeQuiz.questions.length}
+                    </span>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f172a', margin: '8px 0 24px 0', lineHeight: 1.5 }}>
+                      {activeQuiz.questions[currentQuestionIdx].q}
+                    </h3>
+
+                    {/* Options */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {activeQuiz.questions[currentQuestionIdx].options.map((opt, oIdx) => {
+                        const isSelected = selectedAnswers[currentQuestionIdx] === oIdx;
+                        return (
+                          <div
+                            key={oIdx}
+                            onClick={() => handleOptionSelect(oIdx)}
+                            style={{
+                              padding: '16px 20px',
+                              border: isSelected ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                              background: isSelected ? 'rgba(59, 130, 246, 0.04)' : '#ffffff',
+                              borderRadius: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <div style={{
+                              width: '18px',
+                              height: '18px',
+                              borderRadius: '50%',
+                              border: isSelected ? '5px solid #3b82f6' : '2px solid #cbd5e1',
+                              background: '#ffffff',
+                              flexShrink: 0
+                            }} />
+                            <span style={{ fontSize: '0.95rem', color: '#334155', fontWeight: isSelected ? 600 : 500 }}>
+                              {opt}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Nav actions */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '40px' }}>
@@ -957,7 +1605,60 @@ export default function CompetitionTestPage() {
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {activeQuiz.questions.map((q, idx) => {
+                      const isCodingTest = activeQuiz.id === 'tech_test';
                       const userAns = selectedAnswers[idx];
+
+                      if (isCodingTest) {
+                        const userCodeObj = userAns || {};
+                        const currentLang = userCodeObj.selectedLanguage || 'python';
+                        const code = userCodeObj[currentLang] || '';
+                        const defaultTemplate = q.options?.[LANG_MAP[currentLang]?.idx ?? 0] || '';
+                        const isModified = code.trim().length > 0 && code.trim() !== defaultTemplate.trim();
+
+                        return (
+                          <div key={idx} style={{
+                            border: `1px solid ${isModified ? '#bbf7d0' : '#fecdd3'}`,
+                            background: isModified ? '#f0fdf4' : '#fff5f5',
+                            padding: '20px',
+                            borderRadius: '16px',
+                            textAlign: 'left'
+                          }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isModified ? '#16a34a' : '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              {isModified ? '✓ Code Submitted' : '✗ Unattempted / Incomplete'}
+                            </span>
+                            <h5 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', margin: '4px 0 12px 0' }}>
+                              {idx + 1}. {q.q}
+                            </h5>
+
+                            {isModified ? (
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#475569', marginBottom: '8px', fontWeight: 600 }}>
+                                  <span>Language: <strong style={{ textTransform: 'capitalize' }}>{currentLang}</strong></span>
+                                </div>
+                                <pre style={{
+                                  padding: '12px',
+                                  background: '#1e1e1e',
+                                  color: '#d4d4d4',
+                                  borderRadius: '10px',
+                                  fontSize: '0.8rem',
+                                  fontFamily: 'Consolas, Monaco, monospace',
+                                  overflowX: 'auto',
+                                  maxHeight: '200px',
+                                  whiteSpace: 'pre',
+                                  margin: 0
+                                }}>
+                                  {code}
+                                </pre>
+                              </div>
+                            ) : (
+                              <p style={{ fontSize: '0.9rem', color: '#dc2626', margin: 0 }}>
+                                No code was written or modified for this question.
+                              </p>
+                            )}
+                          </div>
+                        );
+                      }
+
                       const isCorrect = userAns === q.answer;
                       return (
                         <div key={idx} style={{

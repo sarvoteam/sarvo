@@ -13,6 +13,7 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
   const [activeTestFilter, setActiveTestFilter] = useState('apti_test'); // apti_test or tech_test
   const [activeContext, setActiveContext] = useState('training'); // training or competition
   const [questions, setQuestions] = useState([]);
+  const [activeLangTab, setActiveLangTab] = useState({});
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
 
@@ -77,10 +78,17 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
   const handleOpenAddModal = () => {
     setEditingQuestion(null);
     setFormText('');
-    setFormOptA('');
-    setFormOptB('');
-    setFormOptC('');
-    setFormOptD('');
+    if (activeTestFilter === 'tech_test') {
+      setFormOptA('def solve(n):\n    # Write your Python code here\n    pass');
+      setFormOptB('public class Solution {\n    public int solve(int n) {\n        // Write your Java code here\n        return 0;\n    }\n}');
+      setFormOptC('#include <iostream>\nusing namespace std;\n\nclass Solution {\npublic:\n    int solve(int n) {\n        // Write your C++ code here\n        return 0;\n    }\n};');
+      setFormOptD('function solve(n) {\n    // Write your JavaScript code here\n    return 0;\n}');
+    } else {
+      setFormOptA('');
+      setFormOptB('');
+      setFormOptC('');
+      setFormOptD('');
+    }
     setFormCorrectIdx(0);
     setFormExplanation('');
     setIsQuestionModalOpen(true);
@@ -97,6 +105,135 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
     setFormCorrectIdx(q.correct_option || 0);
     setFormExplanation(q.explanation || '');
     setIsQuestionModalOpen(true);
+  };
+
+  const handleAutoGenerateTemplates = () => {
+    if (!formText.trim()) {
+      alert("Please enter a question description first.");
+      return;
+    }
+
+    const desc = formText.toLowerCase();
+
+    let funcName = 'solve';
+    let pyParams = 'n';
+    let javaParams = 'int n';
+    let cppParams = 'int n';
+    let jsParams = 'n';
+    let returnTypeJava = 'int';
+    let returnTypeCpp = 'int';
+    let javaDefaultReturn = '0';
+    let cppDefaultReturn = '0';
+    let pyDefaultReturn = 'pass';
+    let jsDefaultReturn = '0';
+    let explanation = '';
+
+    // 1. Even/Odd
+    if (desc.includes('even') && (desc.includes('odd') || desc.includes('check') || desc.includes('number'))) {
+      pyParams = 'n';
+      javaParams = 'int n';
+      cppParams = 'int n';
+      jsParams = 'n';
+      returnTypeJava = 'boolean';
+      returnTypeCpp = 'bool';
+      javaDefaultReturn = 'false';
+      cppDefaultReturn = 'false';
+      pyDefaultReturn = 'pass';
+      jsDefaultReturn = 'return false;';
+      explanation = "Example 1:\nInput: n = 4\nOutput: true\n\nExample 2:\nInput: n = 7\nOutput: false";
+    }
+    // 2. Prime Number
+    else if (desc.includes('prime')) {
+      pyParams = 'n';
+      javaParams = 'int n';
+      cppParams = 'int n';
+      jsParams = 'n';
+      returnTypeJava = 'boolean';
+      returnTypeCpp = 'bool';
+      javaDefaultReturn = 'false';
+      cppDefaultReturn = 'false';
+      pyDefaultReturn = 'pass';
+      jsDefaultReturn = 'return false;';
+      explanation = "Example 1:\nInput: n = 7\nOutput: true\n\nExample 2:\nInput: n = 4\nOutput: false";
+    }
+    // 3. Add / Sum of Two Numbers
+    else if (desc.includes('add') || desc.includes('sum') || desc.includes('plus')) {
+      pyParams = 'a, b';
+      javaParams = 'int a, int b';
+      cppParams = 'int a, int b';
+      jsParams = 'a, b';
+      returnTypeJava = 'int';
+      returnTypeCpp = 'int';
+      javaDefaultReturn = '0';
+      cppDefaultReturn = '0';
+      pyDefaultReturn = 'pass';
+      jsDefaultReturn = 'return 0;';
+      explanation = "Example 1:\nInput: a = 5, b = 7\nOutput: 12\n\nExample 2:\nInput: a = 12, b = 15\nOutput: 27";
+    }
+    // 4. Reverse String
+    else if (desc.includes('reverse') && desc.includes('string')) {
+      pyParams = 's';
+      javaParams = 'String s';
+      cppParams = 'string s';
+      jsParams = 's';
+      returnTypeJava = 'String';
+      returnTypeCpp = 'string';
+      javaDefaultReturn = '""';
+      cppDefaultReturn = '""';
+      pyDefaultReturn = 'pass';
+      jsDefaultReturn = "return '';";
+      explanation = "Example 1:\nInput: s = \"hello\"\nOutput: \"olleh\"";
+    }
+    // 5. Palindrome
+    else if (desc.includes('palindrome')) {
+      pyParams = 's';
+      javaParams = 'String s';
+      cppParams = 'string s';
+      jsParams = 's';
+      returnTypeJava = 'boolean';
+      returnTypeCpp = 'bool';
+      javaDefaultReturn = 'false';
+      cppDefaultReturn = 'false';
+      pyDefaultReturn = 'pass';
+      jsDefaultReturn = 'return false;';
+      explanation = "Example 1:\nInput: s = \"radar\"\nOutput: true\n\nExample 2:\nInput: s = \"sarvo\"\nOutput: false";
+    }
+    // 6. Factorial
+    else if (desc.includes('factorial')) {
+      pyParams = 'n';
+      javaParams = 'int n';
+      cppParams = 'int n';
+      jsParams = 'n';
+      returnTypeJava = 'int';
+      returnTypeCpp = 'int';
+      javaDefaultReturn = '1';
+      cppDefaultReturn = '1';
+      pyDefaultReturn = 'pass';
+      jsDefaultReturn = 'return 1;';
+      explanation = "Example 1:\nInput: n = 5\nOutput: 120";
+    }
+    // Generic guesser
+    else {
+      if (desc.includes('two') || desc.includes('a, b') || desc.includes('a and b')) {
+        pyParams = 'a, b';
+        jsParams = 'a, b';
+        javaParams = 'int a, int b';
+        cppParams = 'int a, int b';
+      }
+    }
+
+    const pyTemplate = `def ${funcName}(${pyParams}):\n    # Write your Python code here\n    ${pyDefaultReturn}`;
+    const javaTemplate = `public class Solution {\n    public ${returnTypeJava} ${funcName}(${javaParams}) {\n        // Write your Java code here\n        return ${javaDefaultReturn};\n    }\n}`;
+    const cppTemplate = `class Solution {\npublic:\n    ${returnTypeCpp} ${funcName}(${cppParams}) {\n        // Write your C++ code here\n        return ${cppDefaultReturn};\n    }\n};`;
+    const jsTemplate = `function ${funcName}(${jsParams}) {\n    // Write your JavaScript code here\n    ${jsDefaultReturn}\n}`;
+
+    setFormOptA(pyTemplate);
+    setFormOptB(javaTemplate);
+    setFormOptC(cppTemplate);
+    setFormOptD(jsTemplate);
+    if (explanation) {
+      setFormExplanation(explanation);
+    }
   };
 
   // Save (Create or Update) Question
@@ -505,51 +642,100 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
                         {q.question_text}
                       </h4>
 
-                      {/* Options Grid */}
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                        gap: '10px',
-                        marginBottom: '16px'
-                      }}>
-                        {q.options?.map((opt, oIdx) => {
-                          const isCorrect = q.correct_option === oIdx;
-                          return (
-                            <div
-                              key={oIdx}
-                              style={{
-                                padding: '10px 12px',
-                                borderRadius: '6px',
-                                border: isCorrect ? '1px solid #10b981' : '1px solid var(--border-color)',
-                                background: isCorrect ? 'rgba(16,185,129,0.05)' : 'var(--primary-bg)',
-                                color: 'var(--text-main)',
-                                fontSize: '12.5px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                              }}
-                            >
-                              <span style={{
-                                width: '20px',
-                                height: '20px',
-                                borderRadius: '50%',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyC: 'center',
-                                background: isCorrect ? '#10b981' : 'var(--border-color)',
-                                color: isCorrect ? 'white' : 'var(--text-muted)',
-                                fontSize: '10px',
-                                fontWeight: 800,
-                                justifyContent: 'center'
-                              }}>
-                                {String.fromCharCode(65 + oIdx)}
-                              </span>
-                              <span style={{ flex: 1 }}>{opt}</span>
-                              {isCorrect && <Check size={14} style={{ color: '#10b981' }} />}
-                            </div>
-                          );
-                        })}
-                      </div>
+                      {/* Options or Code Templates Grid */}
+                      {activeTestFilter === 'tech_test' ? (
+                        <div style={{ marginBottom: '16px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+                            Starter Code Templates:
+                          </span>
+                          <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                            {['Python', 'Java', 'C++', 'JavaScript'].map((lang, lIdx) => {
+                              const activeTab = (activeLangTab[q.id] ?? 0) === lIdx;
+                              return (
+                                <button
+                                  key={lang}
+                                  type="button"
+                                  onClick={() => setActiveLangTab(prev => ({ ...prev, [q.id]: lIdx }))}
+                                  style={{
+                                    padding: '4px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '11.5px',
+                                    fontWeight: 700,
+                                    border: activeTab ? '1px solid var(--active-blue)' : '1px solid var(--border-color)',
+                                    background: activeTab ? 'rgba(0, 123, 245, 0.08)' : 'var(--card-bg)',
+                                    color: activeTab ? 'var(--active-blue)' : 'var(--text-muted)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  {lang}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <pre style={{
+                            padding: '12px 14px',
+                            background: 'var(--primary-bg)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '12px',
+                            color: 'var(--text-main)',
+                            fontFamily: 'Consolas, Monaco, monospace',
+                            overflowX: 'auto',
+                            maxHeight: '160px',
+                            textAlign: 'left',
+                            whiteSpace: 'pre',
+                            margin: 0,
+                            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)'
+                          }}>
+                            {q.options?.[activeLangTab[q.id] ?? 0] || '// No template set'}
+                          </pre>
+                        </div>
+                      ) : (
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                          gap: '10px',
+                          marginBottom: '16px'
+                        }}>
+                          {q.options?.map((opt, oIdx) => {
+                            const isCorrect = q.correct_option === oIdx;
+                            return (
+                              <div
+                                key={oIdx}
+                                style={{
+                                  padding: '10px 12px',
+                                  borderRadius: '6px',
+                                  border: isCorrect ? '1px solid #10b981' : '1px solid var(--border-color)',
+                                  background: isCorrect ? 'rgba(16,185,129,0.05)' : 'var(--primary-bg)',
+                                  color: 'var(--text-main)',
+                                  fontSize: '12.5px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px'
+                                }}
+                              >
+                                <span style={{
+                                  width: '20px',
+                                  height: '20px',
+                                  borderRadius: '50%',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: isCorrect ? '#10b981' : 'var(--border-color)',
+                                  color: isCorrect ? 'white' : 'var(--text-muted)',
+                                  fontSize: '10px',
+                                  fontWeight: 800
+                                }}>
+                                  {String.fromCharCode(65 + oIdx)}
+                                </span>
+                                <span style={{ flex: 1 }}>{opt}</span>
+                                {isCorrect && <Check size={14} style={{ color: '#10b981' }} />}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       {/* Explanation */}
                       {q.explanation && (
@@ -824,9 +1010,32 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
               
               {/* Question Text */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase' }}>
-                  Question Description *
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase' }}>
+                    Question Description *
+                  </label>
+                  {activeTestFilter === 'tech_test' && (
+                    <button
+                      type="button"
+                      onClick={handleAutoGenerateTemplates}
+                      style={{
+                        background: 'rgba(59, 130, 246, 0.08)',
+                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                        color: 'var(--active-blue)',
+                        borderRadius: '6px',
+                        padding: '2px 8px',
+                        fontSize: '10.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      ✨ Auto-generate Code & Tests
+                    </button>
+                  )}
+                </div>
                 <textarea
                   required
                   rows={3}
@@ -847,61 +1056,100 @@ export default function AdminTestsSection({ currentUser, subNavItem }) {
               </div>
 
               {/* Options */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase' }}>
-                  Multiple Choice Options *
-                </label>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {[['A', formOptA, setFormOptA], ['B', formOptB, setFormOptB], ['C', formOptC, setFormOptC], ['D', formOptD, setFormOptD]].map(([lbl, val, setter], idx) => (
-                    <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', width: '12px' }}>{lbl}</span>
-                      <input
-                        type="text"
+              {activeTestFilter === 'tech_test' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase' }}>
+                    Language Starter Code Templates *
+                  </label>
+                  {[
+                    ['Python Starter Code', formOptA, setFormOptA],
+                    ['Java Starter Code', formOptB, setFormOptB],
+                    ['C++ Starter Code', formOptC, setFormOptC],
+                    ['JavaScript Starter Code', formOptD, setFormOptD]
+                  ].map(([label, value, setter]) => (
+                    <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>{label}</span>
+                      <textarea
                         required
-                        placeholder={`Option ${lbl} text`}
-                        value={val}
+                        rows={4}
+                        placeholder={`Enter default starter code for ${label.split(' ')[0]}...`}
+                        value={value}
                         onChange={(e) => setter(e.target.value)}
                         style={{
-                          flex: 1,
                           padding: '8px 10px',
-                          fontSize: '12.5px',
+                          fontSize: '12px',
+                          fontFamily: 'Consolas, Monaco, monospace',
                           borderRadius: '6px',
                           border: '1px solid var(--border-color)',
                           background: 'var(--primary-bg)',
                           color: 'var(--text-main)',
-                          outline: 'none'
+                          outline: 'none',
+                          resize: 'vertical',
+                          whiteSpace: 'pre'
                         }}
                       />
                     </div>
                   ))}
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase' }}>
+                      Multiple Choice Options *
+                    </label>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {[['A', formOptA, setFormOptA], ['B', formOptB, setFormOptB], ['C', formOptC, setFormOptC], ['D', formOptD, setFormOptD]].map(([lbl, val, setter], idx) => (
+                        <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', width: '12px' }}>{lbl}</span>
+                          <input
+                            type="text"
+                            required
+                            placeholder={`Option ${lbl} text`}
+                            value={val}
+                            onChange={(e) => setter(e.target.value)}
+                            style={{
+                              flex: 1,
+                              padding: '8px 10px',
+                              fontSize: '12.5px',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-color)',
+                              background: 'var(--primary-bg)',
+                              color: 'var(--text-main)',
+                              outline: 'none'
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-              {/* Correct Option Selector */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase' }}>
-                  Select Correct Answer Option *
-                </label>
-                <select
-                  value={formCorrectIdx}
-                  onChange={(e) => setFormCorrectIdx(Number(e.target.value))}
-                  style={{
-                    padding: '8px 10px',
-                    fontSize: '12.5px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--primary-bg)',
-                    color: 'var(--text-main)',
-                    outline: 'none'
-                  }}
-                >
-                  <option value={0}>Option A</option>
-                  <option value={1}>Option B</option>
-                  <option value={2}>Option C</option>
-                  <option value={3}>Option D</option>
-                </select>
-              </div>
+                  {/* Correct Option Selector */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase' }}>
+                      Select Correct Answer Option *
+                    </label>
+                    <select
+                      value={formCorrectIdx}
+                      onChange={(e) => setFormCorrectIdx(Number(e.target.value))}
+                      style={{
+                        padding: '8px 10px',
+                        fontSize: '12.5px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-color)',
+                        background: 'var(--primary-bg)',
+                        color: 'var(--text-main)',
+                        outline: 'none'
+                      }}
+                    >
+                      <option value={0}>Option A</option>
+                      <option value={1}>Option B</option>
+                      <option value={2}>Option C</option>
+                      <option value={3}>Option D</option>
+                    </select>
+                  </div>
+                </>
+              )}
 
               {/* Explanation */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
