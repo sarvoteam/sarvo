@@ -21,6 +21,22 @@ import {
   ClipboardList
 } from 'lucide-react';
 
+export const ADMIN_MODULES = [
+  { id: 'home', label: 'Dashboard' },
+  { id: 'batches', label: 'Batches' },
+  { id: 'admin', label: 'Employees' },
+  { id: 'tests', label: 'Test Settings' },
+  { id: 'attendance', label: 'Attendance' },
+  { id: 'leave', label: 'Leaves' },
+  { id: 'lms', label: 'LMS Hub' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'placements', label: 'Placements' },
+  { id: 'jobapplications', label: 'Job Apply' },
+  { id: 'certificates', label: 'Certificates' },
+  { id: 'reports', label: 'Analytics' },
+  { id: 'competitions', label: 'Competitions' }
+];
+
 export default function Sidebar({ activeTab, setActiveTab, user }) {
   // Master menu items map
   const menuConfig = {
@@ -75,17 +91,22 @@ export default function Sidebar({ activeTab, setActiveTab, user }) {
   };
  
   // Resolve role list
-  // Resolve role list
-const userRole =
-  user?.role === 'Admin'
-    ? 'Admin'
-    : user?.role === 'Reporting Manager' || user?.role === 'Mentor'
-      ? 'Mentor'
-      : user?.role === 'Student'
-        ? 'Student'
-        : 'Intern';
+  const userRole =
+    user?.role === 'Admin'
+      ? 'Admin'
+      : user?.role === 'Reporting Manager' || user?.role === 'Mentor'
+        ? 'Mentor'
+        : user?.role === 'Student'
+          ? 'Student'
+          : 'Intern';
 
-const visibleMenuItems = menuConfig[userRole] || menuConfig['Intern'];
+  let visibleMenuItems = menuConfig[userRole] || menuConfig['Intern'];
+
+  if (userRole === 'Admin') {
+    if (user?.allowed_modules && Array.isArray(user.allowed_modules) && user.allowed_modules.length > 0) {
+      visibleMenuItems = visibleMenuItems.filter(item => user.allowed_modules.includes(item.id));
+    }
+  }
 
   return (
     <aside className="sidebar">

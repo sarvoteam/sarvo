@@ -63,7 +63,7 @@ const Footer = () => {
                 { icon: <FaTwitter size={18} />, href: '#' },
                 { icon: <FaLinkedin size={18} />, href: 'https://www.linkedin.com/company/sarvoprime/' },
                 { icon: <FaGithub size={18} />, href: 'https://github.com/sarvoteam' },
-                { icon: <FaInstagram size={18} />, href: 'https://www.instagram.com/sarvo.in' },
+                { icon: <FaInstagram size={18} />, href: 'https://www.instagram.com/sarvo_prime' },
               ].map((s, i) => (
                 <a key={i} href={s.href}
                   style={{ color: 'var(--text-secondary)', transition: 'var(--transition-smooth)', display: 'flex' }}

@@ -22,6 +22,7 @@ import { attendanceApi } from '../apis/attendanceApi';
 import { leaveApi } from '../apis/leaveApi';
 import { projectApi } from '../apis/projectApi';
 import EditEmployeeProfileModal from './EditEmployeeProfileModal';
+import { ADMIN_MODULES } from './Sidebar';
 
 const getAvatarColor = (name) => {
   const colors = [
@@ -70,10 +71,11 @@ export default function AdminPanel() {
   const [formEmail, setFormEmail] = useState('');
   const [formMobile, setFormMobile] = useState('');
   const [formPhone, setFormPhone] = useState('');
-  const [formPortalRole, setFormPortalRole] = useState('Employee');
   const [formTimezone, setFormTimezone] = useState('India Standard Time (GMT+05:30)');
   const [formShift, setFormShift] = useState('General (10:30 AM - 06:30 PM)');
   const [formAbout, setFormAbout] = useState('');
+  const [selectedModules, setSelectedModules] = useState([]);
+  const [editAllowedModules, setEditAllowedModules] = useState([]);
 
   // Organization Meta (Departments, Designations)
   const [orgMeta, setOrgMeta] = useState({ departments: [], designations: [] });
@@ -93,6 +95,21 @@ export default function AdminPanel() {
   const [selectedProjectFilter, setSelectedProjectFilter] = useState('all');
   const [projectMemberEmployeeIds, setProjectMemberEmployeeIds] = useState([]);
 
+  useEffect(() => {
+    if (isDrawerOpen) {
+      setSelectedModules(ADMIN_MODULES.map(m => m.id));
+    }
+  }, [isDrawerOpen]);
+
+  useEffect(() => {
+    if (selectedEmployee) {
+      const rawEmp = employees.find(e => e.id === selectedEmployee.id);
+      if (rawEmp) {
+        setEditAllowedModules(rawEmp.allowed_modules || ADMIN_MODULES.map(m => m.id));
+      }
+    }
+  }, [selectedEmployee, employees]);
+
   // Load Employees and Org Meta
   const fetchEmployeesAndMeta = async () => {
     try {
@@ -104,6 +121,7 @@ export default function AdminPanel() {
           employee_id: emp.employee_code,
           name: `${emp.first_name} ${emp.last_name}`,
           role: emp.designation_name || emp.role || 'Employee',
+          system_role: emp.role,
           department: emp.department_name || 'Engineering',
           avatar: `https://images.unsplash.com/photo-${1500000000000 + (emp.id * 100000)}?w=150` || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
           status: emp.status || 'Yet to check-in',
@@ -112,7 +130,8 @@ export default function AdminPanel() {
           work_phone: emp.phone || '9999999999',
           timezone: 'India Standard Time (GMT+05:30)',
           about_me: 'Registered employee',
-          shift: 'General (10:30 AM - 06:30 PM)'
+          shift: 'General (10:30 AM - 06:30 PM)',
+          allowed_modules: emp.allowed_modules
         }));
       setEmployees(mappedEmps);
 
@@ -296,9 +315,10 @@ export default function AdminPanel() {
       lastName,
       email: formEmail || `${firstName.toLowerCase()}@sarvo.com`,
       phone: formMobile || formPhone || '9999999999',
-      role: formPortalRole || formUserRole,
+      role: formUserRole,
       departmentId: Number(formDept),
-      designationId: Number(formRole)
+      designationId: Number(formRole),
+      allowedModules: formUserRole === 'Admin' ? selectedModules : null
     };
 
     try {
@@ -321,11 +341,11 @@ export default function AdminPanel() {
     setFormUserRole('Admin');
     if (orgMeta.departments.length > 0) setFormDept(orgMeta.departments[0].id);
     if (orgMeta.designations.length > 0) setFormRole(orgMeta.designations[0].id);
-    setFormPortalRole('Employee');
     setFormEmail('');
     setFormMobile('');
     setFormPhone('');
     setFormAbout('');
+    setSelectedModules(ADMIN_MODULES.map(m => m.id));
   };
 
   const handleAdminStatusUpdate = async (applicationId, status) => {
@@ -857,6 +877,66 @@ export default function AdminPanel() {
                     <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#4b5563' }}>{selectedEmployee.about_me}</p>
                   </div>
                 </div>
+
+                {/* 5. Admin Module Access Control */}
+                {selectedEmployee?.system_role?.toLowerCase() === 'admin' && (
+                  <div className="admin-profile-card-section" style={{ gridColumn: 'span 3' }}>
+                    <h4 className="admin-profile-section-title">Admin Module Access Control</h4>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                      Check or uncheck modules to control what this admin user can access.
+                    </p>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                      gap: '12px',
+                      background: 'rgba(0, 0, 0, 0.02)',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)',
+                      marginBottom: '16px'
+                    }}>
+                      {ADMIN_MODULES.map(module => (
+                        <label key={module.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '12.5px',
+                          color: 'var(--text-main)',
+                          cursor: 'pointer'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={editAllowedModules.includes(module.id)}
+                            onChange={() => {
+                              setEditAllowedModules(prev =>
+                                prev.includes(module.id)
+                                  ? prev.filter(id => id !== module.id)
+                                  : [...prev, module.id]
+                              );
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          {module.label}
+                        </label>
+                      ))}
+                    </div>
+                    <button
+                      className="btn-add-employee"
+                      style={{ padding: '8px 16px', fontSize: '12px', height: 'fit-content' }}
+                      onClick={async () => {
+                        try {
+                          await employeeApi.updateAllowedModules(selectedEmployee.id, editAllowedModules);
+                          alert('Module permissions updated successfully');
+                          await fetchEmployeesAndMeta();
+                        } catch (err) {
+                          alert(err.message || 'Failed to update module permissions');
+                        }
+                      }}
+                    >
+                      Save Module Access
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1131,15 +1211,45 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              <div className="admin-form-group">
-                <label>System Portal Access Role *</label>
-                <select value={formPortalRole} onChange={(e) => setFormPortalRole(e.target.value)}>
-                  <option value="Employee">Employee (Standard)</option>
-                  <option value="Reporting Manager">Reporting Manager (Mentor)</option>
-                  <option value="Admin">System Admin</option>
-                  <option value="Intern">Intern</option>
-                </select>
-              </div>
+              {formUserRole === 'Admin' && (
+                <div className="admin-form-group">
+                  <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Allowed Modules *</label>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '10px',
+                    background: 'rgba(0, 0, 0, 0.02)',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)'
+                  }}>
+                    {ADMIN_MODULES.map(module => (
+                      <label key={module.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '12.5px',
+                        color: 'var(--text-main)',
+                        cursor: 'pointer'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedModules.includes(module.id)}
+                          onChange={() => {
+                            setSelectedModules(prev =>
+                              prev.includes(module.id)
+                                ? prev.filter(m => m !== module.id)
+                                : [...prev, module.id]
+                            );
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        />
+                        {module.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="admin-form-group">
                 <label>Department *</label>
