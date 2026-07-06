@@ -51,7 +51,6 @@ const CompetitionTable = ({ competitions, onEdit, onDelete, onRowClick }) => {
               <th style={{ ...th, textAlign: 'center' }}>Registered</th>
               <th style={{ ...th, textAlign: 'center' }}>Paid</th>
               <th style={th}>Fee</th>
-              <th style={th}>Top Prize</th>
               <th style={{ ...th, textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
@@ -59,7 +58,6 @@ const CompetitionTable = ({ competitions, onEdit, onDelete, onRowClick }) => {
             {competitions.length > 0 ? (
               competitions.map((comp) => {
                 const fee = formatFee(comp.registration_fee);
-                const topPrize = parsePrizePool(comp.prize_pool);
                 const regCount = comp.registration_count ?? 0;
                 const paidCount = comp.paid_count ?? 0;
 
@@ -187,17 +185,6 @@ const CompetitionTable = ({ competitions, onEdit, onDelete, onRowClick }) => {
                       )}
                     </td>
 
-                    {/* Top Prize */}
-                    <td style={{ padding: '14px 20px' }}>
-                      {topPrize ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#f59e0b', fontWeight: 700, fontSize: '13px' }}>
-                          <Award size={13} /> {topPrize}
-                        </div>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>—</span>
-                      )}
-                    </td>
-
                     {/* Actions */}
                     <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -226,7 +213,7 @@ const CompetitionTable = ({ competitions, onEdit, onDelete, onRowClick }) => {
               })
             ) : (
               <tr>
-                <td colSpan="8" style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <td colSpan="7" style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
                   No competitions configured yet. Click "Add Competition" to get started.
                 </td>
               </tr>

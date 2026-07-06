@@ -132,11 +132,22 @@ export default function CompetitionTestPage() {
         if (!compRes.ok) return;
         const comps = await compRes.json();
 
-        const activeComp = comps.find(c => c.status === 'active');
-        if (activeComp) {
-          setActiveCompetition(activeComp);
+        // 1. Try to find the exact competition matching the student's registration
+        let targetComp = null;
+        const studentCompId = currentUser?.competitionId || currentUser?.competition_id;
+        if (studentCompId) {
+          targetComp = comps.find(c => c.id === studentCompId);
+        }
 
-          const regRes = await fetch(`${apiBase}/payments/registrations/${activeComp.id}`);
+        // 2. Fallback to the first active competition if no match
+        if (!targetComp) {
+          targetComp = comps.find(c => c.status === 'active');
+        }
+
+        if (targetComp) {
+          setActiveCompetition(targetComp);
+
+          const regRes = await fetch(`${apiBase}/payments/registrations/${targetComp.id}`);
           if (regRes.ok) {
             const regs = await regRes.json();
             const studentReg = regs.some(r => r.student_email.toLowerCase() === currentUser.email.toLowerCase());
@@ -161,47 +172,75 @@ export default function CompetitionTestPage() {
         const token = sessionStorage.getItem('sarvo_token');
         const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
+        const activeCompId = activeCompetition?.id;
+        const aptTestId = activeCompId ? `competition_${activeCompId}_apti_test` : 'competition_apti_test';
+        const techTestId = activeCompId ? `competition_${activeCompId}_tech_test` : 'competition_tech_test';
+
         // Fetch Aptitude Questions
-        const aptRes = await fetch(`${apiBase}/lms/interview-questions?testId=competition_apti_test`, {
+        let aptRes = await fetch(`${apiBase}/lms/interview-questions?testId=${aptTestId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        let aptData = [];
         if (aptRes.ok) {
-          const data = await aptRes.json();
-          if (data && data.length > 0) {
-            const parsed = data.map(q => ({
-              id: q.id,
-              q: q.question_text,
-              options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
-              answer: q.correct_option,
-              explanation: q.explanation
-            }));
-            setAptitudeQuestions(parsed);
+          aptData = await aptRes.json();
+        }
+
+        // Fallback if specific comp questions don't exist
+        if ((!aptRes.ok || !aptData || aptData.length === 0) && activeCompId) {
+          const fallbackRes = await fetch(`${apiBase}/lms/interview-questions?testId=competition_apti_test`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (fallbackRes.ok) {
+            aptData = await fallbackRes.json();
           }
         }
 
+        if (aptData && aptData.length > 0) {
+          const parsed = aptData.map(q => ({
+            id: q.id,
+            q: q.question_text,
+            options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
+            answer: q.correct_option,
+            explanation: q.explanation
+          }));
+          setAptitudeQuestions(parsed);
+        }
+
         // Fetch Technical Questions (Coding questions)
-        const techRes = await fetch(`${apiBase}/lms/interview-questions?testId=competition_tech_test`, {
+        let techRes = await fetch(`${apiBase}/lms/interview-questions?testId=${techTestId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        let techData = [];
         if (techRes.ok) {
-          const data = await techRes.json();
-          if (data && data.length > 0) {
-            const parsed = data.map(q => ({
-              id: q.id,
-              q: q.question_text,
-              options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
-              answer: q.correct_option,
-              explanation: q.explanation
-            }));
-            setTechnicalQuestions(parsed);
+          techData = await techRes.json();
+        }
+
+        // Fallback if specific comp questions don't exist
+        if ((!techRes.ok || !techData || techData.length === 0) && activeCompId) {
+          const fallbackRes = await fetch(`${apiBase}/lms/interview-questions?testId=competition_tech_test`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (fallbackRes.ok) {
+            techData = await fallbackRes.json();
           }
+        }
+
+        if (techData && techData.length > 0) {
+          const parsed = techData.map(q => ({
+            id: q.id,
+            q: q.question_text,
+            options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
+            answer: q.correct_option,
+            explanation: q.explanation
+          }));
+          setTechnicalQuestions(parsed);
         }
       } catch (err) {
         console.error('Error fetching questions from backend:', err);
       }
     };
     loadDBQuestions();
-  }, [currentUser]);
+  }, [currentUser, activeCompetition]);
 
   // Real-time ticking countdown to scheduled exam start time
   useEffect(() => {

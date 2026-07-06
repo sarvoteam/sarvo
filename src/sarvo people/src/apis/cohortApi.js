@@ -28,6 +28,9 @@ export const cohortApi = {
   getAllStudents: async () => {
     return await api.get('/cohorts/students/all');
   },
+  getCompetitionStudents: async () => {
+    return await api.get('/cohorts/students/competitions');
+  },
   updateStudentProfile: async (studentId, profileData) => {
     return await api.put(`/cohorts/students/${studentId}/profile`, profileData);
   },
